@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Molekula Academy — Kemija koja konačno ima smisla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+
+  :root {
+    /* palette */
+    --bg: #f5f8f7;
+    --surface: #ffffff;
+    --ink: #15252b;
+    --ink-soft: #46585e;
+    --ink-faint: #7d8d92;
+    --deep: #0b343c;            /* deep teal — dark sections */
+    --deep-2: #0e424b;
+    --line: #e2eae9;
+    --line-strong: #cfdcda;
+
+    /* accent (overridable by tweaks) */
+    --accent: #0f8f86;          /* primary teal */
+    --accent-bright: #1ec8b6;   /* bright teal */
+    --accent-ink: #064843;      /* dark accent text */
+    --accent-wash: #e7f6f3;     /* tinted surface */
+    --on-accent: #ffffff;
+
+    /* type */
+    --display: "Bricolage Grotesque", sans-serif;
+    --body: "DM Sans", sans-serif;
+    --mono: "Space Mono", monospace;
+
+    /* metrics */
+    --maxw: 1180px;
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin: 0; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  ::selection { background: var(--accent-bright); color: var(--deep); }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  /* eyebrow label */
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent);
+    display: inline-flex; align-items: center; gap: 9px;
+  }
+  .eyebrow::before {
+    content: ""; width: 22px; height: 1.5px; background: var(--accent); display: inline-block;
+  }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    font-family: var(--body); font-weight: 600; font-size: 16px;
+    padding: 14px 24px; border-radius: 999px; border: 1.5px solid transparent;
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 8px 22px -10px var(--accent); }
+  .btn-primary:hover { background: var(--accent-ink); transform: translateY(-2px); box-shadow: 0 14px 28px -12px var(--accent); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent-ink); transform: translateY(-2px); }
+  .btn-dark { background: var(--deep); color: #fff; }
+  .btn-dark:hover { background: var(--deep-2); transform: translateY(-2px); }
+  .btn-white { background: #fff; color: var(--deep); }
+  .btn-white:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); }
+
+  /* section rhythm */
+  .section { padding: 96px 0; }
+  .section-head { max-width: 640px; }
+  .section-head h2 { font-size: clamp(30px, 4vw, 46px); margin-top: 16px; }
+  .section-head p { color: var(--ink-soft); font-size: 19px; margin-top: 14px; }
+
+  /* hexagon motif */
+  .hex {
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  /* periodic element tile */
+  .el-tile {
+    font-family: var(--mono); position: relative; display: flex; flex-direction: column;
+    justify-content: space-between; border: 1.5px solid var(--line-strong); border-radius: 10px;
+    background: var(--surface); padding: 8px 9px; aspect-ratio: 1; color: var(--ink);
+  }
+  .el-tile .num { font-size: 10px; color: var(--ink-faint); }
+  .el-tile .sym { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+  /* scroll reveal */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* utility card */
+  .card {
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -28px rgba(11,52,60,.4); border-color: var(--line-strong); }
+
+  #root { overflow-x: clip; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 980px) {
+    .hero-split { grid-template-columns: 1fr !important; gap: 40px !important; }
+    .teacher-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+    .three-grid { grid-template-columns: 1fr 1fr !important; }
+    .feat-grid { grid-template-columns: 1fr 1fr !important; }
+    .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+    .price-grid { grid-template-columns: 1fr !important; max-width: 460px; }
+    .trust-grid { grid-template-columns: 1fr 1fr !important; gap: 32px 16px !important; }
+    .trust-grid > div:nth-child(3) { border-left: none !important; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .section { padding: 64px 0; }
+    .wrap { padding: 0 20px; }
+    .desk-nav { display: none !important; }
+    .three-grid, .feat-grid, .footer-grid, .trust-grid { grid-template-columns: 1fr !important; }
+    .trust-grid > div { border-left: none !important; }
+    .footer-grid > div:first-child { grid-column: 1 / -1; }
+  }
+
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script>
+/* Molekula Academy — bilingual content (HR primary, EN secondary) */
+window.CONTENT = {
+  hr: {
+    nav: { home: "Početna", about: "O nama", blog: "Blog", pricing: "Cijene", login: "Prijava", start: "Počni besplatno" },
+
+    hero: {
+      eyebrow: "Online akademija kemije",
+      title: "Kemija objašnjena tako da konačno ima smisla.",
+      sub: "Strukturirane lekcije, kvizovi i live podrška za IB, prijemni ispit za medicinu i stomatologiju. Vodi te netko tko je bio na tvom mjestu.",
+      ctaPrimary: "Počni besplatno",
+      ctaSecondary: "Pogledaj planove",
+      note: "Bez kartice za probni period · Otkaži bilo kada",
+      eqCaption: "Stehiometrija · izjednačavanje reakcije",
+      photoLabel: "fotografija učenika / lab",
+    },
+
+    trust: {
+      label: "Vjeruju nam učenici diljem Hrvatske",
+      stats: [
+        { num: "50+", label: "aktivnih učenika" },
+        { num: "95%", label: "prolaznost na ispitima" },
+        { num: "4.9/5", label: "prosječna ocjena" },
+        { num: "od 2008.", label: "iskustva u podučavanju" },
+      ],
+      tags: ["IB Diploma", "Medicinski fakultet", "Stomatološki fakultet", "Prijemni ispiti"],
+    },
+
+    who: {
+      eyebrow: "Za koga je ovo",
+      title: "Napravljeno za tvoj ispit, ne za prosjek.",
+      sub: "Svaki put kreće od onoga što ti zaista treba — dobri temelji i fokus na razumijevanje.",
+      cards: [
+        { tag: "IB", title: "IB Kemija (HL i SL)", desc: "Cjeloviti syllabus, Paper 1–3 strategije i podrška za visok rezultat.", link: "Saznaj više" },
+        { tag: "Rx", title: "Prijemni za medicinu i stomatologiju", desc: "Ciljana priprema za najteža pitanja kemije na prijemnim ispitima.", link: "Saznaj više" },
+        { tag: "Uni", title: "Fakultetska kemija", desc: "Opća, organska i biokemija za studente medicine i stomatologije.", link: "Saznaj više" },
+      ],
+    },
+
+    how: {
+      eyebrow: "Kako funkcionira",
+      title: "Od zbunjenosti do sigurnosti u tri koraka.",
+      steps: [
+        { n: "01", title: "Odaberi plan", desc: "Basic za samostalno učenje ili Premium za direktnu podršku profesora." },
+        { n: "02", title: "Uči svojim tempom", desc: "Lekcije, kvizovi i probni ispiti dostupni 24/7, s bilo kojeg uređaja." },
+        { n: "03", title: "Zatraži pomoć", desc: "Postavi pitanje u chatu ili rezerviraj live Zoom termin kad zapneš." },
+      ],
+    },
+
+    features: {
+      eyebrow: "Što dobivaš",
+      title: "Sve na jednom mjestu.",
+      sub: "Platforma izgrađena oko jednog cilja — da razumiješ, a ne samo zapamtiš.",
+      items: [
+        { el: "Li", name: "Pisane lekcije", desc: "Jasna teorija, korak po korak." },
+        { el: "Vd", name: "Video lekcije", desc: "Vizualna objašnjenja teških tema." },
+        { el: "Qz", name: "Vježbe i kvizovi", desc: "Trenutna povratna informacija." },
+        { el: "Ex", name: "Probni ispiti", desc: "Realni uvjeti, prava priprema." },
+        { el: "Pr", name: "Praćenje napretka", desc: "Vidiš gdje si i kamo ideš." },
+        { el: "Ch", name: "Chat s profesorom", desc: "Pitanja kad ti trebaju odgovori." },
+        { el: "Bk", name: "Rezervacija termina", desc: "Live Zoom 1-na-1 sesije." },
+        { el: "Ce", name: "Certifikati", desc: "Dokaz o završenom modulu." },
+      ],
+    },
+
+    teacher: {
+      eyebrow: "Tvoj profesor",
+      name: "Tomislav",
+      role: "Instruktor",
+      quote: "Dobro kemijsko obrazovanje su tri stvari: razumjeti teoriju, položiti ispit i zadržati ono što zaista vrijedi — kad jednog dana budeš liječnik. Sve tri. Nikad jedna bez druge.",
+      bio: [
+        "Kemiju podučavam jer se sjećam koliko je zabavno bilo kad mi je jedna osoba objasnila stvari kako treba.",
+        "Liječnik sam koji kemiju predaje više od 15 godina. Sjedio sam na istom prijemnom ispitu za koji ti se pripremaš. Znam točno što se ispituje, gdje učenici gube bodove i što vrijedi duboko razumjeti — a što ne.",
+        "Od 2008. pripremam studente medicine i stomatologije za ispite. Zadnjih 5 godina radim i s IB učenicima. Molekula Academy izgrađena je na tom iskustvu — solidni temelji, prava vježba za ispit i klinička perspektiva liječnika koji to znanje koristi svaki dan. Bez nabubanih definicija. Bez \"jer je tako\".",
+      ],
+      creds: ["dr. med.", "15+ godina iskustva", "200+ podučavanih učenika", "IB & prijemni specijalist"],
+      photoLabel: "fotografija profesora",
+    },
+
+    testimonials: {
+      eyebrow: "Što kažu učenici",
+      title: "Rezultati govore umjesto nas.",
+      items: [
+        { quote: "Prvi put da mi je organska kemija imala smisla. Prešla sam s 4 na 7 u IB-u.", name: "Marta K.", role: "IB Chemistry HL" },
+        { quote: "Prijemni za medicinu je bio puno lakši nego što sam mislio. Probni ispiti su zlato.", name: "Luka P.", role: "Medicinski fakultet" },
+        { quote: "Tomislav objasni u pet minuta ono što sam tjednima čitao iz skripte.", name: "Ana M.", role: "Stomatologija, 1. god." },
+      ],
+    },
+
+    pricing: {
+      eyebrow: "Cijene",
+      title: "Jednostavno. Bez skrivenih troškova.",
+      sub: "Mjesečna naplata. Otkaži bilo kada.",
+      perMonth: "/mj",
+      cta: "Odaberi plan",
+      popular: "Najpopularnije",
+      note: "Besplatno prvi tjedan &middot; Otkaži kad god",
+      plans: [
+        {
+          name: "Basic", price: "19", tagline: "Za samostalno učenje",
+          features: [
+            { t: "Sve pisane lekcije i teorija", on: true },
+            { t: "Sve vježbe (samoispravljanje)", on: true },
+            { t: "Kvizovi s trenutnom povratnom informacijom", on: true },
+            { t: "Praćenje napretka", on: true },
+            { t: "Certifikati o završetku", on: true },
+            { t: "Video lekcije", on: false },
+            { t: "Chat s profesorom", on: false },
+            { t: "Live Zoom sesije", on: false },
+          ],
+        },
+        {
+          name: "Premium", price: "39", tagline: "Za maksimalan rezultat",
+          features: [
+            { t: "Sve iz Basic plana", on: true },
+            { t: "Video lekcije", on: true },
+            { t: "Probni ispiti s pitanjima zatvorenog tipa", on: true },
+            { t: "Direktan chat s profesorom", on: true },
+            { t: "1 live Zoom sesija mjesečno", on: true },
+            { t: "Pisani feedback na probne ispite", on: true },
+            { t: "Prioritetni odgovor", on: true },
+          ],
+        },
+      ],
+    },
+
+    faq: {
+      eyebrow: "Česta pitanja",
+      title: "Sve što te zanima.",
+      items: [
+        { q: "Je li ovo dobro za IB Kemiju HL?", a: "Da. Cijeli sadržaj prati IB syllabus za HL i SL, uključujući strategije za Paper 1, 2 i 3 te podršku za internal assessment." },
+        { q: "Kako funkcioniraju live sesije?", a: "Premium uključuje jednu Zoom sesiju mjesečno. Rezerviraš termin u kalendaru, dobiješ link na email i radimo 1-na-1 na onome što ti treba." },
+        { q: "Mogu li promijeniti plan?", a: "Naravno. Možeš nadograditi ili smanjiti plan u bilo kojem trenutku iz svojih postavki računa. Promjena vrijedi od sljedećeg ciklusa." },
+        { q: "Što ako zaostanem?", a: "Sve lekcije su uvijek dostupne, bez rokova. Učiš svojim tempom, a napredak ti se sprema automatski." },
+        { q: "Postoji li besplatna proba?", a: "Da. Možeš započeti besplatno i isprobati dio lekcija i kvizova prije nego se odlučiš za plan." },
+        { q: "Na kojem je jeziku sadržaj?", a: "Sadržaj je na hrvatskom, uz stručne pojmove i na engleskom — idealno za IB učenike koji polažu na engleskom." },
+      ],
+    },
+
+    finalCta: {
+      title: "Spreman/na prestati se mučiti s kemijom?",
+      sub: "Pridruži se učenicima koji su prestali bubati i počeli razumjeti.",
+      cta: "Počni besplatno",
+    },
+
+    footer: {
+      tagline: "Kemija koja konačno ima smisla.",
+      colsTitle: ["Stranice", "Resursi", "Pravno"],
+      cols: [
+        ["Početna", "Cijene", "Blog", "O nama", "Kontakt"],
+        ["IB Kemija", "Prijemni ispiti", "Fakultetska kemija", "Besplatni materijali"],
+        ["Privatnost", "Uvjeti korištenja", "Kolačići"],
+      ],
+      rights: "© 2026 Molekula Academy. Sva prava pridržana.",
+    },
+  },
+
+  en: {
+    nav: { home: "Home", about: "About", blog: "Blog", pricing: "Pricing", login: "Log in", start: "Start free" },
+
+    hero: {
+      eyebrow: "Online chemistry academy",
+      title: "Chemistry explained so it finally makes sense.",
+      sub: "Structured lessons, quizzes, and live tutoring for IB and the medical & dental entrance exam. Guided by someone who's been in your seat.",
+      ctaPrimary: "Start for free",
+      ctaSecondary: "See plans",
+      note: "No card for the trial · Cancel anytime",
+      eqCaption: "Stoichiometry · balancing the equation",
+      photoLabel: "student / lab photo",
+    },
+
+    trust: {
+      label: "Trusted by students across Croatia",
+      stats: [
+        { num: "50+", label: "active students" },
+        { num: "95%", label: "exam pass rate" },
+        { num: "4.9/5", label: "average rating" },
+        { num: "since 2008", label: "teaching experience" },
+      ],
+      tags: ["IB Diploma", "Medical School", "Dental School", "Entrance Exams"],
+    },
+
+    who: {
+      eyebrow: "Who it's for",
+      title: "Built for your exam, not the average.",
+      sub: "Every path starts from what you actually need — solid foundations and a focus on understanding.",
+      cards: [
+        { tag: "IB", title: "IB Chemistry (HL & SL)", desc: "Full syllabus, Paper 1–3 strategy and support for a top score.", link: "Learn more" },
+        { tag: "Rx", title: "Medical & Dental Entrance", desc: "Targeted prep for the toughest chemistry on entrance exams.", link: "Learn more" },
+        { tag: "Uni", title: "University Chemistry", desc: "General, organic and biochemistry for medicine and dentistry students.", link: "Learn more" },
+      ],
+    },
+
+    how: {
+      eyebrow: "How it works",
+      title: "From confused to confident in three steps.",
+      steps: [
+        { n: "01", title: "Choose your plan", desc: "Basic for self-paced study or Premium for direct teacher support." },
+        { n: "02", title: "Study at your pace", desc: "Lessons, quizzes and mock exams available 24/7, on any device." },
+        { n: "03", title: "Get personal help", desc: "Ask in chat or book a live Zoom session whenever you're stuck." },
+      ],
+    },
+
+    features: {
+      eyebrow: "What you get",
+      title: "Everything in one place.",
+      sub: "A platform built around a single goal — to understand, not just memorise.",
+      items: [
+        { el: "Li", name: "Written lessons", desc: "Clear theory, step by step." },
+        { el: "Vd", name: "Video lessons", desc: "Visual takes on hard topics." },
+        { el: "Qz", name: "Practice quizzes", desc: "Instant feedback as you go." },
+        { el: "Ex", name: "Mock exams", desc: "Real conditions, real prep." },
+        { el: "Pr", name: "Progress tracking", desc: "See where you are and where you're headed." },
+        { el: "Ch", name: "Teacher chat", desc: "Questions when you need answers." },
+        { el: "Bk", name: "Session booking", desc: "Live 1-on-1 Zoom sessions." },
+        { el: "Ce", name: "Certificates", desc: "Proof of every module done." },
+      ],
+    },
+
+    teacher: {
+      eyebrow: "Your teacher",
+      name: "Tomislav",
+      role: "Tutor",
+      quote: "Good chemistry education is three things: understanding the theory properly, passing the exam, and keeping what actually matters when you are practising medicine. All three. Not one without the others.",
+      bio: [
+        "I teach chemistry because I remember how fun it became once one person explained things to me properly.",
+        "I am a practicing physician who has been teaching chemistry for over 15 years. I sat the same entrance exam your students are preparing for. I passed medical chemistry, biochemistry, clinical chemistry, and a range of specialist electives at Medical School. I know exactly what is tested, where students lose marks, and what is worth understanding deeply versus what you can safely deprioritise.",
+        "Since 2008 I have been preparing medical and dentistry students for their exams. For the past 5 years I have also worked with IB Chemistry students. Molekula Academy is built on that experience — solid theoretical foundations, real exam practice, and the clinical perspective of a physician who still uses this knowledge every day. No memorised definitions. No \"because that's how it is\".",
+      ],
+      creds: ["MD", "15+ years experience", "200+ students taught", "IB & entrance specialist"],
+      photoLabel: "teacher photo",
+    },
+
+    testimonials: {
+      eyebrow: "What students say",
+      title: "The results speak for us.",
+      items: [
+        { quote: "First time organic chemistry actually made sense. I went from a 4 to a 7 in IB.", name: "Marta K.", role: "IB Chemistry HL" },
+        { quote: "The medical entrance was far easier than I expected. The mock exams are gold.", name: "Luka P.", role: "Medical School" },
+        { quote: "Tomislav explains in five minutes what I'd read for weeks from a textbook.", name: "Ana M.", role: "Dentistry, Year 1" },
+      ],
+    },
+
+    pricing: {
+      eyebrow: "Pricing",
+      title: "Simple. No hidden costs.",
+      sub: "Billed monthly. Cancel anytime.",
+      perMonth: "/mo",
+      cta: "Choose plan",
+      popular: "Most popular",
+      note: "First week free &middot; Cancel anytime",
+      plans: [
+        {
+          name: "Basic", price: "19", tagline: "For self-paced study",
+          features: [
+            { t: "All written lessons & theory", on: true },
+            { t: "All practice problems (self-marking)", on: true },
+            { t: "Quizzes with instant feedback", on: true },
+            { t: "Progress tracking", on: true },
+            { t: "Completion certificates", on: true },
+            { t: "Video lessons", on: false },
+            { t: "Teacher chat", on: false },
+            { t: "Live Zoom sessions", on: false },
+          ],
+        },
+        {
+          name: "Premium", price: "39", tagline: "For your best possible score",
+          features: [
+            { t: "Everything in Basic", on: true },
+            { t: "Video lessons", on: true },
+            { t: "Topic quizzes & mock exams", on: true },
+            { t: "Direct chat with the teacher", on: true },
+            { t: "1 live Zoom session per month", on: true },
+            { t: "Written feedback on mock exams", on: true },
+            { t: "Priority response time", on: true },
+          ],
+        },
+      ],
+    },
+
+    faq: {
+      eyebrow: "FAQ",
+      title: "Everything you're wondering.",
+      items: [
+        { q: "Is this good for IB Chemistry HL?", a: "Yes. All content follows the IB syllabus for HL and SL, including strategy for Paper 1, 2 and 3 and internal assessment support." },
+        { q: "How do live sessions work?", a: "Premium includes one Zoom session per month. You book a slot in the calendar, get a link by email, and we work 1-on-1 on whatever you need." },
+        { q: "Can I switch plans?", a: "Of course. You can upgrade or downgrade anytime from your account settings. Changes apply from the next billing cycle." },
+        { q: "What if I fall behind?", a: "Every lesson is always available, with no deadlines. You study at your own pace and your progress saves automatically." },
+        { q: "Is there a free trial?", a: "Yes. You can start for free and try a selection of lessons and quizzes before committing to a plan." },
+        { q: "What language is the content in?", a: "Content is in Croatian, with technical terms also in English — ideal for IB students sitting their exams in English." },
+      ],
+    },
+
+    finalCta: {
+      title: "Ready to stop struggling with chemistry?",
+      sub: "Join the students who stopped cramming and started understanding.",
+      cta: "Start for free",
+    },
+
+    footer: {
+      tagline: "Chemistry that finally makes sense.",
+      colsTitle: ["Pages", "Resources", "Legal"],
+      cols: [
+        ["Home", "Pricing", "Blog", "About", "Contact"],
+        ["IB Chemistry", "Entrance Exams", "University Chemistry", "Free Resources"],
+        ["Privacy", "Terms of Service", "Cookies"],
+      ],
+      rights: "© 2026 Molekula Academy. All rights reserved.",
+    },
+  },
+};
+
+</script>
+<script type="text/babel">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+// Exports (to window): useTweaks, TweaksPanel, TweakSection, TweakRow, TweakSlider,
+//   TweakToggle, TweakRadio, TweakSelect, TweakText, TweakNumber, TweakColor, TweakButton.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// TweakRadio is the segmented control for 2–3 short options (auto-falls-back to
+// TweakSelect past ~16/~10 chars per label); reach for TweakSelect directly when
+// options are many or long. For color tweaks always curate 3-4 options rather than
+// a free picker; an option can also be a whole 2–5 color palette (the stored value
+// is the array). The Tweak* controls are a floor, not a ceiling — build custom
+// controls inside the panel if a tweak calls for UI they don't cover.
+/* END USAGE */
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+</script>
+<script type="text/babel">
+/* TopKemija — shared components */
+const { useState, useEffect, useRef } = React;
+
+/* ---- Reveal: fade/slide in on scroll ---- */
+function Reveal({ children, delay = 0, as = "div", className = "", style = {} }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { el.classList.add("in"); io.unobserve(el); } }),
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const Tag = as;
+  return (
+    <Tag ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}ms`, ...style }}>
+      {children}
+    </Tag>
+  );
+}
+
+/* ---- Eyebrow label ---- */
+function Eyebrow({ children, style }) {
+  return <span className="eyebrow" style={style}>{children}</span>;
+}
+
+/* ---- Periodic-style element tile ---- */
+function ElementTile({ num, sym, size = 64, style = {}, accent = false }) {
+  return (
+    <div className="el-tile" style={{
+      width: size, height: size,
+      ...(accent ? { borderColor: "var(--accent)", color: "var(--accent-ink)", background: "var(--accent-wash)" } : {}),
+      ...style,
+    }}>
+      <span className="num">{num}</span>
+      <span className="sym">{sym}</span>
+    </div>
+  );
+}
+
+/* ---- Single hexagon (decorative) ---- */
+function Hexagon({ size = 80, stroke = "var(--accent)", fill = "none", strokeWidth = 1.5, style = {} }) {
+  return (
+    <svg width={size} height={size * 1.1547} viewBox="0 0 100 115.47" style={style} aria-hidden="true">
+      <polygon points="50,2 98,29 98,87 50,114 2,87 2,29"
+        fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+    </svg>
+  );
+}
+
+/* ---- Hex lattice field (background texture) ---- */
+function HexField({ opacity = 1, color = "var(--line-strong)", style = {} }) {
+  // tiling honeycomb via repeating SVG
+  const svg = encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'>
+      <g fill='none' stroke='${color === "var(--line-strong)" ? "%23cfdcda" : color}' stroke-width='1.2'>
+        <path d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z'/>
+        <path d='M28 64 L56 80 L56 112 L28 128 L0 112 L0 80 Z'/>
+      </g>
+    </svg>`
+  );
+  return (
+    <div aria-hidden="true" style={{
+      position: "absolute", inset: 0, opacity: `calc(var(--motif-mult, 1) * ${opacity})`,
+      backgroundImage: `url("data:image/svg+xml,${svg}")`,
+      backgroundSize: "56px 96px",
+      maskImage: "radial-gradient(120% 100% at 50% 0%, #000 35%, transparent 78%)",
+      WebkitMaskImage: "radial-gradient(120% 100% at 50% 0%, #000 35%, transparent 78%)",
+      ...style,
+    }} />
+  );
+}
+
+/* ---- Simple stroked icons (24x24) ---- */
+const Icon = {
+  arrow: (p) => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M5 12h14M13 6l6 6-6 6"/></svg>),
+  check: (p) => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M4 12.5l5 5L20 6"/></svg>),
+  x: (p) => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M6 6l12 12M18 6L6 18"/></svg>),
+  plus: (p) => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" {...p}><path d="M12 5v14M5 12h14"/></svg>),
+  star: (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg>),
+  menu: (p) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" {...p}><path d="M3 6h18M3 12h18M3 18h18"/></svg>),
+  flask: (p) => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M9 3h6M10 3v6L5 18a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/><path d="M7.5 14h9"/></svg>),
+};
+
+/* ---- Wordmark / logo ---- */
+function Logo({ dark = false, size = 1 }) {
+  const ink = dark ? "#fff" : "var(--ink)";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 10 * size, fontFamily: "var(--display)", fontWeight: 800, fontSize: 21 * size, letterSpacing: "-0.03em", color: ink }}>
+      <span style={{ position: "relative", width: 30 * size, height: 34 * size, display: "inline-grid", placeItems: "center" }}>
+        <span className="hex" style={{ position: "absolute", inset: 0, background: "var(--accent)" }}></span>
+        <span style={{ position: "relative", color: "#fff", fontFamily: "var(--mono)", fontWeight: 700, fontSize: 14 * size }}>M</span>
+      </span>
+      <span>Molekula<span style={{ color: "var(--accent)" }}>&nbsp;Academy</span></span>
+    </span>
+  );
+}
+
+Object.assign(window, { Reveal, Eyebrow, ElementTile, Hexagon, HexField, Icon, Logo });
+
+</script>
+<script type="text/babel">
+/* TopKemija — sections A: Nav, Hero (3 variants), Trust, Who, How, Features */
+
+/* ============ NAV ============ */
+function Nav({ c, lang, setLang, scrolled }) {
+  const [open, setOpen] = useState(false);
+  const links = [
+    { k: "home", href: "#top" },
+    { k: "about", href: "#teacher" },
+    { k: "blog", href: "#" },
+    { k: "pricing", href: "#pricing" },
+  ];
+  return (
+    <header style={{
+      position: "sticky", top: 0, zIndex: 50,
+      background: scrolled ? "rgba(245,248,247,.82)" : "transparent",
+      backdropFilter: scrolled ? "saturate(180%) blur(14px)" : "none",
+      borderBottom: `1px solid ${scrolled ? "var(--line)" : "transparent"}`,
+      transition: "background .3s ease, border-color .3s ease",
+    }}>
+      <div className="wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 76 }}>
+        <a href="#top"><Logo /></a>
+
+        <nav style={{ display: "flex", alignItems: "center", gap: 30 }} className="desk-nav">
+          {links.map((l) => (
+            <a key={l.k} href={l.href} style={{ fontSize: 15.5, fontWeight: 500, color: "var(--ink-soft)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--ink)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ink-soft)")}>
+              {c.nav[l.k]}
+            </a>
+          ))}
+        </nav>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <LangToggle lang={lang} setLang={setLang} />
+          <a href="#" style={{ fontSize: 15.5, fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap" }} className="desk-nav">{c.nav.login}</a>
+          <a href="#pricing" className="btn btn-primary" style={{ padding: "11px 20px", fontSize: 15 }}>{c.nav.start}</a>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function LangToggle({ lang, setLang }) {
+  return (
+    <div style={{
+      display: "inline-flex", border: "1.5px solid var(--line-strong)", borderRadius: 999,
+      padding: 3, background: "var(--surface)", fontFamily: "var(--mono)", fontSize: 12.5, fontWeight: 700,
+    }}>
+      {["hr", "en"].map((L) => (
+        <button key={L} onClick={() => setLang(L)} style={{
+          border: "none", borderRadius: 999, padding: "5px 11px", letterSpacing: ".06em",
+          background: lang === L ? "var(--accent)" : "transparent",
+          color: lang === L ? "#fff" : "var(--ink-faint)",
+          transition: "background .2s, color .2s",
+        }}>{L.toUpperCase()}</button>
+      ))}
+    </div>
+  );
+}
+
+/* ============ HERO ============ */
+function Hero({ c, variant }) {
+  const h = c.hero;
+  return (
+    <section id="top" style={{ position: "relative", paddingTop: 40, paddingBottom: 30 }}>
+      {variant === "centered" && <HexField opacity={0.5} style={{ height: 620 }} />}
+      <div className="wrap" style={{ position: "relative" }}>
+        {variant === "split" && <HeroSplit h={h} />}
+        {variant === "centered" && <HeroCentered h={h} />}
+        {variant === "equation" && <HeroEquation h={h} />}
+      </div>
+    </section>
+  );
+}
+
+function HeroText({ h, center = false }) {
+  return (
+    <div style={{ textAlign: center ? "center" : "left", maxWidth: center ? 760 : 560, margin: center ? "0 auto" : 0 }}>
+      <Reveal><Eyebrow style={center ? { justifyContent: "center" } : {}}>{h.eyebrow}</Eyebrow></Reveal>
+      <Reveal delay={60}>
+        <h1 style={{ fontSize: center ? "clamp(40px,6vw,76px)" : "clamp(38px,5vw,62px)", marginTop: 22, fontWeight: 800 }}>
+          {h.title}
+        </h1>
+      </Reveal>
+      <Reveal delay={120}>
+        <p style={{ marginTop: 22, fontSize: 20, lineHeight: 1.55, color: "var(--ink-soft)", maxWidth: center ? 620 : "none", marginInline: center ? "auto" : 0 }}>
+          {h.sub}
+        </p>
+      </Reveal>
+      <Reveal delay={180}>
+        <div style={{ display: "flex", gap: 14, marginTop: 32, justifyContent: center ? "center" : "flex-start", flexWrap: "wrap" }}>
+          <a href="#pricing" className="btn btn-primary" style={{ padding: "16px 28px", fontSize: 17 }}>
+            {h.ctaPrimary} <Icon.arrow />
+          </a>
+          <a href="#pricing" className="btn btn-ghost" style={{ padding: "16px 28px", fontSize: 17 }}>{h.ctaSecondary}</a>
+        </div>
+      </Reveal>
+      <Reveal delay={240}>
+        <p style={{ marginTop: 18, fontFamily: "var(--mono)", fontSize: 12.5, letterSpacing: ".04em", color: "var(--ink-faint)" }}>
+          {h.note}
+        </p>
+      </Reveal>
+    </div>
+  );
+}
+
+/* photo placeholder with stripes */
+function PhotoSlot({ label, style = {}, radius = 20 }) {
+  return (
+    <div style={{
+      position: "relative", borderRadius: radius, overflow: "hidden",
+      background: "repeating-linear-gradient(135deg, #e9f1ef 0 14px, #eef5f3 14px 28px)",
+      border: "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", ...style,
+    }}>
+      <span style={{ fontFamily: "var(--mono)", fontSize: 12, letterSpacing: ".06em", color: "var(--ink-faint)", textTransform: "uppercase" }}>{label}</span>
+    </div>
+  );
+}
+
+/* equation chip — styled chemistry formula */
+function EqChip({ caption, big = false }) {
+  const S = ({ children }) => <sub style={{ fontSize: "0.62em" }}>{children}</sub>;
+  return (
+    <div style={{
+      background: "var(--surface)", border: "1.5px solid var(--line)", borderRadius: 16,
+      padding: big ? "26px 30px" : "18px 22px", boxShadow: "0 24px 50px -34px rgba(11,52,60,.5)",
+    }}>
+      <div style={{ fontFamily: "var(--mono)", fontSize: big ? 30 : 22, fontWeight: 700, color: "var(--ink)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span>2 H<S>2</S></span><span style={{ color: "var(--ink-faint)" }}>+</span>
+        <span>O<S>2</S></span>
+        <span style={{ color: "var(--accent)" }}>&rarr;</span>
+        <span>2 H<S>2</S>O</span>
+      </div>
+      <div style={{ marginTop: 10, fontFamily: "var(--mono)", fontSize: 11.5, letterSpacing: ".04em", color: "var(--ink-faint)", textTransform: "uppercase" }}>{caption}</div>
+    </div>
+  );
+}
+
+/* Variant 1: split */
+function HeroSplit({ h }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 56, alignItems: "center", paddingBlock: 48 }} className="hero-split">
+      <HeroText h={h} />
+      <Reveal delay={140}>
+        <div style={{ position: "relative" }}>
+          <HexField opacity={0.6} style={{ inset: "-40px -20px auto auto", height: 320, width: 340, maskImage: "radial-gradient(80% 80% at 70% 30%, #000 30%, transparent 75%)", WebkitMaskImage: "radial-gradient(80% 80% at 70% 30%, #000 30%, transparent 75%)" }} />
+          <PhotoSlot label={h.photoLabel} style={{ aspectRatio: "4/5", maxWidth: 420, marginLeft: "auto" }} />
+          <div style={{ position: "absolute", left: -26, bottom: 48, transform: "rotate(-3deg)" }}>
+            <EqChip caption={h.eqCaption} />
+          </div>
+          <div style={{ position: "absolute", top: 18, right: -14, display: "flex", gap: 8 }}>
+            <ElementTile num="1" sym="H" size={58} accent />
+            <ElementTile num="8" sym="O" size={58} />
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/* Variant 2: centered */
+function HeroCentered({ h }) {
+  const tiles = [{ n: "6", s: "C" }, { n: "1", s: "H" }, { n: "8", s: "O" }, { n: "7", s: "N" }, { n: "11", s: "Na" }, { n: "17", s: "Cl" }];
+  return (
+    <div style={{ paddingTop: 54, paddingBottom: 30, position: "relative" }}>
+      {/* floating tiles */}
+      {[
+        { ...tiles[0], top: 30, left: "6%", r: -8 }, { ...tiles[1], top: 120, left: "16%", r: 6 },
+        { ...tiles[2], top: 30, right: "7%", r: 7 }, { ...tiles[3], top: 130, right: "15%", r: -6 },
+      ].map((t, i) => (
+        <Reveal key={i} delay={200 + i * 70} style={{ position: "absolute", top: t.top, left: t.left, right: t.right }}>
+          <div style={{ transform: `rotate(${t.r}deg)` }}><ElementTile num={t.n} sym={t.s} size={62} accent={i % 2 === 0} /></div>
+        </Reveal>
+      ))}
+      <HeroText h={h} center />
+      <Reveal delay={300}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 42 }}>
+          <EqChip caption={h.eqCaption} big />
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/* Variant 3: equation-forward */
+function HeroEquation({ h }) {
+  const Step = ({ n, label, eq, active }) => {
+    const S = ({ children }) => <sub style={{ fontSize: "0.62em" }}>{children}</sub>;
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", borderRadius: 14, background: active ? "var(--accent-wash)" : "transparent", border: `1.5px solid ${active ? "var(--accent)" : "var(--line)"}` }}>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 12, fontWeight: 700, color: active ? "var(--accent-ink)" : "var(--ink-faint)" }}>{n}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 19, fontWeight: 700, color: "var(--ink)" }}>{eq}</div>
+          <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 2 }}>{label}</div>
+        </div>
+        {active && <span style={{ color: "var(--accent)" }}><Icon.check /></span>}
+      </div>
+    );
+  };
+  const S = ({ children }) => <sub style={{ fontSize: "0.62em" }}>{children}</sub>;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center", paddingBlock: 48 }} className="hero-split">
+      <HeroText h={h} />
+      <Reveal delay={140}>
+        <div style={{ position: "relative", background: "var(--surface)", borderRadius: 22, border: "1.5px solid var(--line)", padding: 26, boxShadow: "0 30px 60px -40px rgba(11,52,60,.55)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 11.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-faint)" }}>Worked example · 03</span>
+            <span style={{ color: "var(--accent)" }}><Icon.flask /></span>
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            <Step n="1" eq={<span>C<S>3</S>H<S>8</S> + O<S>2</S></span>} label="Unbalanced — count each atom" />
+            <Step n="2" eq={<span>C<S>3</S>H<S>8</S> + 5 O<S>2</S></span>} label="Balance carbon, then hydrogen" />
+            <Step n="3" eq={<span>C<S>3</S>H<S>8</S> + 5 O<S>2</S> &rarr; 3 CO<S>2</S> + 4 H<S>2</S>O</span>} label="Balanced ✓" active />
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/* ============ TRUST BAR ============ */
+function TrustBar({ c }) {
+  const t = c.trust;
+  return (
+    <section style={{ paddingBlock: 40, borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", background: "var(--surface)" }}>
+      <div className="wrap">
+        <Reveal><p style={{ textAlign: "center", fontFamily: "var(--mono)", fontSize: 12.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-faint)" }}>{t.label}</p></Reveal>
+        <Reveal delay={80}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24, marginTop: 28 }} className="trust-grid">
+            {t.stats.map((s, i) => (
+              <div key={i} style={{ textAlign: "center", borderLeft: i ? "1px solid var(--line)" : "none" }}>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 800, fontSize: 40, letterSpacing: "-0.03em", color: "var(--ink)" }}>{s.num}</div>
+                <div style={{ fontSize: 14, color: "var(--ink-soft)", marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ============ WHO IT'S FOR ============ */
+function WhoFor({ c }) {
+  const w = c.who;
+  return (
+    <section className="section">
+      <div className="wrap">
+        <Reveal className="section-head">
+          <Eyebrow>{w.eyebrow}</Eyebrow>
+          <h2>{w.title}</h2>
+          <p>{w.sub}</p>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22, marginTop: 48 }} className="three-grid">
+          {w.cards.map((card, i) => (
+            <Reveal key={i} delay={i * 90}>
+              <a href="#pricing" className="card" style={{ display: "block", padding: 30, height: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <span className="hex" style={{ width: 52, height: 58, background: "var(--accent-wash)", display: "grid", placeItems: "center", color: "var(--accent-ink)", fontFamily: "var(--mono)", fontWeight: 700, fontSize: 17 }}>{card.tag}</span>
+                </div>
+                <h3 style={{ fontSize: 23, marginTop: 24 }}>{card.title}</h3>
+                <p style={{ color: "var(--ink-soft)", marginTop: 12, fontSize: 16 }}>{card.desc}</p>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 22, fontWeight: 600, color: "var(--accent-ink)", fontSize: 15, whiteSpace: "nowrap" }}>
+                  {card.link} <Icon.arrow style={{ width: 16, height: 16 }} />
+                </span>
+              </a>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ HOW IT WORKS ============ */
+function HowItWorks({ c }) {
+  const h = c.how;
+  return (
+    <section className="section" style={{ background: "var(--deep)", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <HexField opacity={0.16} color="%23ffffff" style={{ maskImage: "radial-gradient(110% 90% at 80% 10%, #000 20%, transparent 70%)", WebkitMaskImage: "radial-gradient(110% 90% at 80% 10%, #000 20%, transparent 70%)" }} />
+      <div className="wrap" style={{ position: "relative" }}>
+        <Reveal className="section-head">
+          <Eyebrow style={{ color: "var(--accent-bright)" }}>{h.eyebrow}</Eyebrow>
+          <h2 style={{ color: "#fff" }}>{h.title}</h2>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 28, marginTop: 52 }} className="three-grid">
+          {h.steps.map((s, i) => (
+            <Reveal key={i} delay={i * 110}>
+              <div style={{ position: "relative", paddingTop: 28 }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "rgba(255,255,255,.18)" }} />
+                <span style={{ fontFamily: "var(--mono)", fontSize: 14, fontWeight: 700, color: "var(--accent-bright)", letterSpacing: ".1em" }}>{s.n}</span>
+                <h3 style={{ color: "#fff", fontSize: 25, marginTop: 16 }}>{s.title}</h3>
+                <p style={{ color: "rgba(255,255,255,.72)", marginTop: 12, fontSize: 16.5 }}>{s.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FEATURES ============ */
+function Features({ c }) {
+  const f = c.features;
+  return (
+    <section className="section">
+      <div className="wrap">
+        <Reveal className="section-head">
+          <Eyebrow>{f.eyebrow}</Eyebrow>
+          <h2>{f.title}</h2>
+          <p>{f.sub}</p>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18, marginTop: 48 }} className="feat-grid">
+          {f.items.map((it, i) => (
+            <Reveal key={i} delay={(i % 4) * 70}>
+              <div className="card" style={{ padding: 24, height: "100%" }}>
+                <ElementTile num={i + 1} sym={it.el} size={52} accent={i % 4 === 0} />
+                <h4 style={{ fontSize: 18, marginTop: 18 }}>{it.name}</h4>
+                <p style={{ color: "var(--ink-soft)", marginTop: 7, fontSize: 14.5 }}>{it.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+Object.assign(window, { Nav, Hero, TrustBar, WhoFor, HowItWorks, Features });
+
+</script>
+<script type="text/babel">
+/* TopKemija — sections B: Teacher, Testimonials, Pricing, FAQ, FinalCTA, Footer */
+
+/* ============ TEACHER ============ */
+function Teacher({ c }) {
+  const t = c.teacher;
+  return (
+    <section id="teacher" className="section" style={{ background: "var(--surface)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
+      <div className="wrap">
+        <div style={{ display: "grid", gridTemplateColumns: ".8fr 1.2fr", gap: 56, alignItems: "center" }} className="teacher-grid">
+          <Reveal>
+            <div style={{ position: "relative" }}>
+              <PhotoSlot label={t.photoLabel} style={{ aspectRatio: "4/5" }} radius={20} />
+              <div style={{ position: "absolute", bottom: -18, right: -18, display: "flex", gap: 8 }}>
+                <ElementTile num="6" sym="C" size={62} accent />
+              </div>
+              <div className="hex" style={{ position: "absolute", top: -16, left: -16, width: 48, height: 54, background: "var(--accent-bright)", opacity: .9 }} />
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <Eyebrow>{t.eyebrow}</Eyebrow>
+            <h2 style={{ fontSize: "clamp(30px,4vw,46px)", marginTop: 16 }}>{t.name}</h2>
+            <p style={{ fontFamily: "var(--mono)", fontSize: 13.5, letterSpacing: ".06em", color: "var(--accent-ink)", marginTop: 8, textTransform: "uppercase" }}>{t.role}</p>
+            {t.quote && (
+              <blockquote style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 18, margin: "22px 0 0", fontSize: 17, fontStyle: "italic", color: "var(--ink)", lineHeight: 1.65, background: "var(--accent-wash)", borderRadius: "0 10px 10px 0", padding: "14px 18px 14px 20px" }}>
+                &ldquo;{t.quote}&rdquo;
+              </blockquote>
+            )}
+            {t.bio.map((para, i) => (
+              <p key={i} style={{ color: "var(--ink-soft)", fontSize: 17, marginTop: 16, lineHeight: 1.7 }}>{para}</p>
+            ))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 26 }}>
+              {t.creds.map((cr, i) => (
+                <span key={i} style={{ fontFamily: "var(--mono)", fontSize: 12.5, padding: "8px 14px", borderRadius: 999, border: "1.5px solid var(--line-strong)", color: "var(--ink-soft)" }}>{cr}</span>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ TESTIMONIALS ============ */
+function Testimonials({ c }) {
+  const t = c.testimonials;
+  return (
+    <section className="section">
+      <div className="wrap">
+        <Reveal className="section-head">
+          <Eyebrow>{t.eyebrow}</Eyebrow>
+          <h2>{t.title}</h2>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22, marginTop: 48 }} className="three-grid">
+          {t.items.map((it, i) => (
+            <Reveal key={i} delay={i * 90}>
+              <figure className="card" style={{ padding: 28, height: "100%", margin: 0, display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 3, color: "var(--accent)" }}>
+                  {[0,1,2,3,4].map((s) => <Icon.star key={s} />)}
+                </div>
+                <blockquote style={{ margin: "18px 0 0", fontSize: 18.5, lineHeight: 1.5, color: "var(--ink)", fontFamily: "var(--display)", fontWeight: 600, letterSpacing: "-0.01em", flex: 1 }}>
+                  &ldquo;{it.quote}&rdquo;
+                </blockquote>
+                <figcaption style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
+                  <span className="hex" style={{ width: 40, height: 45, background: "var(--accent-wash)", display: "grid", placeItems: "center", color: "var(--accent-ink)", fontFamily: "var(--mono)", fontWeight: 700, fontSize: 15 }}>{it.name[0]}</span>
+                  <span>
+                    <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{it.name}</span>
+                    <span style={{ display: "block", fontSize: 13.5, color: "var(--ink-faint)" }}>{it.role}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ PRICING ============ */
+function Pricing({ c }) {
+  const p = c.pricing;
+  return (
+    <section id="pricing" className="section" style={{ background: "var(--surface)", borderTop: "1px solid var(--line)" }}>
+      <div className="wrap">
+        <Reveal className="section-head" style={{ textAlign: "center", margin: "0 auto" }}>
+          <Eyebrow style={{ justifyContent: "center" }}>{p.eyebrow}</Eyebrow>
+          <h2>{p.title}</h2>
+          <p style={{ marginInline: "auto" }}>{p.sub}</p>
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 24, marginTop: 48, maxWidth: 880, marginInline: "auto" }} className="price-grid">
+          {p.plans.map((plan, i) => {
+            const popular = i === 1;
+            return (
+              <Reveal key={i} delay={i * 110}>
+                <div style={{
+                  position: "relative", borderRadius: 22, padding: "34px 30px", height: "100%",
+                  background: popular ? "var(--deep)" : "var(--surface)",
+                  color: popular ? "#fff" : "var(--ink)",
+                  border: `1.5px solid ${popular ? "var(--deep)" : "var(--line-strong)"}`,
+                  boxShadow: popular ? "0 30px 60px -34px rgba(11,52,60,.6)" : "none",
+                }}>
+                  {popular && (
+                    <span style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", background: "var(--accent-bright)", color: "var(--deep)", fontFamily: "var(--mono)", fontSize: 11.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", padding: "6px 14px", borderRadius: 999, whiteSpace: "nowrap" }}>{p.popular}</span>
+                  )}
+                  <h3 style={{ fontSize: 24, color: popular ? "#fff" : "var(--ink)" }}>{plan.name}</h3>
+                  <p style={{ fontSize: 14.5, color: popular ? "rgba(255,255,255,.7)" : "var(--ink-faint)", marginTop: 4 }}>{plan.tagline}</p>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 22 }}>
+                    <span style={{ fontFamily: "var(--display)", fontWeight: 800, fontSize: 54, letterSpacing: "-0.04em" }}>&euro;{plan.price}</span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: 15, color: popular ? "rgba(255,255,255,.65)" : "var(--ink-faint)" }}>{p.perMonth}</span>
+                  </div>
+                  <a href="#" className={popular ? "btn btn-white" : "btn btn-dark"} style={{ width: "100%", marginTop: 24, padding: "15px 24px" }}>{p.cta}</a>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "26px 0 0", display: "grid", gap: 13 }}>
+                    {plan.features.map((ft, j) => (
+                      <li key={j} style={{ display: "flex", gap: 11, alignItems: "flex-start", fontSize: 15.5, color: ft.on ? (popular ? "rgba(255,255,255,.92)" : "var(--ink)") : (popular ? "rgba(255,255,255,.4)" : "var(--ink-faint)") }}>
+                        <span style={{ color: ft.on ? (popular ? "var(--accent-bright)" : "var(--accent)") : (popular ? "rgba(255,255,255,.35)" : "var(--line-strong)"), flexShrink: 0, marginTop: 1 }}>
+                          {ft.on ? <Icon.check /> : <Icon.x />}
+                        </span>
+                        <span style={{ textDecoration: ft.on ? "none" : "line-through", textDecorationColor: "var(--line-strong)" }}>{ft.t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FAQ ============ */
+function FAQ({ c }) {
+  const f = c.faq;
+  const [open, setOpen] = useState(0);
+  return (
+    <section className="section">
+      <div className="wrap" style={{ maxWidth: 820 }}>
+        <Reveal className="section-head" style={{ textAlign: "center", margin: "0 auto 48px" }}>
+          <Eyebrow style={{ justifyContent: "center" }}>{f.eyebrow}</Eyebrow>
+          <h2>{f.title}</h2>
+        </Reveal>
+        <div style={{ display: "grid", gap: 12 }}>
+          {f.items.map((it, i) => {
+            const isOpen = open === i;
+            return (
+              <Reveal key={i} delay={i * 50}>
+                <div className="card" style={{ overflow: "hidden", borderColor: isOpen ? "var(--line-strong)" : "var(--line)" }}>
+                  <button onClick={() => setOpen(isOpen ? -1 : i)} style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+                    background: "transparent", border: "none", padding: "22px 26px", textAlign: "left",
+                    fontFamily: "var(--display)", fontWeight: 600, fontSize: 19, color: "var(--ink)", letterSpacing: "-0.01em",
+                  }}>
+                    {it.q}
+                    <span style={{ flexShrink: 0, color: "var(--accent)", transition: "transform .25s ease", transform: isOpen ? "rotate(45deg)" : "none" }}><Icon.plus /></span>
+                  </button>
+                  <div style={{ maxHeight: isOpen ? 200 : 0, overflow: "hidden", transition: "max-height .32s cubic-bezier(.2,.7,.2,1)" }}>
+                    <p style={{ padding: "0 26px 24px", color: "var(--ink-soft)", fontSize: 16.5, lineHeight: 1.6 }}>{it.a}</p>
+                  </div>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FINAL CTA ============ */
+function FinalCTA({ c }) {
+  const f = c.finalCta;
+  return (
+    <section className="section" style={{ paddingBottom: 110 }}>
+      <div className="wrap">
+        <Reveal>
+          <div style={{ position: "relative", overflow: "hidden", borderRadius: 28, background: "var(--deep)", color: "#fff", padding: "76px 40px", textAlign: "center" }}>
+            <HexField opacity={0.2} color="%231ec8b6" style={{ maskImage: "radial-gradient(80% 120% at 50% 0%, #000 25%, transparent 72%)", WebkitMaskImage: "radial-gradient(80% 120% at 50% 0%, #000 25%, transparent 72%)" }} />
+            <div style={{ position: "relative" }}>
+              <h2 style={{ color: "#fff", fontSize: "clamp(30px,4.5vw,52px)", maxWidth: 700, margin: "0 auto" }}>{f.title}</h2>
+              <p style={{ color: "rgba(255,255,255,.78)", fontSize: 19, marginTop: 18, maxWidth: 520, marginInline: "auto" }}>{f.sub}</p>
+              <a href="#pricing" className="btn btn-white" style={{ marginTop: 34, padding: "17px 34px", fontSize: 17 }}>{f.cta} <Icon.arrow /></a>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ============ FOOTER ============ */
+function Footer({ c, lang, setLang }) {
+  const f = c.footer;
+  return (
+    <footer style={{ background: "var(--surface)", borderTop: "1px solid var(--line)", paddingTop: 64, paddingBottom: 40 }}>
+      <div className="wrap">
+        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 32 }} className="footer-grid">
+          <div>
+            <Logo />
+            <p style={{ color: "var(--ink-soft)", fontSize: 15.5, marginTop: 16, maxWidth: 260 }}>{f.tagline}</p>
+            <div style={{ marginTop: 20 }}><LangToggle lang={lang} setLang={setLang} /></div>
+          </div>
+          {f.cols.map((col, i) => (
+            <div key={i}>
+              <h4 style={{ fontFamily: "var(--mono)", fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-faint)", fontWeight: 700 }}>{f.colsTitle[i]}</h4>
+              <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", display: "grid", gap: 11 }}>
+                {col.map((link, j) => (
+                  <li key={j}><a href="#" style={{ fontSize: 15, color: "var(--ink-soft)" }} onMouseEnter={(e)=>e.currentTarget.style.color="var(--accent-ink)"} onMouseLeave={(e)=>e.currentTarget.style.color="var(--ink-soft)"}>{link}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <p style={{ fontFamily: "var(--mono)", fontSize: 12.5, color: "var(--ink-faint)" }}>{f.rights}</p>
+          <div style={{ display: "flex", gap: 14, color: "var(--ink-faint)" }}>
+            {["in", "ig", "yt"].map((s) => (
+              <a key={s} href="#" style={{ width: 34, height: 34, borderRadius: 999, border: "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", fontFamily: "var(--mono)", fontSize: 11, fontWeight: 700 }}>{s}</a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+Object.assign(window, { Teacher, Testimonials, Pricing, FAQ, FinalCTA, Footer });
+
+</script>
+<script type="text/babel">
+/* TopKemija — app assembly + tweaks */
+const ACCENTS = {
+  teal:    { accent: "#0f8f86", bright: "#1ec8b6", ink: "#064843", wash: "#e7f6f3" },
+  blue:    { accent: "#2563d8", bright: "#4f9bff", ink: "#12357a", wash: "#e9eefb" },
+  emerald: { accent: "#15936a", bright: "#2ed29a", ink: "#0a4a35", wash: "#e6f6ee" },
+};
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "hero": "split",
+  "accent": "teal",
+  "motif": "subtle",
+  "displayFont": "Bricolage Grotesque"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [lang, setLang] = useState(() => (typeof localStorage !== "undefined" && localStorage.getItem("tk_lang")) || "hr");
+  const [scrolled, setScrolled] = useState(false);
+  const c = window.CONTENT[lang];
+
+  // language persistence + <html lang>
+  useEffect(() => {
+    try { localStorage.setItem("tk_lang", lang); } catch (e) {}
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  // scroll state for nav
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // apply accent palette
+  useEffect(() => {
+    const a = ACCENTS[t.accent] || ACCENTS.teal;
+    const r = document.documentElement.style;
+    r.setProperty("--accent", a.accent);
+    r.setProperty("--accent-bright", a.bright);
+    r.setProperty("--accent-ink", a.ink);
+    r.setProperty("--accent-wash", a.wash);
+  }, [t.accent]);
+
+  // motif intensity
+  useEffect(() => {
+    document.documentElement.style.setProperty("--motif-mult", t.motif === "bold" ? "2.1" : "1");
+  }, [t.motif]);
+
+  // display font
+  useEffect(() => {
+    document.documentElement.style.setProperty("--display", `"${t.displayFont}", sans-serif`);
+  }, [t.displayFont]);
+
+  return (
+    <React.Fragment>
+      <Nav c={c} lang={lang} setLang={setLang} scrolled={scrolled} />
+      <main>
+        <Hero c={c} variant={t.hero} />
+        <TrustBar c={c} />
+        <WhoFor c={c} />
+        <HowItWorks c={c} />
+        <Features c={c} />
+        <Teacher c={c} />
+        <Testimonials c={c} />
+        <Pricing c={c} />
+        <FAQ c={c} />
+        <FinalCTA c={c} />
+      </main>
+      <Footer c={c} lang={lang} setLang={setLang} />
+
+      <TweaksPanel>
+        <TweakSection label={lang === "hr" ? "Hero" : "Hero section"} />
+        <TweakRadio label={lang === "hr" ? "Smjer" : "Direction"} value={t.hero}
+          options={["split", "centered", "equation"]}
+          onChange={(v) => setTweak("hero", v)} />
+        <TweakSection label={lang === "hr" ? "Stil" : "Style"} />
+        <TweakColor label={lang === "hr" ? "Naglasak" : "Accent"} value={ACCENTS[t.accent].accent}
+          options={[ACCENTS.teal.accent, ACCENTS.blue.accent, ACCENTS.emerald.accent]}
+          onChange={(hex) => {
+            const key = Object.keys(ACCENTS).find((k) => ACCENTS[k].accent === hex) || "teal";
+            setTweak("accent", key);
+          }} />
+        <TweakRadio label={lang === "hr" ? "Uzorak" : "Hex motif"} value={t.motif}
+          options={["subtle", "bold"]}
+          onChange={(v) => setTweak("motif", v)} />
+        <TweakRadio label={lang === "hr" ? "Naslovni font" : "Display font"} value={t.displayFont}
+          options={["Bricolage Grotesque", "Space Grotesk"]}
+          onChange={(v) => setTweak("displayFont", v)} />
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+</body>
+</html>

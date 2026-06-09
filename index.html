@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Molekula Academy — Kemija koja konačno ima smisla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* palette */
+    --bg: #f5f8f7;
+    --surface: #ffffff;
+    --ink: #15252b;
+    --ink-soft: #46585e;
+    --ink-faint: #7d8d92;
+    --deep: #0b343c;            /* deep teal — dark sections */
+    --deep-2: #0e424b;
+    --line: #e2eae9;
+    --line-strong: #cfdcda;
+
+    /* accent (overridable by tweaks) */
+    --accent: #0f8f86;          /* primary teal */
+    --accent-bright: #1ec8b6;   /* bright teal */
+    --accent-ink: #064843;      /* dark accent text */
+    --accent-wash: #e7f6f3;     /* tinted surface */
+    --on-accent: #ffffff;
+
+    /* type */
+    --display: "Bricolage Grotesque", sans-serif;
+    --body: "DM Sans", sans-serif;
+    --mono: "Space Mono", monospace;
+
+    /* metrics */
+    --maxw: 1180px;
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin: 0; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  ::selection { background: var(--accent-bright); color: var(--deep); }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  /* eyebrow label */
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent);
+    display: inline-flex; align-items: center; gap: 9px;
+  }
+  .eyebrow::before {
+    content: ""; width: 22px; height: 1.5px; background: var(--accent); display: inline-block;
+  }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    font-family: var(--body); font-weight: 600; font-size: 16px;
+    padding: 14px 24px; border-radius: 999px; border: 1.5px solid transparent;
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 8px 22px -10px var(--accent); }
+  .btn-primary:hover { background: var(--accent-ink); transform: translateY(-2px); box-shadow: 0 14px 28px -12px var(--accent); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent-ink); transform: translateY(-2px); }
+  .btn-dark { background: var(--deep); color: #fff; }
+  .btn-dark:hover { background: var(--deep-2); transform: translateY(-2px); }
+  .btn-white { background: #fff; color: var(--deep); }
+  .btn-white:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); }
+
+  /* section rhythm */
+  .section { padding: 96px 0; }
+  .section-head { max-width: 640px; }
+  .section-head h2 { font-size: clamp(30px, 4vw, 46px); margin-top: 16px; }
+  .section-head p { color: var(--ink-soft); font-size: 19px; margin-top: 14px; }
+
+  /* hexagon motif */
+  .hex {
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  /* periodic element tile */
+  .el-tile {
+    font-family: var(--mono); position: relative; display: flex; flex-direction: column;
+    justify-content: space-between; border: 1.5px solid var(--line-strong); border-radius: 10px;
+    background: var(--surface); padding: 8px 9px; aspect-ratio: 1; color: var(--ink);
+  }
+  .el-tile .num { font-size: 10px; color: var(--ink-faint); }
+  .el-tile .sym { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+  /* scroll reveal */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* utility card */
+  .card {
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -28px rgba(11,52,60,.4); border-color: var(--line-strong); }
+
+  #root { overflow-x: clip; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 980px) {
+    .hero-split { grid-template-columns: 1fr !important; gap: 40px !important; }
+    .teacher-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+    .three-grid { grid-template-columns: 1fr 1fr !important; }
+    .feat-grid { grid-template-columns: 1fr 1fr !important; }
+    .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+    .price-grid { grid-template-columns: 1fr !important; max-width: 460px; }
+    .trust-grid { grid-template-columns: 1fr 1fr !important; gap: 32px 16px !important; }
+    .trust-grid > div:nth-child(3) { border-left: none !important; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .section { padding: 64px 0; }
+    .wrap { padding: 0 20px; }
+    .desk-nav { display: none !important; }
+    .three-grid, .feat-grid, .footer-grid, .trust-grid { grid-template-columns: 1fr !important; }
+    .trust-grid > div { border-left: none !important; }
+    .footer-grid > div:first-child { grid-column: 1 / -1; }
+  }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="content.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="sections-a.jsx"></script>
+<script type="text/babel" src="sections-b.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

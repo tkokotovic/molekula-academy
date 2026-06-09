@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Molekula Academy — Full Preview</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+/* ── COLOR PALETTE ── */
+:root {
+  --mint:       #f0f7f4;   /* main light bg */
+  --mint-mid:   #e0f0e9;   /* slightly deeper mint */
+  --dark:       #0d2416;   /* dark forest green (replaces navy) */
+  --dark-card:  #122d1c;   /* cards on dark bg */
+  --teal:       #0d7a6a;
+  --teal-hover: #0a6357;
+  --teal-light: #4dd9c0;
+  --teal-pale:  #e0f5ee;
+  --text:       #0d1a2e;
+  --text-body:  #334155;
+  --muted:      #64748b;
+  --border:     #c8e6da;
+}
+
+.preview-banner { background: var(--teal); color: #fff; text-align: center; padding: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; }
+
+/* ── 01 NAV ── */
+.ma-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.ma-nav__logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.ma-nav__logo-icon { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.ma-nav__logo-text { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.ma-nav__logo-text span { color: var(--teal); }
+.ma-nav__links { display: flex; align-items: center; gap: 28px; list-style: none; }
+.ma-nav__links a { font-size: 14px; color: var(--muted); text-decoration: none; }
+.ma-nav__links a.active, .ma-nav__links a:hover { color: var(--teal); }
+.ma-nav__right { display: flex; align-items: center; gap: 8px; }
+.ma-nav__lang { display: flex; background: #f3f4f6; border-radius: 6px; padding: 2px; margin-right: 8px; }
+.ma-nav__lang-btn { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px; border: none; background: transparent; color: #374151; cursor: pointer; }
+.ma-nav__lang-btn.active { background: #fff; color: var(--teal); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.ma-nav__btn-login { font-size: 14px; font-weight: 500; color: var(--text); background: transparent; border: 1px solid #d1d5db; border-radius: 50px; padding: 8px 20px; cursor: pointer; text-decoration: none; }
+.ma-nav__btn-cta { font-size: 14px; font-weight: 600; color: #fff; background: var(--teal); border: none; border-radius: 50px; padding: 8px 20px; cursor: pointer; text-decoration: none; }
+
+/* ── 02 HERO (light mint) ── */
+.hero { background: var(--mint); padding: 80px 32px 80px; position: relative; overflow: hidden; }
+.hero__inner { width: 100%; max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 64px; }
+.hero__content { flex: 1; max-width: 560px; }
+.hero__eyebrow { font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.hero__eyebrow::before { content: ''; display: inline-block; width: 24px; height: 2px; background: var(--teal); border-radius: 2px; }
+.hero__headline { font-size: clamp(38px, 5vw, 58px); font-weight: 900; color: var(--text); line-height: 1.05; letter-spacing: -2px; margin-bottom: 20px; }
+.hero__sub { font-size: 17px; color: var(--text-body); line-height: 1.65; margin-bottom: 32px; }
+.hero__ctas { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--teal); color: #fff; font-size: 15px; font-weight: 600; padding: 13px 28px; border-radius: 50px; text-decoration: none; border: none; cursor: pointer; font-family: inherit; transition: background .15s; }
+.btn-primary:hover { background: var(--teal-hover); }
+.btn-ghost { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--text); font-size: 15px; font-weight: 500; padding: 13px 26px; border-radius: 50px; text-decoration: none; border: 1.5px solid #b0c8be; cursor: pointer; font-family: inherit; }
+.hero__subtext { font-size: 13px; color: var(--muted); letter-spacing: 0.03em; }
+
+/* Hero visual */
+.hero__visual { flex-shrink: 0; width: 380px; position: relative; }
+.hero__photo-card { background: var(--mint-mid); border: 1px solid var(--border); border-radius: 20px; height: 380px; display: flex; align-items: center; justify-content: center; position: relative; }
+.hero__photo-label { font-size: 11px; color: #a0b8ae; font-family: monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+.hero__el-tiles { position: absolute; top: -16px; right: -16px; display: flex; gap: 8px; }
+.el-tile { background: #fff; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 56px; text-align: center; box-shadow: 0 2px 8px rgba(13,122,106,.08); }
+.el-tile--accent { border-color: var(--teal); background: var(--teal-pale); }
+.el-tile-num { font-size: 9px; color: var(--teal); font-family: monospace; font-weight: 700; text-align: left; line-height: 1; margin-bottom: 2px; }
+.el-tile-sym { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+.el-tile--accent .el-tile-sym { color: var(--teal); }
+.el-tile-name { font-size: 8px; color: var(--muted); margin-top: 2px; }
+.hero__eq-card { position: absolute; bottom: -20px; left: -20px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(13,122,106,.1); min-width: 240px; }
+.hero__eq-formula { font-size: 18px; font-weight: 700; color: var(--text); font-family: 'Georgia', serif; letter-spacing: 0.5px; margin-bottom: 6px; }
+.hero__eq-formula sub { font-size: 12px; vertical-align: sub; }
+.hero__eq-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── 03 TRUST BAR ── */
+.trust { background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 36px 32px; }
+.trust__inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
+.trust__stat { flex: 1; min-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 40px; position: relative; }
+.trust__stat+.trust__stat::before { content: ''; position: absolute; left: 0; top: 10%; height: 80%; width: 1px; background: var(--border); }
+.trust__stat-number { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -1.5px; line-height: 1; }
+.trust__stat-number span { color: var(--teal); }
+.trust__stat-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
+.trust__badges { display: none; }
+
+/* ── 04 WHO IT'S FOR ── */
+.wif { background: var(--mint); padding: 80px 32px; }
+.wif__inner { max-width: 1100px; margin: 0 auto; }
+.wif__header { text-align: center; margin-bottom: 52px; }
+.wif__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.wif__title { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -.8px; line-height: 1.15; }
+.wif__sub { font-size: 16px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.wif__strike { text-decoration: line-through; text-decoration-color: var(--teal); text-decoration-thickness: 3px; color: #94a3b8; margin-right: 6px; }
+.wif__replace { color: var(--teal); font-style: normal; }
+.wif__grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.wif__card { border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; background: #fff; display: flex; flex-direction: column; gap: 14px; transition: border-color .2s, box-shadow .2s; }
+.wif__card:hover { border-color: var(--teal); box-shadow: 0 4px 24px rgba(13,122,106,.08); }
+.wif__icon { width: 48px; height: 48px; background: var(--teal-pale); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.wif__card-tag { display: inline-block; font-size: 11px; font-weight: 600; color: var(--teal); background: var(--teal-pale); border-radius: 20px; padding: 3px 10px; letter-spacing: .05em; text-transform: uppercase; align-self: flex-start; }
+.wif__card-title { font-size: 19px; font-weight: 700; color: var(--text); line-height: 1.25; }
+.wif__card-desc { font-size: 14px; color: var(--muted); line-height: 1.65; flex: 1; }
+.wif__card-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.wif__card-list li { font-size: 13px; color: var(--text-body); display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+.wif__card-list li::before { content: ''; width: 6px; height: 6px; min-width: 6px; background: var(--teal); border-radius: 50%; margin-top: 5px; }
+.wif__card-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--teal); text-decoration: none; margin-top: 4px; }
+.wif__card--featured { background: var(--dark); border-color: var(--dark); }
+.wif__card--featured .wif__icon { background: rgba(13,122,106,.3); }
+.wif__card--featured .wif__card-tag { background: rgba(13,122,106,.25); color: var(--teal-light); }
+.wif__card--featured .wif__card-title { color: #fff; }
+.wif__card--featured .wif__card-desc { color: #94a3b8; }
+.wif__card--featured .wif__card-list li { color: #94a3b8; }
+.wif__card--featured .wif__card-list li::before { background: var(--teal-light); }
+.wif__card--featured .wif__card-link { color: var(--teal-light); }
+
+/* ── 05 HOW IT WORKS (dark forest green) ── */
+.hiw { background: var(--dark); padding: 80px 32px; }
+.hiw__inner { max-width: 1100px; margin: 0 auto; }
+.hiw__header { text-align: center; margin-bottom: 60px; }
+.hiw__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal-light); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.hiw__title { font-size: 36px; font-weight: 800; color: #fff; letter-spacing: -.8px; line-height: 1.15; }
+.hiw__sub { font-size: 16px; color: #64748b; margin-top: 12px; line-height: 1.6; }
+.hiw__steps { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr; align-items: start; }
+.hiw__arrow { display: flex; align-items: center; justify-content: center; padding-top: 36px; }
+.hiw__step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 24px; background: var(--dark-card); border: 1px solid rgba(255,255,255,.07); border-radius: 16px; gap: 16px; position: relative; }
+.hiw__step-num { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; background: var(--teal); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 3px solid var(--dark); }
+.hiw__step-icon { width: 60px; height: 60px; background: rgba(13,122,106,.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-top: 8px; }
+.hiw__step-title { font-size: 17px; font-weight: 700; color: #fff; line-height: 1.2; }
+.hiw__step-desc { font-size: 14px; color: #64748b; line-height: 1.65; }
+.hiw__step-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }
+.hiw__tag { font-size: 11px; font-weight: 500; color: var(--teal-light); background: rgba(13,122,106,.2); border-radius: 20px; padding: 3px 10px; }
+.hiw__cta { margin-top: 48px; background: rgba(13,122,106,.15); border: 1px solid rgba(13,122,106,.3); border-radius: 16px; padding: 32px 40px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.hiw__cta-title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.hiw__cta-sub { font-size: 14px; color: #64748b; }
+.hiw__cta-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--teal); color: #fff; font-size: 15px; font-weight: 600; padding: 12px 26px; border-radius: 50px; text-decoration: none; border: none; cursor: pointer; font-family: inherit; }
+
+/* ── 06 FEATURES (element tiles) ── */
+.feat { background: #fff; padding: 80px 32px; }
+.feat__inner { max-width: 1100px; margin: 0 auto; }
+.feat__header { text-align: center; margin-bottom: 56px; }
+.feat__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.feat__title { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -.8px; line-height: 1.15; }
+.feat__sub { font-size: 16px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.feat__grid { display: grid; grid-template-columns: repeat(4,1fr); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.feat__item { display: flex; flex-direction: column; gap: 12px; padding: 28px 22px; background: #fff; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: background .15s; }
+.feat__item:hover { background: var(--mint); }
+.feat__item:nth-child(4n) { border-right: none; }
+.feat__item:nth-last-child(-n+4) { border-bottom: none; }
+
+/* Element tile icon */
+.feat__el { width: 52px; height: 56px; border: 1.5px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 6px; position: relative; background: var(--mint); flex-shrink: 0; }
+.feat__el--premium { border-color: rgba(146,96,10,.3); background: #fdf8f0; }
+.feat__el-num { font-size: 9px; color: var(--teal); font-family: monospace; font-weight: 700; align-self: flex-start; line-height: 1; width: 100%; }
+.feat__el--premium .feat__el-num { color: #92600a; }
+.feat__el-sym { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
+.feat__item-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.feat__item-desc { font-size: 13px; color: var(--muted); line-height: 1.55; flex: 1; }
+.feat__item-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; align-self: flex-start; margin-top: 4px; }
+.badge-all { background: var(--teal-pale); color: var(--teal); }
+.badge-premium { background: #fdf4e7; color: #92600a; }
+
+/* ── 07 ABOUT ── */
+.about { background: var(--mint); padding: 80px 32px; }
+.about__inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 400px 1fr; gap: 72px; align-items: center; }
+.about__photo-wrap { position: relative; }
+.about__photo { width: 100%; aspect-ratio: 4/5; background: var(--mint-mid); border: 1px solid var(--border); border-radius: 20px; display: flex; align-items: center; justify-content: center; }
+.about__photo-placeholder { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #7ab09a; }
+.about__photo-placeholder span { font-size: 13px; font-weight: 500; opacity: .7; }
+.about__stat-card { position: absolute; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 16px rgba(13,122,106,.08); }
+.about__stat-card--tl { top: -16px; right: -16px; }
+.about__stat-card--bl { bottom: 24px; left: -24px; }
+.about__stat-icon { width: 36px; height: 36px; background: var(--teal-pale); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.about__stat-num { font-size: 18px; font-weight: 800; color: var(--text); line-height: 1; }
+.about__stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.about__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.about__name { font-size: 40px; font-weight: 800; color: var(--text); letter-spacing: -1px; line-height: 1.1; margin-bottom: 6px; }
+.about__role { font-size: 16px; color: var(--muted); margin-bottom: 28px; }
+.about__role span { color: var(--teal); font-weight: 600; }
+.about__quote { border-left: 3px solid var(--teal); padding: 14px 18px; background: #fff; border-radius: 0 10px 10px 0; margin-bottom: 28px; font-size: 15px; font-style: italic; color: var(--text-body); line-height: 1.6; }
+.about__bio { font-size: 15px; color: var(--text-body); line-height: 1.75; display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+.about__creds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+.about__cred { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 500; color: var(--text-body); }
+.about__cta { display: flex; align-items: center; gap: 16px; }
+.about__btn { display: inline-flex; align-items: center; gap: 8px; background: var(--teal); color: #fff; font-size: 14px; font-weight: 600; padding: 11px 24px; border-radius: 50px; text-decoration: none; font-family: inherit; border: none; }
+.about__link { font-size: 14px; font-weight: 500; color: var(--teal); text-decoration: none; }
+
+/* ── 08 PRICING ── */
+.pricing { background: #fff; padding: 80px 32px; }
+.pricing__inner { max-width: 900px; margin: 0 auto; }
+.pricing__header { text-align: center; margin-bottom: 48px; }
+.pricing__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.pricing__title { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -.8px; line-height: 1.15; }
+.pricing__sub { font-size: 16px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.pricing__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.pricing__card { border: 1px solid var(--border); border-radius: 20px; padding: 36px 32px; }
+.pricing__card--premium { background: var(--dark); border-color: var(--dark); position: relative; }
+.pricing__popular { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--teal); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 16px; border-radius: 20px; white-space: nowrap; letter-spacing: .05em; text-transform: uppercase; }
+.pricing__plan-name { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.pricing__card--premium .pricing__plan-name { color: var(--teal-light); }
+.pricing__price { display: flex; align-items: flex-end; gap: 2px; margin-bottom: 4px; }
+.pricing__currency { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.pricing__card--premium .pricing__currency { color: #fff; }
+.pricing__amount { font-size: 52px; font-weight: 800; color: var(--text); letter-spacing: -2px; line-height: 1; }
+.pricing__card--premium .pricing__amount { color: #fff; }
+.pricing__period { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+.pricing__desc { font-size: 14px; color: var(--muted); line-height: 1.55; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.pricing__card--premium .pricing__desc { color: #94a3b8; border-bottom-color: rgba(255,255,255,.1); }
+.pricing__features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+.pricing__feature { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-body); line-height: 1.4; }
+.pricing__card--premium .pricing__feature { color: #cbd5e1; }
+.pricing__feature--locked { color: #94a3b8 !important; }
+.pricing__feature-icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+.pricing__btn { display: block; text-align: center; width: 100%; font-size: 15px; font-weight: 600; padding: 13px; border-radius: 50px; text-decoration: none; cursor: pointer; font-family: inherit; border: none; }
+.pricing__btn--basic { background: var(--teal-pale); color: var(--teal); border: 1px solid #b8ddd1; }
+.pricing__btn--premium { background: var(--teal); color: #fff; }
+.pricing__note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+.pricing__footer { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 32px; flex-wrap: wrap; }
+.pricing__footer-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+
+/* ── 09 TESTIMONIALS ── */
+.testi { background: var(--mint); padding: 80px 32px; }
+.testi__inner { max-width: 1100px; margin: 0 auto; }
+.testi__header { text-align: center; margin-bottom: 52px; }
+.testi__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.testi__title { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -.8px; line-height: 1.15; }
+.testi__sub { font-size: 16px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.testi__grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+.testi__card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 16px; transition: border-color .2s, box-shadow .15s; }
+.testi__card:hover { border-color: var(--teal); box-shadow: 0 4px 20px rgba(13,122,106,.08); }
+.testi__tag { display: inline-block; font-size: 10px; font-weight: 600; background: var(--teal-pale); color: var(--teal); border-radius: 20px; padding: 2px 8px; align-self: flex-start; }
+.testi__stars { display: flex; gap: 3px; }
+.testi__quote { font-size: 15px; color: var(--text-body); line-height: 1.7; flex: 1; font-style: italic; }
+.testi__quote::before { content: '\201C'; color: var(--teal); font-size: 24px; font-style: normal; line-height: 0; vertical-align: -8px; margin-right: 2px; }
+.testi__divider { height: 1px; background: var(--border); }
+.testi__author { display: flex; align-items: center; gap: 12px; }
+.testi__avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--teal-pale); border: 1.5px solid var(--teal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
+.testi__author-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.testi__author-role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ── 10 FAQ ── */
+.faq { background: #fff; padding: 80px 32px; }
+.faq__inner { max-width: 760px; margin: 0 auto; }
+.faq__header { text-align: center; margin-bottom: 52px; }
+.faq__eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.faq__title { font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -.8px; line-height: 1.15; }
+.faq__sub { font-size: 16px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.faq__list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.faq__item { border-bottom: 1px solid var(--border); }
+.faq__item:last-child { border-bottom: none; }
+.faq__question { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; transition: background .15s; }
+.faq__question:hover, .faq__item.open .faq__question { background: var(--mint); }
+.faq__q-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.faq__icon { flex-shrink: 0; width: 22px; height: 22px; background: var(--teal-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform .2s, background .2s; }
+.faq__item.open .faq__icon { background: var(--teal); transform: rotate(45deg); }
+.faq__item.open .faq__icon svg path { stroke: #fff; }
+.faq__answer { display: none; padding: 0 24px 20px; }
+.faq__item.open .faq__answer { display: block; }
+.faq__a-text { font-size: 14px; color: var(--text-body); line-height: 1.75; }
+.faq__cta { margin-top: 40px; text-align: center; }
+.faq__cta-text { font-size: 15px; color: var(--muted); margin-bottom: 16px; }
+.faq__cta-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--teal); color: #fff; font-size: 14px; font-weight: 600; padding: 11px 26px; border-radius: 50px; text-decoration: none; border: none; cursor: pointer; font-family: inherit; }
+
+/* ── 11 FOOTER ── */
+.footer { background: var(--dark); padding: 64px 32px 32px; }
+.footer__inner { max-width: 1100px; margin: 0 auto; }
+.footer__top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+.footer__logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: 16px; }
+.footer__logo-icon { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.footer__logo-text { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+.footer__logo-text span { color: var(--teal-light); }
+.footer__tagline { font-size: 14px; color: #64748b; line-height: 1.65; margin-bottom: 24px; max-width: 280px; }
+.footer__lang { display: flex; background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px; width: fit-content; }
+.footer__lang-btn { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px; border: none; background: transparent; color: #64748b; cursor: pointer; font-family: inherit; }
+.footer__lang-btn.active { background: rgba(255,255,255,.1); color: #e2e8f0; }
+.footer__col-title { font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 16px; }
+.footer__links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer__links a { font-size: 14px; color: #64748b; text-decoration: none; transition: color .15s; }
+.footer__links a:hover { color: #e2e8f0; }
+.footer__divider { height: 1px; background: rgba(255,255,255,.08); margin-bottom: 28px; }
+.footer__bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.footer__copy { font-size: 13px; color: #334155; }
+.footer__social { display: flex; align-items: center; gap: 8px; }
+.footer__social-btn { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; transition: border-color .15s; }
+.footer__social-btn:hover { border-color: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="preview-banner">PREVIEW — Molekula Academy · All 11 sections · Open in browser to scroll the full page</div>
+
+<!-- 01 NAV -->
+<nav class="ma-nav">
+  <a class="ma-nav__logo" href="#"><div class="ma-nav__logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="2.5" fill="white" opacity="0.9"/><circle cx="3.5" cy="14.5" r="2.5" fill="white" opacity="0.9"/><circle cx="16.5" cy="14.5" r="2.5" fill="white" opacity="0.9"/><line x1="10" y1="7.5" x2="4.5" y2="12.5" stroke="white" stroke-width="1.5" opacity="0.65"/><line x1="10" y1="7.5" x2="15.5" y2="12.5" stroke="white" stroke-width="1.5" opacity="0.65"/><line x1="5.5" y1="14.5" x2="14.5" y2="14.5" stroke="white" stroke-width="1.5" opacity="0.65"/></svg></div><span class="ma-nav__logo-text">Molekula <span>Academy</span></span></a>
+  <ul class="ma-nav__links"><li><a href="#" class="active">Home</a></li><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Pricing</a></li></ul>
+  <div class="ma-nav__right"><div class="ma-nav__lang"><button class="ma-nav__lang-btn active">HR</button><button class="ma-nav__lang-btn">EN</button></div><a href="#" class="ma-nav__btn-login">Log in</a><a href="#" class="ma-nav__btn-cta">Get started</a></div>
+</nav>
+
+<!-- 02 HERO -->
+<div class="hero">
+  <div class="hero__inner">
+    <div class="hero__content">
+      <div class="hero__eyebrow">Online akademija kemije</div>
+      <h1 class="hero__headline">Chemistry explained<br>so it finally<br>makes sense.</h1>
+      <p class="hero__sub">Structured lessons, quizzes and live tutoring for IB Chemistry, medical and dental school entrance exams, and university students in Croatia.</p>
+      <div class="hero__ctas">
+        <a href="#" class="btn-primary">Start for free &rarr;</a>
+        <a href="#" class="btn-ghost">See plans</a>
+      </div>
+      <p class="hero__subtext">No card for trial period &middot; Cancel any time</p>
+    </div>
+    <div class="hero__visual">
+      <div class="hero__photo-card">
+        <span class="hero__photo-label">Student / lab photo</span>
+        <div class="hero__el-tiles">
+          <div class="el-tile el-tile--accent"><div class="el-tile-num">1</div><div class="el-tile-sym">H</div><div class="el-tile-name">Hydrogen</div></div>
+          <div class="el-tile"><div class="el-tile-num">8</div><div class="el-tile-sym">O</div><div class="el-tile-name">Oxygen</div></div>
+        </div>
+      </div>
+      <div class="hero__eq-card">
+        <div class="hero__eq-formula">2 H<sub>2</sub> + O<sub>2</sub> &rarr; 2 H<sub>2</sub>O</div>
+        <div class="hero__eq-label">Stoichiometry &middot; Balancing reactions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 03 TRUST BAR -->
+<div class="trust"><div class="trust__inner">
+  <div class="trust__stat"><div class="trust__stat-number">50<span>+</span></div><div class="trust__stat-desc">Students<br>enrolled</div></div>
+  <div class="trust__stat"><div class="trust__stat-number">95<span>%</span></div><div class="trust__stat-desc">Student<br>pass rate</div></div>
+  <div class="trust__stat"><div class="trust__stat-number">4.9<span>/5</span></div><div class="trust__stat-desc">Average<br>rating</div></div>
+  <div class="trust__stat"><div class="trust__stat-number">2008</div><div class="trust__stat-desc">Teaching<br>since</div></div>
+</div></div>
+
+<!-- 04 WHO IT'S FOR -->
+<section class="wif"><div class="wif__inner">
+  <div class="wif__header"><p class="wif__eyebrow">Who this is for</p><h2 class="wif__title">Chemistry is <span class="wif__strike">hard</span><span class="wif__replace">fun.</span><br>We make it <span class="wif__strike">passable</span><span class="wif__replace">understandable.</span></h2><p class="wif__sub">Three groups of students. One platform. Every exam covered.</p></div>
+  <div class="wif__grid">
+    <div class="wif__card"><div class="wif__icon"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect x="4" y="4" width="20" height="20" rx="4" stroke="#0d7a6a" stroke-width="1.8"/><path d="M9 14h10M9 10h6M9 18h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></div><span class="wif__card-tag">High school</span><h3 class="wif__card-title">IB Chemistry HL &amp; SL</h3><p class="wif__card-desc">Structured around the IB syllabus topic by topic. IB-style worked examples and mock exams that match the real paper format.</p><ul class="wif__card-list"><li>Full HL and SL topic coverage</li><li>Past-paper style questions with mark schemes</li><li>Mock exams with teacher feedback</li></ul><a href="#" class="wif__card-link">Learn more &rarr;</a></div>
+    <div class="wif__card wif__card--featured"><div class="wif__icon"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><path d="M14 4C9.6 4 6 7.6 6 12c0 5.5 8 14 8 14s8-8.5 8-14c0-4.4-3.6-8-8-8z" stroke="#4dd9c0" stroke-width="1.8"/><path d="M14 10v4M12 12h4" stroke="#4dd9c0" stroke-width="1.8" stroke-linecap="round"/></svg></div><span class="wif__card-tag">Most popular</span><h3 class="wif__card-title">Medical &amp; Dental School Entrance</h3><p class="wif__card-desc">Entrance exam chemistry is its own beast. We break down exactly what Croatian medical and dental faculties test.</p><ul class="wif__card-list"><li>Croatian faculty entrance exam focus</li><li>High-frequency topic drills</li><li>Timed mock entrance exams</li></ul><a href="#" class="wif__card-link">Learn more &rarr;</a></div>
+    <div class="wif__card"><div class="wif__icon"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><circle cx="10" cy="10" r="3" stroke="#0d7a6a" stroke-width="1.8"/><circle cx="20" cy="10" r="3" stroke="#0d7a6a" stroke-width="1.8"/><circle cx="14" cy="20" r="3" stroke="#0d7a6a" stroke-width="1.8"/><line x1="13" y1="10" x2="17" y2="10" stroke="#0d7a6a" stroke-width="1.8"/><line x1="11" y1="13" x2="13" y2="17" stroke="#0d7a6a" stroke-width="1.8"/><line x1="19" y1="13" x2="15" y2="17" stroke="#0d7a6a" stroke-width="1.8"/></svg></div><span class="wif__card-tag">University</span><h3 class="wif__card-title">Medical Chemistry &amp; Biochemistry</h3><p class="wif__card-desc">Focused notes, reaction mechanisms, and quizzes that test what your faculty actually examines.</p><ul class="wif__card-list"><li>Organic &amp; reaction mechanism focus</li><li>Biochemistry pathways explained clearly</li><li>Faculty-specific exam prep</li></ul><a href="#" class="wif__card-link">Learn more &rarr;</a></div>
+  </div>
+</div></section>
+
+<!-- 05 HOW IT WORKS -->
+<section class="hiw"><div class="hiw__inner">
+  <div class="hiw__header"><p class="hiw__eyebrow">How it works</p><h2 class="hiw__title">From confusion to confidence<br>in three steps.</h2><p class="hiw__sub">No setup. No confusion. Open your laptop and start learning today.</p></div>
+  <div class="hiw__steps">
+    <div class="hiw__step"><div class="hiw__step-num">1</div><div class="hiw__step-icon"><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="16" rx="4" stroke="#4dd9c0" stroke-width="2"/><path d="M10 16h4M18 16h4M10 20h8" stroke="#4dd9c0" stroke-width="2" stroke-linecap="round"/></svg></div><h3 class="hiw__step-title">Choose your plan</h3><p class="hiw__step-desc">Pick Basic for self-paced learning, or Premium for direct access to the teacher and live sessions.</p><div class="hiw__step-tags"><span class="hiw__tag">Basic</span><span class="hiw__tag">Premium</span><span class="hiw__tag">Cancel any time</span></div></div>
+    <div class="hiw__arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M14 7l5 5-5 5" stroke="#4dd9c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg></div>
+    <div class="hiw__step"><div class="hiw__step-num">2</div><div class="hiw__step-icon"><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" stroke="#4dd9c0" stroke-width="2"/><path d="M16 10v6l4 2" stroke="#4dd9c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3 class="hiw__step-title">Study at your own pace</h3><p class="hiw__step-desc">Work through lessons, tackle practice problems, and test yourself with quizzes. Track every topic.</p><div class="hiw__step-tags"><span class="hiw__tag">Lessons</span><span class="hiw__tag">Quizzes</span><span class="hiw__tag">Mock exams</span></div></div>
+    <div class="hiw__arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M14 7l5 5-5 5" stroke="#4dd9c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg></div>
+    <div class="hiw__step"><div class="hiw__step-num">3</div><div class="hiw__step-icon"><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><path d="M6 8h14a2 2 0 012 2v8a2 2 0 01-2 2H12l-4 4v-4H6a2 2 0 01-2-2v-8a2 2 0 012-2z" stroke="#4dd9c0" stroke-width="2" stroke-linejoin="round"/></svg></div><h3 class="hiw__step-title">Get personalised help</h3><p class="hiw__step-desc">Stuck? Message the teacher via chat or book a 1-on-1 live Zoom session &mdash; your questions, your pace.</p><div class="hiw__step-tags"><span class="hiw__tag">Teacher chat</span><span class="hiw__tag">Live sessions</span><span class="hiw__tag">Premium</span></div></div>
+  </div>
+  <div class="hiw__cta"><div><div class="hiw__cta-title">Ready to get started?</div><div class="hiw__cta-sub">First week free. Cancel any time. No commitment.</div></div><a href="#" class="hiw__cta-btn">Start for free &rarr;</a></div>
+</div></section>
+
+<!-- 06 FEATURES (element tile icons) -->
+<section class="feat"><div class="feat__inner">
+  <div class="feat__header"><p class="feat__eyebrow">Everything included</p><h2 class="feat__title">One platform.<br>Everything you need to pass.</h2><p class="feat__sub">No textbooks. No scattered YouTube videos. Everything in one place, built around your exam.</p></div>
+  <div class="feat__grid">
+    <div class="feat__item"><div class="feat__el"><div class="feat__el-num">01</div><div class="feat__el-sym">Lk</div></div><div class="feat__item-title">Written lessons</div><div class="feat__item-desc">Clear theory notes and worked examples &mdash; written like a smart friend, not a textbook.</div><span class="feat__item-badge badge-all">All plans</span></div>
+    <div class="feat__item"><div class="feat__el feat__el--premium"><div class="feat__el-num">02</div><div class="feat__el-sym">Vi</div></div><div class="feat__item-title">Video lessons</div><div class="feat__item-desc">Short recorded lectures you can pause, rewind, and rewatch any time.</div><span class="feat__item-badge badge-premium">Premium</span></div>
+    <div class="feat__item"><div class="feat__el"><div class="feat__el-num">03</div><div class="feat__el-sym">Vj</div></div><div class="feat__item-title">Practice problems</div><div class="feat__item-desc">Hundreds of self-marking exercises with full solutions and instant feedback.</div><span class="feat__item-badge badge-all">All plans</span></div>
+    <div class="feat__item"><div class="feat__el feat__el--premium"><div class="feat__el-num">04</div><div class="feat__el-sym">Kv</div></div><div class="feat__item-title">Topic quizzes</div><div class="feat__item-desc">Scored quizzes at the end of every topic with explanations for every answer.</div><span class="feat__item-badge badge-premium">Premium</span></div>
+    <div class="feat__item"><div class="feat__el feat__el--premium"><div class="feat__el-num">05</div><div class="feat__el-sym">Is</div></div><div class="feat__item-title">Mock exams</div><div class="feat__item-desc">Timed full-length exams built to match the real format &mdash; IB, entrance, or university.</div><span class="feat__item-badge badge-premium">Premium</span></div>
+    <div class="feat__item"><div class="feat__el"><div class="feat__el-num">06</div><div class="feat__el-sym">Np</div></div><div class="feat__item-title">Progress tracking</div><div class="feat__item-desc">Dashboard showing completions, scores over time, and weak topics.</div><span class="feat__item-badge badge-all">All plans</span></div>
+    <div class="feat__item"><div class="feat__el feat__el--premium"><div class="feat__el-num">07</div><div class="feat__el-sym">Ch</div></div><div class="feat__item-title">Teacher chat</div><div class="feat__item-desc">Real answers from a real person &mdash; not an AI chatbot.</div><span class="feat__item-badge badge-premium">Premium</span></div>
+    <div class="feat__item"><div class="feat__el feat__el--premium"><div class="feat__el-num">08</div><div class="feat__el-sym">Sv</div></div><div class="feat__item-title">Live session booking</div><div class="feat__item-desc">Book a 1-on-1 Zoom session. Pick a slot, get a link &mdash; no emails needed.</div><span class="feat__item-badge badge-premium">Premium</span></div>
+  </div>
+</div></section>
+
+<!-- 07 ABOUT -->
+<section class="about"><div class="about__inner">
+  <div class="about__photo-wrap">
+    <div class="about__photo"><div class="about__photo-placeholder"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="12" stroke="#7ab09a" stroke-width="2"/><path d="M8 56c0-13.3 10.7-24 24-24s24 10.7 24 24" stroke="#7ab09a" stroke-width="2" stroke-linecap="round"/></svg><span>Your photo goes here</span></div></div>
+    <div class="about__stat-card about__stat-card--tl"><div class="about__stat-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4L3.2 6.2l4-.6L9 2z" fill="#0d7a6a"/></svg></div><div><div class="about__stat-num">15+</div><div class="about__stat-lbl">Years teaching</div></div></div>
+    <div class="about__stat-card about__stat-card--bl"><div class="about__stat-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3a6 6 0 100 12A6 6 0 009 3z" stroke="#0d7a6a" stroke-width="1.6"/><path d="M6.5 15.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1.1 2.5 2.5" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="about__stat-num">MD</div><div class="about__stat-lbl">Practicing physician</div></div></div>
+  </div>
+  <div>
+    <p class="about__eyebrow">Your teacher</p>
+    <h2 class="about__name">Tomislav</h2>
+    <p class="about__role">Physician &amp; founder of <span>Molekula Academy</span></p>
+    <blockquote class="about__quote">"Good chemistry education is three things: understanding the theory properly, passing the exam, and keeping what actually matters when you are practising medicine. All three. Not one without the others."</blockquote>
+    <div class="about__bio"><p>I am a practicing physician who has been teaching chemistry for over 15 years. I sat the same entrance exam your students are preparing for. I passed medical chemistry, biochemistry, clinical chemistry, and specialist electives at Medical School and the Faculty of Natural Sciences.</p><p>Since 2008 I have been preparing medical and dentistry students. For the past 5 years I have also worked with IB Chemistry students. Molekula Academy brings all of that into one structured platform.</p></div>
+    <div class="about__creds">
+      <div class="about__cred"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3 3.3.5-2.4 2.3.6 3.2L7 8.5 4 10l.6-3.2L2.2 4.5l3.3-.5L7 1z" fill="#0d7a6a"/></svg>MD, Practicing Physician</div>
+      <div class="about__cred"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="#0d7a6a" stroke-width="1.5"/><path d="M4 7h6M4 9.5h4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round"/></svg>Medical School Graduate</div>
+      <div class="about__cred"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 7l1.5 1.5L9 5" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>IB tutor since 2021</div>
+      <div class="about__cred"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V5l5-3 5 3v6l-5 2-5-2z" stroke="#0d7a6a" stroke-width="1.5" stroke-linejoin="round"/></svg>Med &amp; dental prep since 2008</div>
+    </div>
+    <div class="about__cta"><a href="#" class="about__btn">Start learning with Tomislav &rarr;</a><a href="#" class="about__link">Full story &rarr;</a></div>
+  </div>
+</div></section>
+
+<!-- 08 PRICING -->
+<section class="pricing"><div class="pricing__inner">
+  <div class="pricing__header"><p class="pricing__eyebrow">Pricing</p><h2 class="pricing__title">Simple, transparent pricing</h2><p class="pricing__sub">No hidden fees. No long-term contracts. Cancel any time.</p></div>
+  <div class="pricing__cards">
+    <div class="pricing__card">
+      <div class="pricing__plan-name">Basic</div>
+      <div class="pricing__price"><span class="pricing__currency">&euro;</span><span class="pricing__amount">19</span></div>
+      <div class="pricing__period">per month</div>
+      <p class="pricing__desc">Written lessons, practice problems and progress tracking at your own pace.</p>
+      <ul class="pricing__features">
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#e0f5ee"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Written theory lessons</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#e0f5ee"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>1,000+ practice problems</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#e0f5ee"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Progress dashboard</li>
+        <li class="pricing__feature pricing__feature--locked"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>Video lessons</li>
+        <li class="pricing__feature pricing__feature--locked"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>Topic quizzes &amp; mock exams</li>
+        <li class="pricing__feature pricing__feature--locked"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>Teacher chat &amp; live sessions</li>
+      </ul>
+      <a href="#" class="pricing__btn pricing__btn--basic">Get started with Basic</a>
+      <p class="pricing__note">First week free (excl. mock exams &amp; live sessions) &middot; Cancel any time</p>
+    </div>
+    <div class="pricing__card pricing__card--premium">
+      <div class="pricing__popular">Most popular</div>
+      <div class="pricing__plan-name">Premium</div>
+      <div class="pricing__price"><span class="pricing__currency">&euro;</span><span class="pricing__amount">35</span></div>
+      <div class="pricing__period" style="color:#64748b">per month</div>
+      <p class="pricing__desc">Everything in Basic plus videos, quizzes, mock exams, chat, and 1 live session per month.</p>
+      <ul class="pricing__features">
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Basic</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Video lessons</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Topic quizzes &amp; mock exams</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Direct teacher chat</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>1 live Zoom session per month</li>
+        <li class="pricing__feature"><svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.2)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Mock exam written feedback</li>
+      </ul>
+      <a href="#" class="pricing__btn pricing__btn--premium">Get started with Premium</a>
+      <p class="pricing__note">First week free (excl. mock exams &amp; live sessions) &middot; Cancel any time</p>
+    </div>
+  </div>
+  <div class="pricing__footer">
+    <div class="pricing__footer-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>First week free</div>
+    <div class="pricing__footer-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Cancel any time, no questions asked</div>
+    <div class="pricing__footer-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Croatian &amp; English content</div>
+  </div>
+</div></section>
+
+<!-- 09 TESTIMONIALS -->
+<section class="testi"><div class="testi__inner">
+  <div class="testi__header"><p class="testi__eyebrow">Student results</p><h2 class="testi__title">What students say</h2><p class="testi__sub">Real feedback from IB, medical, and dental students.</p></div>
+  <div class="testi__grid">
+    <div class="testi__card"><span class="testi__tag">IB Chemistry HL</span><div class="testi__stars"><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg></div><p class="testi__quote">I struggled with electrochemistry and thermodynamics for months. After two weeks on Molekula Academy I finally understood why things work, not just how to memorise them. Finished IB with a 6.</p><div class="testi__divider"></div><div class="testi__author"><div class="testi__avatar">AM</div><div><div class="testi__author-name">Ana M.</div><div class="testi__author-role">IB Chemistry HL student, Zagreb</div></div></div></div>
+    <div class="testi__card"><span class="testi__tag">Medical Entrance</span><div class="testi__stars"><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg></div><p class="testi__quote">The entrance exam chemistry is nothing like what you learn in high school. Tomislav knows exactly which topics appear on the test and explains the logic behind every question. I got into medicine on the first attempt.</p><div class="testi__divider"></div><div class="testi__author"><div class="testi__avatar">LP</div><div><div class="testi__author-name">Luka P.</div><div class="testi__author-role">Medical school applicant, Split</div></div></div></div>
+    <div class="testi__card"><span class="testi__tag">Biochemistry</span><div class="testi__stars"><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg><svg width="16" height="16" viewBox="0 0 16 16" fill="#f59e0b"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z"/></svg></div><p class="testi__quote">What makes Tomislav different is that he teaches biochemistry the way a doctor thinks about it. Not just what to memorise for the exam, but what you will actually use.</p><div class="testi__divider"></div><div class="testi__author"><div class="testi__avatar">MK</div><div><div class="testi__author-name">Maja K.</div><div class="testi__author-role">2nd year Medicine, Rijeka</div></div></div></div>
+  </div>
+</div></section>
+
+<!-- 10 FAQ -->
+<section class="faq"><div class="faq__inner">
+  <div class="faq__header"><p class="faq__eyebrow">FAQ</p><h2 class="faq__title">Common questions</h2><p class="faq__sub">Everything you need to know before signing up.</p></div>
+  <div class="faq__list">
+    <div class="faq__item open"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">Is this suitable for IB Chemistry HL and SL?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Yes &mdash; both HL and SL are covered. Structured around the IB syllabus topic by topic, with IB-style worked examples and mock exams that follow the actual paper format.</p></div></div>
+    <div class="faq__item"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">How do live sessions work?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Premium subscribers get one 1-on-1 Zoom session per month. Book directly through the platform &mdash; pick a slot, get a Zoom link automatically. Sessions are with Tomislav personally.</p></div></div>
+    <div class="faq__item"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">What is the difference between Basic and Premium?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Basic (&euro;19/month): written lessons, 1,000+ practice problems, progress tracking. Premium (&euro;35/month) adds video lessons, topic quizzes, mock exams, direct chat with Tomislav, and one live Zoom session per month.</p></div></div>
+    <div class="faq__item"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">Is there a free trial?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Yes &mdash; first week free on both plans. Access to everything except mock exams and live sessions. Cancel before the week is up and you are not charged.</p></div></div>
+    <div class="faq__item"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">Can I cancel or switch plans at any time?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Yes to both. Upgrade, downgrade, or cancel from your account page at any time. No contracts, no fees, no questions asked.</p></div></div>
+    <div class="faq__item"><button class="faq__question" onclick="toggleFaq(this)"><span class="faq__q-text">I am a university student in medicine or dentistry &mdash; is this right for me?</span><span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span></button><div class="faq__answer"><p class="faq__a-text">Yes. Dedicated content for Medical Chemistry, Biochemistry, and Clinical Chemistry. Tomislav is a physician who passed these exact exams &mdash; the material is tailored to what Croatian medical and dental faculties actually test.</p></div></div>
+  </div>
+  <div class="faq__cta"><p class="faq__cta-text">Still have a question?</p><a href="#" class="faq__cta-btn">Contact us &rarr;</a></div>
+</div></section>
+
+<!-- 11 FOOTER -->
+<footer class="footer"><div class="footer__inner">
+  <div class="footer__top">
+    <div><a class="footer__logo" href="#"><div class="footer__logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="2.5" fill="white" opacity="0.9"/><circle cx="3.5" cy="14.5" r="2.5" fill="white" opacity="0.9"/><circle cx="16.5" cy="14.5" r="2.5" fill="white" opacity="0.9"/><line x1="10" y1="7.5" x2="4.5" y2="12.5" stroke="white" stroke-width="1.5" opacity="0.65"/><line x1="10" y1="7.5" x2="15.5" y2="12.5" stroke="white" stroke-width="1.5" opacity="0.65"/><line x1="5.5" y1="14.5" x2="14.5" y2="14.5" stroke="white" stroke-width="1.5" opacity="0.65"/></svg></div><span class="footer__logo-text">Molekula <span>Academy</span></span></a><p class="footer__tagline">Chemistry taught with solid theoretical foundations, real exam practice, and the clinical perspective of a physician.</p><div class="footer__lang"><button class="footer__lang-btn active">HR</button><button class="footer__lang-btn">EN</button></div></div>
+    <div><p class="footer__col-title">Platform</p><ul class="footer__links"><li><a href="#">Get started</a></li><li><a href="#">Pricing</a></li><li><a href="#">Log in</a></li><li><a href="#">Free resources</a></li></ul></div>
+    <div><p class="footer__col-title">Subjects</p><ul class="footer__links"><li><a href="#">IB Chemistry HL &amp; SL</a></li><li><a href="#">Medical &amp; Dental Entrance</a></li><li><a href="#">Medical Chemistry</a></li><li><a href="#">Biochemistry</a></li></ul></div>
+    <div><p class="footer__col-title">Company</p><ul class="footer__links"><li><a href="#">About Tomislav</a></li><li><a href="#">Contact</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li></ul></div>
+  </div>
+  <div class="footer__divider"></div>
+  <div class="footer__bottom">
+    <p class="footer__copy">&copy; 2025 Molekula Academy. All rights reserved.</p>
+    <div class="footer__social">
+      <a href="#" class="footer__social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="3.5" stroke="#64748b" stroke-width="1.4"/><circle cx="8" cy="8" r="2.8" stroke="#64748b" stroke-width="1.4"/><circle cx="11.2" cy="4.8" r="0.8" fill="#64748b"/></svg></a>
+      <a href="#" class="footer__social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3H8.5C7.7 3 7 3.7 7 4.5V6H5v2.5h2V14h2.5V8.5H11L11.5 6H9.5V4.8c0-.4.3-.8.8-.8H10V3z" stroke="#64748b" stroke-width="1.3" stroke-linejoin="round"/></svg></a>
+      <a href="#" class="footer__social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="#64748b" stroke-width="1.4"/><path d="M5 7v4M5 5.5v.01M8 11V8.5c0-.8.7-1.5 1.5-1.5S11 7.7 11 8.5V11M8 7v4" stroke="#64748b" stroke-width="1.3" stroke-linecap="round"/></svg></a>
+    </div>
+  </div>
+</div></footer>
+
+<script>
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq__item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>

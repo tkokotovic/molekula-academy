@@ -1,0 +1,183 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 11: Footer
+     Dark navy background to close the page
+     4-column layout: brand · platform · subjects · company
+     ⚠️  Add real social media links before launch
+     ============================================ -->
+
+<style>
+  .footer {
+    background: #ffffff;
+    padding: 64px 32px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    border-top: 1px solid #e2ebe8;
+  }
+  .footer__inner { max-width: 1100px; margin: 0 auto; }
+
+  /* Top grid */
+  .footer__top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+
+  /* Brand column */
+  .footer__logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; margin-bottom: 16px;
+  }
+  .footer__logo-icon {
+    width: 34px; height: 38px; background: #0d7a6a;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .footer__logo-icon span {
+    color: #fff; font-family: 'Space Mono', monospace; font-weight: 700;
+    font-size: 15px; display: inline-block; transform: scaleX(1.35); line-height: 1;
+  }
+  .footer__logo-text { font-size: 16px; font-weight: 700; color: #0d1a2e; letter-spacing: -0.3px; }
+  .footer__logo-text span { color: #0d7a6a; }
+
+  .footer__tagline {
+    font-size: 14px; color: #64748b; line-height: 1.65;
+    margin-bottom: 24px; max-width: 280px;
+  }
+
+  .footer__lang {
+    display: flex; background: #f3f4f6; border-radius: 6px;
+    padding: 2px; width: fit-content;
+  }
+  .footer__lang-btn {
+    font-size: 12px; font-weight: 600; padding: 4px 10px;
+    border-radius: 4px; border: none; background: transparent;
+    color: #374151; cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .footer__lang-btn.active { background: #ffffff; color: #0d7a6a; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+
+  /* Nav columns */
+  .footer__col-title {
+    font-size: 11px; font-weight: 600; color: #94a3b8;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;
+  }
+  .footer__links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer__links a {
+    font-size: 14px; color: #64748b; text-decoration: none; transition: color 0.15s;
+  }
+  .footer__links a:hover { color: #0d1a2e; }
+
+  /* Divider */
+  .footer__divider { height: 1px; background: #e2ebe8; margin-bottom: 28px; }
+
+  /* Bottom row */
+  .footer__bottom {
+    display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .footer__copy { font-size: 13px; color: #94a3b8; }
+  .footer__copy a { color: #64748b; text-decoration: none; }
+  .footer__copy a:hover { color: #0d1a2e; }
+
+  .footer__social { display: flex; align-items: center; gap: 8px; }
+  .footer__social-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #f8faf9; border: 1px solid #e2ebe8;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    text-decoration: none;
+  }
+  .footer__social-btn:hover { border-color: #0d7a6a; background: #f0faf7; }
+
+  @media (max-width: 900px) {
+    .footer__top { grid-template-columns: 1fr 1fr; gap: 32px; }
+  }
+  @media (max-width: 560px) {
+    .footer__top { grid-template-columns: 1fr; }
+  }
+</style>
+
+<footer class="footer">
+  <div class="footer__inner">
+
+    <div class="footer__top">
+
+      <!-- Brand -->
+      <div>
+        <a class="footer__logo" href="/">
+          <div class="footer__logo-icon">
+            <span>M</span>
+          </div>
+          <span class="footer__logo-text">Molekula <span>Academy</span></span>
+        </a>
+        <p class="footer__tagline">Chemistry taught with solid theoretical foundations, real exam practice, and the clinical perspective of a physician.</p>
+        <div class="footer__lang">
+          <button class="footer__lang-btn active">HR</button>
+          <button class="footer__lang-btn">EN</button>
+        </div>
+      </div>
+
+      <!-- Platform -->
+      <div>
+        <p class="footer__col-title">Platform</p>
+        <ul class="footer__links">
+          <li><a href="/signup">Get started</a></li>
+          <li><a href="/pricing">Pricing</a></li>
+          <li><a href="/login">Log in</a></li>
+          <li><a href="/blog">Free resources</a></li>
+        </ul>
+      </div>
+
+      <!-- Subjects -->
+      <div>
+        <p class="footer__col-title">Subjects</p>
+        <ul class="footer__links">
+          <li><a href="/ib-chemistry">IB Chemistry HL &amp; SL</a></li>
+          <li><a href="/entrance-exam">Medical &amp; Dental Entrance</a></li>
+          <li><a href="/university">Medical Chemistry</a></li>
+          <li><a href="/university">Biochemistry</a></li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <p class="footer__col-title">Company</p>
+        <ul class="footer__links">
+          <li><a href="/about">About Tomislav</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="footer__divider"></div>
+
+    <div class="footer__bottom">
+      <p class="footer__copy">&copy; 2025 Molekula Academy. All rights reserved.</p>
+      <div class="footer__social">
+        <!-- REPLACE href with real social links -->
+        <a href="#" class="footer__social-btn" aria-label="Instagram">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="3.5" stroke="#64748b" stroke-width="1.4"/>
+            <circle cx="8" cy="8" r="2.8" stroke="#64748b" stroke-width="1.4"/>
+            <circle cx="11.2" cy="4.8" r="0.8" fill="#64748b"/>
+          </svg>
+        </a>
+        <a href="#" class="footer__social-btn" aria-label="Facebook">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3H8.5C7.7 3 7 3.7 7 4.5V6H5v2.5h2V14h2.5V8.5H11L11.5 6H9.5V4.8c0-.4.3-.8.8-.8H10V3z" stroke="#64748b" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="#" class="footer__social-btn" aria-label="LinkedIn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#64748b" stroke-width="1.4"/>
+            <path d="M5 7v4M5 5.5v.01M8 11V8.5c0-.8.7-1.5 1.5-1.5S11 7.7 11 8.5V11M8 7v4" stroke="#64748b" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</footer>

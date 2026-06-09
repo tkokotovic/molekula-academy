@@ -1,0 +1,188 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 06: Features Overview
+     4x2 grid with icon, title, description, plan badge
+     "All plans" = Basic & Premium | "Premium" = Premium only
+     ============================================ -->
+
+<style>
+  .feat {
+    background: #ffffff;
+    padding: 80px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .feat__inner { max-width: 1100px; margin: 0 auto; }
+
+  .feat__header { text-align: center; margin-bottom: 56px; }
+  .feat__eyebrow {
+    font-size: 12px; font-weight: 600; color: #0d7a6a;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .feat__title {
+    font-size: 36px; font-weight: 800; color: #0d1a2e;
+    letter-spacing: -0.8px; line-height: 1.15;
+  }
+  .feat__sub { font-size: 16px; color: #64748b; margin-top: 12px; line-height: 1.6; }
+
+  /* Grid — bordered table style */
+  .feat__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid #e2ebe8;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .feat__item {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 28px 24px;
+    background: #ffffff;
+    border-right: 1px solid #e2ebe8;
+    border-bottom: 1px solid #e2ebe8;
+    transition: background 0.2s;
+  }
+  .feat__item:hover { background: #f8faf9; }
+  .feat__item:nth-child(4n)   { border-right: none; }
+  .feat__item:nth-last-child(-n+4) { border-bottom: none; }
+
+  .feat__item-icon {
+    width: 44px; height: 44px; background: #f0faf7;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feat__item-title { font-size: 15px; font-weight: 700; color: #0d1a2e; line-height: 1.2; }
+  .feat__item-desc  { font-size: 13px; color: #64748b; line-height: 1.55; flex: 1; }
+
+  .feat__item-badge {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px; align-self: flex-start; margin-top: 4px;
+  }
+  .badge-all     { background: #f0faf7; color: #0d7a6a; }
+  .badge-premium { background: #fdf4e7; color: #92600a; }
+
+  @media (max-width: 900px) {
+    .feat__grid { grid-template-columns: repeat(2, 1fr); }
+    .feat__item:nth-child(4n)   { border-right: 1px solid #e2ebe8; }
+    .feat__item:nth-child(2n)   { border-right: none; }
+    .feat__item:nth-last-child(-n+4) { border-bottom: 1px solid #e2ebe8; }
+    .feat__item:nth-last-child(-n+2) { border-bottom: none; }
+  }
+  @media (max-width: 500px) {
+    .feat__grid { grid-template-columns: 1fr; }
+    .feat__item { border-right: none !important; }
+    .feat__item:last-child { border-bottom: none; }
+  }
+</style>
+
+<section class="feat">
+  <div class="feat__inner">
+
+    <div class="feat__header">
+      <p class="feat__eyebrow">Everything included</p>
+      <h2 class="feat__title">One platform.<br>Everything you need to pass.</h2>
+      <p class="feat__sub">No textbooks. No scattered YouTube videos. Everything in one place, built around your exam.</p>
+    </div>
+
+    <div class="feat__grid">
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="3" y="3" width="16" height="16" rx="3" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M6 8h10M6 11h7M6 14h9" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Written lessons</div>
+        <div class="feat__item-desc">Clear theory notes and worked examples for every topic &mdash; written like a smart friend, not a textbook.</div>
+        <span class="feat__item-badge badge-all">All plans</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="2" y="5" width="18" height="12" rx="3" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M9 9l5 2.5L9 14V9z" fill="#0d7a6a" opacity="0.8"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Video lessons</div>
+        <div class="feat__item-desc">Short recorded lectures you can pause, rewind, and rewatch any time &mdash; ideal for visual learners.</div>
+        <span class="feat__item-badge badge-premium">Premium</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M8 11l2 2 4-4" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Practice problems</div>
+        <div class="feat__item-desc">Hundreds of self-marking exercises with full solutions. Instant feedback so you know exactly where you went wrong.</div>
+        <span class="feat__item-badge badge-all">All plans</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="3" y="3" width="16" height="16" rx="3" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M7 8h3M7 11h8M7 14h5" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+            <circle cx="16" cy="8" r="2" fill="#0d7a6a" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Topic quizzes</div>
+        <div class="feat__item-desc">Scored quizzes at the end of every topic. Right or wrong &mdash; you always see why, with explanations for every answer.</div>
+        <span class="feat__item-badge badge-premium">Premium</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M11 7v4l3 1.5" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Mock exams</div>
+        <div class="feat__item-desc">Timed full-length exams built to match the real format &mdash; IB, Croatian entrance exam, or university paper.</div>
+        <span class="feat__item-badge badge-premium">Premium</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M3 17V6a1 1 0 011-1h14a1 1 0 011 1v11" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M5 17h12" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M7 13l2-3 2 2 2-4 2 3" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Progress tracking</div>
+        <div class="feat__item-desc">Your dashboard shows what you have completed, your quiz scores over time, and which topics need more work.</div>
+        <span class="feat__item-badge badge-all">All plans</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M4 5h10a2 2 0 012 2v6a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#0d7a6a" stroke-width="1.7" stroke-linejoin="round"/>
+            <path d="M7 10h6M7 13h4" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Teacher chat</div>
+        <div class="feat__item-desc">Message the teacher directly when you are stuck. Real answers from a real person &mdash; not an AI chatbot.</div>
+        <span class="feat__item-badge badge-premium">Premium</span>
+      </div>
+
+      <div class="feat__item">
+        <div class="feat__item-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="3" y="4" width="16" height="15" rx="2" stroke="#0d7a6a" stroke-width="1.7"/>
+            <path d="M3 9h16M8 3v3M14 3v3" stroke="#0d7a6a" stroke-width="1.7" stroke-linecap="round"/>
+            <circle cx="11" cy="14" r="2" fill="#0d7a6a" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="feat__item-title">Live session booking</div>
+        <div class="feat__item-desc">Book a 1-on-1 Zoom session with the teacher. Pick a time slot, get a link &mdash; no back-and-forth emails needed.</div>
+        <span class="feat__item-badge badge-premium">Premium</span>
+      </div>
+
+    </div>
+  </div>
+</section>

@@ -1,0 +1,96 @@
+/* ============================================================
+   MOLEKULA ACADEMY — DESIGN SYSTEM TOKENS
+   Single source of truth for color, type, spacing & motion.
+   Import this first, before any page or component styles:
+     <link rel="stylesheet" href="tokens.css" />
+   ============================================================ */
+
+:root {
+  /* ---- SURFACES & INK ---- */
+  --bg: #f5f8f7;            /* page background — cool off-white */
+  --surface: #ffffff;       /* cards, raised panels */
+  --ink: #15252b;           /* primary text — near-black teal */
+  --ink-soft: #46585e;      /* secondary text */
+  --ink-faint: #7d8d92;     /* tertiary / captions */
+  --line: #e2eae9;          /* hairline borders */
+  --line-strong: #cfdcda;   /* stronger borders, dividers */
+
+  /* ---- DEEP (dark sections) ---- */
+  --deep: #0b343c;          /* deep teal — dark section bg */
+  --deep-2: #0e424b;        /* hover / layered deep */
+
+  /* ---- ACCENT (default: Teal) ----
+     Swap the whole 4-token group to re-theme. See palettes below. */
+  --accent: #0f8f86;        /* primary accent */
+  --accent-bright: #1ec8b6; /* bright accent — highlights, popular badge */
+  --accent-ink: #064843;    /* accent text on light surfaces */
+  --accent-wash: #e7f6f3;   /* tinted accent surface */
+  --on-accent: #ffffff;     /* text/icon on accent fills */
+
+  /* ---- TYPE FAMILIES ---- */
+  --display: "Bricolage Grotesque", sans-serif; /* headings, wordmark */
+  --body: "DM Sans", sans-serif;                /* body copy, UI */
+  --mono: "Space Mono", monospace;              /* eyebrows, formulas, element tiles */
+
+  /* ---- TYPE SCALE (px) ---- */
+  --t-eyebrow: 12px;        /* mono, uppercase, tracked */
+  --t-caption: 13px;
+  --t-body-sm: 15px;
+  --t-body: 17px;
+  --t-body-lg: 19px;
+  --t-h4: 18px;
+  --t-h3: 24px;
+  --t-h2: clamp(30px, 4vw, 46px);
+  --t-h1: clamp(38px, 5vw, 62px);
+  --t-display: clamp(40px, 6vw, 76px); /* centered hero */
+
+  /* ---- SPACING SCALE ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 22px;
+  --sp-6: 28px;
+  --sp-7: 40px;
+  --sp-8: 56px;
+  --sp-section: 96px;       /* vertical rhythm between sections */
+
+  /* ---- RADII ---- */
+  --radius: 18px;           /* cards, large panels */
+  --radius-sm: 12px;        /* small cards, inputs */
+  --radius-pill: 999px;     /* buttons, chips, toggles */
+  --radius-tile: 10px;      /* periodic element tiles */
+
+  /* ---- ELEVATION ---- */
+  --shadow-card: 0 20px 40px -28px rgba(11,52,60,.4);
+  --shadow-pop: 0 30px 60px -34px rgba(11,52,60,.6);
+  --shadow-accent: 0 8px 22px -10px var(--accent);
+
+  /* ---- LAYOUT ---- */
+  --maxw: 1180px;
+  --gutter: 28px;
+
+  /* ---- MOTION ---- */
+  --ease: cubic-bezier(.2,.7,.2,1);
+  --dur-fast: .18s;
+  --dur: .3s;
+  --dur-reveal: .7s;
+
+  /* ---- MOTIF ---- */
+  --motif-mult: 1;          /* hex-field opacity multiplier (subtle=1, bold=2.1) */
+}
+
+/* ============================================================
+   ACCENT PALETTES — apply one by setting the 4 accent tokens.
+   Default above is Teal. To switch, override on :root or a scope:
+     [data-accent="blue"]    { ...blue tokens... }
+   ============================================================ */
+[data-accent="teal"] {
+  --accent: #0f8f86; --accent-bright: #1ec8b6; --accent-ink: #064843; --accent-wash: #e7f6f3;
+}
+[data-accent="blue"] {
+  --accent: #2563d8; --accent-bright: #4f9bff; --accent-ink: #12357a; --accent-wash: #e9eefb;
+}
+[data-accent="emerald"] {
+  --accent: #15936a; --accent-bright: #2ed29a; --accent-ink: #0a4a35; --accent-wash: #e6f6ee;
+}

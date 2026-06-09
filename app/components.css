@@ -1,0 +1,87 @@
+/* ============================================================
+   MOLEKULA ACADEMY — COMPONENT PRIMITIVES
+   Reusable classes built on tokens.css. Import order:
+     <link rel="stylesheet" href="tokens.css" />
+     <link rel="stylesheet" href="components.css" />
+   ============================================================ */
+
+/* ---- BASE ---- */
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: var(--t-body); line-height: 1.6;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin: 0; }
+::selection { background: var(--accent-bright); color: var(--deep); }
+
+/* ---- LAYOUT ---- */
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+.section { padding: var(--sp-section) 0; }
+
+/* ---- EYEBROW LABEL ---- */
+.eyebrow {
+  font-family: var(--mono); font-size: var(--t-eyebrow); font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent);
+  display: inline-flex; align-items: center; gap: 9px;
+}
+.eyebrow::before { content: ""; width: 22px; height: 1.5px; background: var(--accent); display: inline-block; }
+
+/* ---- BUTTONS ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  font-family: var(--body); font-weight: 600; font-size: 16px;
+  padding: 14px 24px; border-radius: var(--radius-pill); border: 1.5px solid transparent;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease);
+  white-space: nowrap; cursor: pointer;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-accent); }
+.btn-primary:hover { background: var(--accent-ink); transform: translateY(-2px); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent-ink); transform: translateY(-2px); }
+.btn-dark { background: var(--deep); color: #fff; }
+.btn-dark:hover { background: var(--deep-2); transform: translateY(-2px); }
+.btn-white { background: #fff; color: var(--deep); }
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); }
+
+/* ---- CARD ---- */
+.card {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: var(--line-strong); }
+
+/* ---- CHIP / BADGE ---- */
+.chip {
+  font-family: var(--mono); font-size: 12.5px; padding: 8px 14px;
+  border-radius: var(--radius-pill); border: 1.5px solid var(--line-strong); color: var(--ink-soft);
+}
+.badge-popular {
+  background: var(--accent-bright); color: var(--deep); font-family: var(--mono);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+}
+
+/* ---- HEXAGON MOTIF ---- */
+.hex { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+.hex-accent { background: var(--accent); }
+.hex-wash {
+  background: var(--accent-wash); color: var(--accent-ink);
+  display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
+}
+
+/* ---- PERIODIC ELEMENT TILE ---- */
+.el-tile {
+  font-family: var(--mono); position: relative; display: flex; flex-direction: column;
+  justify-content: space-between; border: 1.5px solid var(--line-strong); border-radius: var(--radius-tile);
+  background: var(--surface); padding: 8px 9px; aspect-ratio: 1; color: var(--ink); width: 64px; height: 64px;
+}
+.el-tile.is-accent { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
+.el-tile .num { font-size: 10px; color: var(--ink-faint); }
+.el-tile .sym { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ---- REVEAL (scroll animation) ---- */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity var(--dur-reveal) var(--ease), transform var(--dur-reveal) var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }

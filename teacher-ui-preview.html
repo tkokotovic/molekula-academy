@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Molekula Admin — Teacher UI Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f5f8f7;
+    color: #0b343c;
+    min-height: 100vh;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    background: #fff;
+    border-bottom: 1px solid #e0eae8;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .nav-left   { display: flex; align-items: center; gap: 10px; }
+  .nav-logo   { width: 32px; height: 32px; background: #0b343c; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #1ec8b6; font-weight: 700; font-size: 15px; font-family: 'Bricolage Grotesque', sans-serif; }
+  .nav-brand  { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 16px; color: #0b343c; }
+  .nav-crumb  { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5a7a74; }
+  .nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: #d4f5f0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #0b343c; }
+  .nav-right  { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5a7a74; }
+
+  /* ── Breadcrumb link ── */
+  .crumb-link { color: #0f8f86; cursor: pointer; text-decoration: none; font-weight: 500; }
+  .crumb-link:hover { text-decoration: underline; }
+
+  /* ── Page ── */
+  .page { max-width: 820px; margin: 0 auto; padding: 36px 24px 60px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+  .page-title  { font-family: 'Bricolage Grotesque', sans-serif; font-size: 26px; font-weight: 700; color: #0b343c; line-height: 1.2; }
+  .page-sub    { font-size: 13px; color: #5a7a74; margin-top: 3px; }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity .15s; font-family: 'DM Sans', sans-serif; }
+  .btn:active { opacity: .8; }
+  .btn-primary  { background: #0f8f86; color: #fff; }
+  .btn-primary:hover { background: #0b7a72; }
+  .btn-ghost    { background: #fff; color: #0b343c; border: 1.5px solid #ccd9d7; }
+  .btn-ghost:hover { background: #f5f8f7; }
+  .btn-danger   { background: #fff0f0; color: #c0392b; border: 1.5px solid #f5c6c6; }
+  .btn-danger:hover { background: #ffe4e4; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+  /* ── Badge ── */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-published { background: #d4f5f0; color: #085041; }
+  .badge-draft     { background: #f0f4f3; color: #5a7a74; }
+  .badge-archived  { background: #e8e8e8; color: #888; }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1.5px solid #e0eae8; border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; }
+  .card + .card { margin-top: 10px; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-title { font-size: 16px; font-weight: 500; color: #0b343c; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .card-desc  { font-size: 13px; color: #5a7a74; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .card-meta { font-size: 12px; color: #5a7a74; }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid #e0eae8; border-radius: 10px; padding: 14px 16px; }
+  .stat-label { font-size: 12px; color: #5a7a74; margin-bottom: 4px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: #0b343c; font-family: 'Bricolage Grotesque', sans-serif; }
+
+  /* ── Inline form ── */
+  .inline-form { background: #f5f8f7; border: 1.5px solid #ccd9d7; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .inline-form label { display: block; font-size: 13px; font-weight: 500; color: #0b343c; margin-bottom: 6px; }
+  .inline-form input, .inline-form textarea {
+    width: 100%; padding: 10px 14px; border: 1.5px solid #ccd9d7; border-radius: 8px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif; color: #0b343c; background: #fff;
+    outline: none; margin-bottom: 12px;
+  }
+  .inline-form input:focus, .inline-form textarea:focus { border-color: #0f8f86; }
+  .inline-form textarea { resize: vertical; }
+  .form-title { font-size: 15px; font-weight: 500; margin-bottom: 16px; color: #0b343c; }
+  .form-row { display: flex; gap: 8px; }
+  .form-error { color: #c0392b; font-size: 13px; margin-top: -8px; margin-bottom: 10px; }
+
+  /* ── Topic icon ── */
+  .topic-icon { width: 34px; height: 34px; background: #f0f4f3; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 56px 0; color: #5a7a74; }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav" id="nav"></nav>
+
+<!-- Page content -->
+<div class="page" id="page"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentPage = 'courses';
+let selectedId  = null;
+let showForm    = false;
+let formError   = '';
+let nextId      = 100;
+
+const courses = [
+  { id: 1, title: 'IB Kemija HL', status: 'published', description: 'IB Higher Level kemija — za učenike Međunarodne mature' },
+  { id: 2, title: 'Opća kemija',  status: 'draft',     description: 'Uvod u kemiju za maturante i studente medicine' },
+  { id: 3, title: 'Medicinska biokemija', status: 'archived', description: 'Napredni kolegij za pristupnike medicine' },
+];
+
+const topicsByCourse = {
+  1: [
+    { id: 1, title: 'Atomska struktura', status: 'published' },
+    { id: 2, title: 'Kemijska veza', status: 'published' },
+    { id: 3, title: 'Periodički sustav elemenata', status: 'draft' },
+    { id: 4, title: 'Stehiometrija', status: 'draft' },
+  ],
+  2: [
+    { id: 5, title: 'Uvod u kemiju', status: 'draft' },
+    { id: 6, title: 'Atomi i molekule', status: 'draft' },
+  ],
+  3: [],
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function badge(status) {
+  const map = { published: ['badge-published','Objavljeno'], draft: ['badge-draft','Nacrt'], archived: ['badge-archived','Arhivirano'] };
+  const [cls, label] = map[status] || map.draft;
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function icon(emoji) {
+  return `<div class="topic-icon">${emoji}</div>`;
+}
+
+const topicIcons = ['⚛️','🔗','🧪','⚗️','🔬','💡','🌡️','🧲','💧','🌿','🔥','⚖️'];
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function renderNav() {
+  const crumb = currentPage === 'courses'
+    ? `<span class="nav-brand" style="font-size:14px;">Kolegiji</span>`
+    : `<a class="crumb-link" onclick="goBack()">← Kolegiji</a>
+       <span style="color:#ccd9d7;">/</span>
+       <span style="font-size:13px;font-weight:500;">${courses.find(c=>c.id===selectedId)?.title||''}</span>`;
+
+  document.getElementById('nav').innerHTML = `
+    <div class="nav-left">
+      <div class="nav-logo">M</div>
+      <span class="nav-brand">Molekula Academy</span>
+    </div>
+    <div class="nav-crumb">${crumb}</div>
+    <div class="nav-right">
+      <div class="nav-avatar">T</div>
+      <span>Tomislav</span>
+    </div>`;
+}
+
+// ── Courses page ──────────────────────────────────────────────────────────────
+function renderCourses() {
+  const formHtml = showForm ? `
+    <div class="inline-form">
+      <p class="form-title">+ Novi kolegij</p>
+      <label for="c-title">Naziv kolegija</label>
+      <input id="c-title" type="text" placeholder="npr. IB Kemija SL" />
+      ${formError ? `<p class="form-error">${formError}</p>` : ''}
+      <label for="c-desc">Opis</label>
+      <textarea id="c-desc" rows="2" placeholder="Kratki opis kolegija..."></textarea>
+      <div class="form-row">
+        <button class="btn btn-primary btn-sm" onclick="addCourse()">✓ Spremi</button>
+        <button class="btn btn-ghost btn-sm" onclick="cancel()">Odustani</button>
+      </div>
+    </div>` : '';
+
+  const list = courses.map(c => `
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title">
+          ${c.title}
+          ${badge(c.status)}
+        </div>
+        <div class="card-desc">${c.description}</div>
+      </div>
+      <div class="card-actions">
+        <span class="card-meta">${(topicsByCourse[c.id]||[]).length} tema</span>
+        <button class="btn btn-ghost btn-sm" onclick="goDetail(${c.id})">Teme →</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCourse(${c.id})" title="Obriši kolegij">🗑</button>
+      </div>
+    </div>`).join('');
+
+  const empty = courses.length === 0 ? `
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <p>Nema kolegija — kreirajte prvi!</p>
+    </div>` : '';
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Kolegiji</h1>
+        <p class="page-sub">${courses.length} kolegija ukupno</p>
+      </div>
+      <button class="btn btn-primary" onclick="openForm()">+ Novi kolegij</button>
+    </div>
+    ${formHtml}
+    ${list}${empty}`;
+
+  if (showForm) document.getElementById('c-title')?.focus();
+}
+
+// ── Course detail (topics) ────────────────────────────────────────────────────
+function renderDetail() {
+  const course = courses.find(c => c.id === selectedId);
+  if (!course) return;
+  const topics = topicsByCourse[selectedId] || [];
+
+  const published = topics.filter(t => t.status === 'published').length;
+  const draft     = topics.filter(t => t.status === 'draft').length;
+
+  const stats = `
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">Ukupno tema</div><div class="stat-value">${topics.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Objavljeno</div><div class="stat-value">${published}</div></div>
+      <div class="stat-card"><div class="stat-label">Nacrt</div><div class="stat-value">${draft}</div></div>
+    </div>`;
+
+  const formHtml = showForm ? `
+    <div class="inline-form">
+      <p class="form-title">+ Nova tema</p>
+      <label for="t-title">Naziv teme</label>
+      <input id="t-title" type="text" placeholder="npr. Termokemija" />
+      ${formError ? `<p class="form-error">${formError}</p>` : ''}
+      <div class="form-row">
+        <button class="btn btn-primary btn-sm" onclick="addTopic()">✓ Spremi</button>
+        <button class="btn btn-ghost btn-sm" onclick="cancel()">Odustani</button>
+      </div>
+    </div>` : '';
+
+  const list = topics.map((t, i) => `
+    <div class="card">
+      ${icon(topicIcons[i % topicIcons.length])}
+      <div class="card-body">
+        <div class="card-title">${t.title} ${badge(t.status)}</div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm">✏️ Uredi</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTopic(${t.id})" title="Obriši temu">🗑</button>
+      </div>
+    </div>`).join('');
+
+  const empty = topics.length === 0 && !showForm ? `
+    <div class="empty">
+      <div class="empty-icon">📄</div>
+      <p>Nema tema — dodajte prvu!</p>
+    </div>` : '';
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">${course.title}</h1>
+        <p class="page-sub" style="margin-top:6px;">${badge(course.status)} &middot; ${course.description}</p>
+      </div>
+      <button class="btn btn-primary" onclick="openForm()">+ Nova tema</button>
+    </div>
+    ${stats}
+    ${formHtml}
+    ${list}${empty}`;
+
+  if (showForm) document.getElementById('t-title')?.focus();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function goDetail(id) { selectedId = id; currentPage = 'detail'; showForm = false; formError = ''; render(); }
+function goBack()     { currentPage = 'courses'; showForm = false; formError = ''; render(); }
+function openForm()   { showForm = true; formError = ''; render(); }
+function cancel()     { showForm = false; formError = ''; render(); }
+
+function addCourse() {
+  const title = document.getElementById('c-title')?.value?.trim();
+  if (!title) { formError = 'Naziv je obavezan!'; render(); return; }
+  const desc = document.getElementById('c-desc')?.value?.trim() || '';
+  courses.push({ id: nextId, title, status: 'draft', description: desc });
+  topicsByCourse[nextId] = [];
+  nextId++;
+  showForm = false; formError = '';
+  render();
+}
+
+function deleteCourse(id) {
+  const i = courses.findIndex(c => c.id === id);
+  if (i > -1) { courses.splice(i, 1); delete topicsByCourse[id]; }
+  render();
+}
+
+function addTopic() {
+  const title = document.getElementById('t-title')?.value?.trim();
+  if (!title) { formError = 'Naziv je obavezan!'; render(); return; }
+  if (!topicsByCourse[selectedId]) topicsByCourse[selectedId] = [];
+  topicsByCourse[selectedId].push({ id: nextId++, title, status: 'draft' });
+  showForm = false; formError = '';
+  render();
+}
+
+function deleteTopic(id) {
+  const ts = topicsByCourse[selectedId];
+  if (ts) { const i = ts.findIndex(t => t.id === id); if (i > -1) ts.splice(i, 1); }
+  render();
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render() {
+  renderNav();
+  if (currentPage === 'courses') renderCourses();
+  else renderDetail();
+}
+
+render();
+</script>
+</body>
+</html>

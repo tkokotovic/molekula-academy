@@ -1,0 +1,179 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 10: FAQ
+     Accordion — click to open/close each question
+     White background to contrast with dark testimonials above
+     ============================================ -->
+
+<style>
+  .faq {
+    background: #ffffff;
+    padding: 80px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .faq__inner { max-width: 760px; margin: 0 auto; }
+
+  .faq__header { text-align: center; margin-bottom: 52px; }
+  .faq__eyebrow {
+    font-size: 12px; font-weight: 600; color: #0d7a6a;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .faq__title { font-size: 36px; font-weight: 800; color: #0d1a2e; letter-spacing: -0.8px; line-height: 1.15; }
+  .faq__sub { font-size: 16px; color: #64748b; margin-top: 12px; line-height: 1.6; }
+
+  .faq__list {
+    display: flex; flex-direction: column;
+    border: 1px solid #e2ebe8; border-radius: 16px; overflow: hidden;
+  }
+  .faq__item { border-bottom: 1px solid #e2ebe8; }
+  .faq__item:last-child { border-bottom: none; }
+
+  .faq__question {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 20px 24px;
+    background: none; border: none; cursor: pointer;
+    text-align: left; font-family: inherit; transition: background 0.15s;
+  }
+  .faq__question:hover { background: #f8faf9; }
+  .faq__item.open .faq__question { background: #f8faf9; }
+
+  .faq__q-text { font-size: 15px; font-weight: 600; color: #0d1a2e; line-height: 1.4; }
+
+  .faq__icon {
+    flex-shrink: 0; width: 22px; height: 22px;
+    background: #f0faf7; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .faq__item.open .faq__icon { background: #0d7a6a; transform: rotate(45deg); }
+  .faq__item.open .faq__icon svg path { stroke: #ffffff; }
+
+  .faq__answer { display: none; padding: 0 24px 20px; }
+  .faq__item.open .faq__answer { display: block; }
+  .faq__a-text { font-size: 14px; color: #475569; line-height: 1.75; }
+  .faq__a-text a { color: #0d7a6a; text-decoration: none; font-weight: 500; }
+  .faq__a-text a:hover { text-decoration: underline; }
+
+  .faq__cta { margin-top: 40px; text-align: center; }
+  .faq__cta-text { font-size: 15px; color: #64748b; margin-bottom: 16px; }
+  .faq__cta-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #0d7a6a; color: #fff; font-size: 14px; font-weight: 600;
+    padding: 11px 24px; border-radius: 10px; text-decoration: none;
+    border: none; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .faq__cta-btn:hover { background: #0a6357; }
+</style>
+
+<section class="faq">
+  <div class="faq__inner">
+
+    <div class="faq__header">
+      <p class="faq__eyebrow">FAQ</p>
+      <h2 class="faq__title">Common questions</h2>
+      <p class="faq__sub">Everything you need to know before signing up.</p>
+    </div>
+
+    <div class="faq__list">
+
+      <div class="faq__item open">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">Is this suitable for IB Chemistry HL and SL?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Yes &mdash; both HL and SL are covered. The content is structured around the IB syllabus topic by topic, with IB-style worked examples and mock exams that follow the actual paper format. HL students get additional depth on the higher-level material.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">How do live sessions work?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Premium subscribers get one 1-on-1 Zoom session per month included. You book directly through the platform by picking an available time slot &mdash; you receive a Zoom link automatically. Additional sessions can be purchased as add-ons. Sessions are with Tomislav personally.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">What is the difference between Basic and Premium?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Basic (&euro;19/month) gives you written lessons, 1,000+ practice problems, and progress tracking &mdash; everything you need to study independently. Premium (&euro;35/month) adds video lessons, topic quizzes, mock exams, direct chat with Tomislav, and one live Zoom session per month.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">Is there a free trial?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Yes &mdash; your first week is free on both plans. During the trial you have access to everything except mock exams and live sessions. No credit card tricks: if you cancel before the week is up, you are not charged.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">Can I cancel or switch plans at any time?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Yes to both. You can upgrade from Basic to Premium or cancel your subscription at any time from your account page. There are no contracts, no cancellation fees, and no questions asked.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">What language is the content in?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">All content is available in both Croatian and English. Croatian is the default for local students preparing for Croatian faculty entrance exams. English is the primary language for IB Chemistry content. You can switch languages at any time from the navigation bar.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">How quickly does Tomislav respond to chat messages?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Premium subscribers can expect a response within 24 hours on weekdays. For urgent questions before an exam, use the session booking feature to get dedicated 1-on-1 time. Chat is not available on the Basic plan.</p>
+        </div>
+      </div>
+
+      <div class="faq__item">
+        <button class="faq__question" onclick="toggleFaq(this)">
+          <span class="faq__q-text">I am a university student in medicine or dentistry &mdash; is this right for me?</span>
+          <span class="faq__icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#0d7a6a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="faq__answer">
+          <p class="faq__a-text">Yes. The platform has dedicated content for Medical Chemistry, Biochemistry, and Clinical Chemistry at university level. Tomislav is a physician who passed these exact exams &mdash; the material is tailored to what Croatian medical and dental faculties actually test, not generic university chemistry.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="faq__cta">
+      <p class="faq__cta-text">Still have a question?</p>
+      <a href="/contact" class="faq__cta-btn">
+        Contact us
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq__item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+</script>

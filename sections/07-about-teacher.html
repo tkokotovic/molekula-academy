@@ -1,0 +1,200 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 07: About the Teacher
+     Split layout: photo left, bio right
+     Floating stat cards on the photo
+     ⚠️  Replace placeholder text marked with REPLACE comments
+     ============================================ -->
+
+<style>
+  .about {
+    background: #f8faf9;
+    padding: 80px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .about__inner {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 420px 1fr;
+    gap: 72px; align-items: center;
+  }
+
+  /* ── Photo side ── */
+  .about__photo-wrap { position: relative; }
+  .about__photo {
+    width: 100%; aspect-ratio: 4/5;
+    background: #d1e0da;
+    border-radius: 20px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Replace the placeholder div below with an <img> tag when you have a photo:
+     <img src="/images/boris.jpg" alt="Tomislav — chemistry teacher" style="width:100%;height:100%;object-fit:cover;"> */
+  .about__photo-placeholder {
+    display: flex; flex-direction: column; align-items: center; gap: 12px; color: #6b9e90;
+  }
+  .about__photo-placeholder span { font-size: 13px; font-weight: 500; opacity: 0.7; }
+
+  /* Floating stat cards */
+  .about__stat-card {
+    position: absolute; background: #ffffff; border: 1px solid #e2ebe8;
+    border-radius: 12px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  .about__stat-card--tl { top: -16px; right: -16px; }
+  .about__stat-card--bl { bottom: 24px; left: -24px; }
+  .about__stat-icon {
+    width: 36px; height: 36px; background: #f0faf7;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .about__stat-num { font-size: 18px; font-weight: 800; color: #0d1a2e; line-height: 1; }
+  .about__stat-lbl { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* ── Content side ── */
+  .about__eyebrow {
+    font-size: 12px; font-weight: 600; color: #0d7a6a;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .about__name {
+    font-size: 40px; font-weight: 800; color: #0d1a2e;
+    letter-spacing: -1px; line-height: 1.1; margin-bottom: 6px;
+  }
+  .about__role { font-size: 16px; color: #64748b; margin-bottom: 28px; }
+  .about__role span { color: #0d7a6a; font-weight: 600; }
+
+  .about__quote {
+    border-left: 3px solid #0d7a6a;
+    padding: 14px 18px;
+    background: #ffffff;
+    border-radius: 0 10px 10px 0;
+    margin-bottom: 28px;
+    font-size: 15px; font-style: italic; color: #374151; line-height: 1.6;
+  }
+
+  .about__bio {
+    font-size: 15px; color: #475569; line-height: 1.75;
+    display: flex; flex-direction: column; gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .about__creds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+  .about__cred {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #ffffff; border: 1px solid #e2ebe8;
+    border-radius: 8px; padding: 7px 12px;
+    font-size: 13px; font-weight: 500; color: #374151;
+  }
+
+  .about__cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .about__btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #0d7a6a; color: #ffffff;
+    font-size: 14px; font-weight: 600; padding: 11px 22px;
+    border-radius: 10px; text-decoration: none;
+    font-family: inherit; border: none; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .about__btn:hover { background: #0a6357; }
+  .about__link {
+    font-size: 14px; font-weight: 500; color: #0d7a6a; text-decoration: none;
+  }
+  .about__link:hover { text-decoration: underline; }
+
+  @media (max-width: 900px) {
+    .about__inner { grid-template-columns: 1fr; gap: 48px; }
+    .about__photo-wrap { max-width: 360px; margin: 0 auto; }
+  }
+</style>
+
+<section class="about">
+  <div class="about__inner">
+
+    <!-- Photo column -->
+    <div class="about__photo-wrap">
+      <div class="about__photo">
+        <!-- REPLACE: swap placeholder div with real photo img tag -->
+        <div class="about__photo-placeholder">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="24" r="12" stroke="#6b9e90" stroke-width="2"/>
+            <path d="M8 56c0-13.3 10.7-24 24-24s24 10.7 24 24" stroke="#6b9e90" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Your photo goes here</span>
+        </div>
+      </div>
+
+      <div class="about__stat-card about__stat-card--tl">
+        <div class="about__stat-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4L3.2 6.2l4-.6L9 2z" fill="#0d7a6a"/>
+          </svg>
+        </div>
+        <div>
+          <div class="about__stat-num">15+</div>
+          <div class="about__stat-lbl">Years teaching</div>
+        </div>
+      </div>
+
+      <div class="about__stat-card about__stat-card--bl">
+        <div class="about__stat-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 3a6 6 0 100 12A6 6 0 009 3z" stroke="#0d7a6a" stroke-width="1.6"/>
+            <path d="M9 6v3l2 1.5" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5 15.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="about__stat-num">MD</div>
+          <div class="about__stat-lbl">Practicing physician</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content column -->
+    <div class="about__content">
+      <p class="about__eyebrow">Your teacher</p>
+      <!-- REPLACE: use your full name if preferred -->
+      <h2 class="about__name">Tomislav</h2>
+      <p class="about__role">Chemistry tutor &amp; founder of <span>Molekula Academy</span></p>
+
+      <blockquote class="about__quote">
+        "Good chemistry education is three things: understanding the theory properly, passing the exam, and keeping what actually matters when you are practising medicine. All three. Not one without the others."
+      </blockquote>
+
+      <div class="about__bio">
+        <p>
+          I am a practicing physician who has been teaching chemistry for over 15 years. I sat the same entrance exam your students are preparing for. I passed medical chemistry, biochemistry, clinical chemistry, and a range of specialist electives at Medical School and the Faculty of Natural Sciences. I know exactly what is tested, where students lose marks, and what is worth understanding deeply versus what you can safely deprioritise.
+        </p>
+        <p>
+          Since 2008 I have been preparing medical and dentistry students for their exams. For the past 5 years I have also worked with IB Chemistry students. Molekula Academy is built on that experience &mdash; solid theoretical foundations, real exam practice, and the clinical perspective of a physician who still uses this knowledge every day.
+        </p>
+      </div>
+
+      <div class="about__creds">
+        <div class="about__cred">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3 3.3.5-2.4 2.3.6 3.2L7 8.5 4 10l.6-3.2L2.2 4.5l3.3-.5L7 1z" fill="#0d7a6a"/></svg>
+          MD, Practicing Physician
+        </div>
+        <div class="about__cred">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="#0d7a6a" stroke-width="1.5"/><path d="M4 7h6M4 9.5h4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Medical School Graduate
+        </div>
+        <div class="about__cred">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 7l1.5 1.5L9 5" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          IB tutor since 2019
+        </div>
+        <div class="about__cred">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11V5l5-3 5 3v6l-5 2-5-2z" stroke="#0d7a6a" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          Med &amp; dental prep since 2008
+        </div>
+      </div>
+
+      <div class="about__cta">
+        <a href="/signup" class="about__btn">
+          Start learning with Tomislav
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="/about" class="about__link">Full story &rarr;</a>
+      </div>
+    </div>
+
+  </div>
+</section>

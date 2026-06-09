@@ -1,0 +1,223 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 08: Pricing
+     Two cards: Basic + Premium (dark featured)
+     Monthly/Annual toggle with discounted annual prices
+     ⚠️  Update prices before launch
+     ============================================ -->
+
+<style>
+  .pricing {
+    background: #ffffff;
+    padding: 80px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .pricing__inner { max-width: 900px; margin: 0 auto; }
+
+  .pricing__header { text-align: center; margin-bottom: 48px; }
+  .pricing__eyebrow {
+    font-size: 12px; font-weight: 600; color: #0d7a6a;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .pricing__title {
+    font-size: 36px; font-weight: 800; color: #0d1a2e;
+    letter-spacing: -0.8px; line-height: 1.15;
+  }
+  .pricing__sub { font-size: 16px; color: #64748b; margin-top: 12px; line-height: 1.6; }
+
+
+  /* Cards grid */
+  .pricing__cards {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px; align-items: start;
+  }
+
+  .pricing__card {
+    border: 1px solid #e2ebe8; border-radius: 20px;
+    padding: 36px 32px; background: #ffffff;
+  }
+  .pricing__card--premium {
+    background: #0d1a2e; border-color: #0d1a2e;
+    position: relative;
+  }
+  .pricing__popular {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+    background: #0d7a6a; color: #ffffff; font-size: 11px; font-weight: 700;
+    padding: 4px 16px; border-radius: 20px; white-space: nowrap;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+
+  .pricing__plan-name {
+    font-size: 13px; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  }
+  .pricing__card--premium .pricing__plan-name { color: #4dd9c0; }
+
+  .pricing__price { display: flex; align-items: flex-end; gap: 2px; margin-bottom: 4px; }
+  .pricing__currency { font-size: 22px; font-weight: 700; color: #0d1a2e; margin-bottom: 8px; }
+  .pricing__card--premium .pricing__currency { color: #ffffff; }
+  .pricing__amount { font-size: 52px; font-weight: 800; color: #0d1a2e; letter-spacing: -2px; line-height: 1; }
+  .pricing__card--premium .pricing__amount { color: #ffffff; }
+  .pricing__period { font-size: 14px; color: #94a3b8; margin-bottom: 16px; }
+
+  .pricing__desc {
+    font-size: 14px; color: #64748b; line-height: 1.55;
+    margin-bottom: 24px; padding-bottom: 24px;
+    border-bottom: 1px solid #e2ebe8;
+  }
+  .pricing__card--premium .pricing__desc {
+    color: #94a3b8; border-bottom-color: rgba(255,255,255,0.1);
+  }
+
+  .pricing__features {
+    list-style: none; display: flex; flex-direction: column;
+    gap: 12px; margin-bottom: 32px;
+  }
+  .pricing__feature {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px; color: #374151; line-height: 1.4;
+  }
+  .pricing__card--premium .pricing__feature { color: #cbd5e1; }
+  .pricing__feature--locked { color: #94a3b8 !important; }
+  .pricing__feature-icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+
+  .pricing__btn {
+    display: block; text-align: center; width: 100%;
+    font-size: 15px; font-weight: 600; padding: 13px;
+    border-radius: 10px; text-decoration: none; cursor: pointer;
+    font-family: inherit; border: none; transition: all 0.15s;
+  }
+  .pricing__btn--basic {
+    background: #f0faf7; color: #0d7a6a; border: 1px solid #d1e0da;
+  }
+  .pricing__btn--basic:hover { background: #e0f5ef; }
+  .pricing__btn--premium { background: #0d7a6a; color: #ffffff; }
+  .pricing__btn--premium:hover { background: #0a6357; }
+
+  .pricing__note { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 10px; }
+
+  /* Footer reassurance strip */
+  .pricing__footer {
+    margin-top: 40px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 32px; flex-wrap: wrap;
+  }
+  .pricing__footer-item {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; color: #64748b;
+  }
+
+  @media (max-width: 680px) {
+    .pricing__cards { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+  }
+</style>
+
+<section class="pricing">
+  <div class="pricing__inner">
+
+    <div class="pricing__header">
+      <p class="pricing__eyebrow">Pricing</p>
+      <h2 class="pricing__title">Simple, transparent pricing</h2>
+      <p class="pricing__sub">No hidden fees. No long-term contracts. Cancel any time.</p>
+    </div>
+
+    <div class="pricing__cards">
+
+      <!-- Basic -->
+      <div class="pricing__card">
+        <div class="pricing__plan-name">Basic</div>
+        <div class="pricing__price">
+          <span class="pricing__currency">&euro;</span>
+          <span class="pricing__amount">19</span>
+        </div>
+        <div class="pricing__period">per month</div>
+        <p class="pricing__desc">Everything you need to study independently &mdash; lessons, practice, and progress tracking at your own pace.</p>
+        <ul class="pricing__features">
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f0faf7"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Written theory lessons
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f0faf7"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            1,000+ practice problems
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f0faf7"/><path d="M5.5 9l2 2 5-5" stroke="#0d7a6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Progress dashboard
+          </li>
+          <li class="pricing__feature pricing__feature--locked">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Video lessons
+          </li>
+          <li class="pricing__feature pricing__feature--locked">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Topic quizzes &amp; mock exams
+          </li>
+          <li class="pricing__feature pricing__feature--locked">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="#f3f4f6"/><rect x="6" y="8" width="6" height="5" rx="1" stroke="#94a3b8" stroke-width="1.4"/><path d="M7 8V6.5a2 2 0 014 0V8" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Teacher chat &amp; live sessions
+          </li>
+        </ul>
+        <a href="/signup?plan=basic" class="pricing__btn pricing__btn--basic">Get started with Basic</a>
+        <p class="pricing__note">First week free (excl. mock exams &amp; live sessions) &middot; Cancel any time</p>
+      </div>
+
+      <!-- Premium -->
+      <div class="pricing__card pricing__card--premium">
+        <div class="pricing__popular">Most popular</div>
+        <div class="pricing__plan-name">Premium</div>
+        <div class="pricing__price">
+          <span class="pricing__currency">&euro;</span>
+          <span class="pricing__amount">35</span>
+        </div>
+        <div class="pricing__period" style="color:#64748b">per month</div>
+        <p class="pricing__desc">Full access to everything, plus direct access to Tomislav for chat, feedback, and live 1-on-1 Zoom sessions.</p>
+        <ul class="pricing__features">
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Everything in Basic
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Video lessons
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Topic quizzes &amp; mock exams
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Direct teacher chat
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            1 live Zoom session per month
+          </li>
+          <li class="pricing__feature">
+            <svg class="pricing__feature-icon" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="rgba(13,122,106,0.25)"/><path d="M5.5 9l2 2 5-5" stroke="#4dd9c0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Mock exam written feedback
+          </li>
+        </ul>
+        <a href="/signup?plan=premium" class="pricing__btn pricing__btn--premium">Get started with Premium</a>
+        <p class="pricing__note">First week free (excl. mock exams &amp; live sessions) &middot; Cancel any time</p>
+      </div>
+
+    </div>
+
+    <div class="pricing__footer">
+      <div class="pricing__footer-item">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        First week free
+      </div>
+      <div class="pricing__footer-item">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cancel any time, no questions asked
+      </div>
+      <div class="pricing__footer-item">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0d7a6a" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#0d7a6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Croatian &amp; English content
+      </div>
+    </div>
+
+  </div>
+</section>
+

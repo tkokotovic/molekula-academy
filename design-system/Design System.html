@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Molekula Academy — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="components.css" />
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  /* sidebar */
+  aside {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    background: var(--surface); border-right: 1px solid var(--line); padding: 32px 24px;
+  }
+  .ds-logo { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -0.03em; }
+  .ds-logo .mark { position: relative; width: 30px; height: 34px; display: inline-grid; place-items: center; }
+  .ds-logo .mark .hex { position: absolute; inset: 0; }
+  .ds-logo .mark span { position: relative; color: #fff; font-family: var(--mono); font-weight: 700; font-size: 14px; }
+  aside nav { margin-top: 36px; display: grid; gap: 2px; }
+  aside nav a {
+    font-size: 14.5px; color: var(--ink-soft); text-decoration: none; padding: 8px 12px;
+    border-radius: 8px; transition: background .15s, color .15s;
+  }
+  aside nav a:hover { background: var(--accent-wash); color: var(--accent-ink); }
+  aside .meta { margin-top: 36px; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); line-height: 1.7; }
+
+  /* main */
+  main { padding: 64px 56px 120px; max-width: 1080px; }
+  .ds-hero h1 { font-size: 52px; font-weight: 800; }
+  .ds-hero p { color: var(--ink-soft); font-size: 19px; margin-top: 14px; max-width: 620px; }
+
+  section.block { margin-top: 72px; scroll-margin-top: 24px; }
+  .block > h2 { font-size: 30px; }
+  .block > .lead { color: var(--ink-soft); font-size: 16.5px; margin-top: 8px; max-width: 640px; }
+  .divider { height: 1px; background: var(--line); margin-top: 20px; }
+
+  .grid { display: grid; gap: 16px; margin-top: 28px; }
+  .panel { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 26px; }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+  code.tok { font-family: var(--mono); font-size: 12px; color: var(--accent-ink); background: var(--accent-wash); padding: 2px 7px; border-radius: 6px; }
+
+  /* color swatches */
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+  .sw { border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+  .sw .chip-color { height: 84px; }
+  .sw .sw-info { padding: 12px 14px; }
+  .sw .sw-name { font-weight: 600; font-size: 14.5px; }
+  .sw .sw-hex { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+
+  /* type rows */
+  .type-row { display: flex; align-items: baseline; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .type-row .ty-meta { flex-shrink: 0; width: 150px; }
+  .type-row .ty-name { font-weight: 600; font-size: 14px; }
+  .type-row .ty-spec { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 28px; }
+  .stack { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+  /* spacing scale viz */
+  .sp-bar { background: var(--accent); height: 16px; border-radius: 4px; }
+</style>
+</head>
+<body data-accent="teal">
+<aside>
+  <div class="ds-logo">
+    <span class="mark"><span class="hex hex-accent" style="position:absolute;inset:0;"></span><span>M</span></span>
+    Molekula
+  </div>
+  <nav>
+    <a href="#brand">Brand</a>
+    <a href="#color">Color</a>
+    <a href="#accents">Accent palettes</a>
+    <a href="#type">Typography</a>
+    <a href="#spacing">Spacing &amp; radii</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#motif">Chemistry motif</a>
+    <a href="#components">Components</a>
+  </nav>
+  <div class="meta">
+    tokens.css<br />components.css<br />v1.0 · 2026
+  </div>
+</aside>
+
+<main>
+  <div class="ds-hero">
+    <h1>Design System</h1>
+    <p>The visual language behind Molekula Academy — extracted from the landing page into reusable tokens and component primitives. Every future page draws from here.</p>
+  </div>
+
+  <!-- BRAND -->
+  <section class="block" id="brand">
+    <h2>Brand</h2>
+    <p class="lead">The wordmark pairs a solid-fill hexagon monogram with the display typeface. The hexagon nods to molecular structure without leaning on literal illustration.</p>
+    <div class="grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="panel" style="display:flex; align-items:center; gap:14px;">
+        <span class="mark" style="position:relative; width:42px; height:48px; display:inline-grid; place-items:center;">
+          <span class="hex hex-accent" style="position:absolute; inset:0;"></span>
+          <span style="position:relative; color:#fff; font-family:var(--mono); font-weight:700; font-size:20px;">M</span>
+        </span>
+        <span style="font-family:var(--display); font-weight:800; font-size:28px; letter-spacing:-0.03em;">Molekula<span style="color:var(--accent);">&nbsp;Academy</span></span>
+      </div>
+      <div class="panel" style="background:var(--deep); display:flex; align-items:center; gap:14px;">
+        <span class="mark" style="position:relative; width:42px; height:48px; display:inline-grid; place-items:center;">
+          <span class="hex" style="position:absolute; inset:0; background:var(--accent-bright);"></span>
+          <span style="position:relative; color:var(--deep); font-family:var(--mono); font-weight:700; font-size:20px;">M</span>
+        </span>
+        <span style="font-family:var(--display); font-weight:800; font-size:28px; letter-spacing:-0.03em; color:#fff;">Molekula<span style="color:var(--accent-bright);">&nbsp;Academy</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLOR -->
+  <section class="block" id="color">
+    <h2>Color</h2>
+    <p class="lead">A cool off-white canvas, near-black teal ink, and a deep-teal for dark sections. Accent sits on top (see palettes below).</p>
+    <div class="label" style="margin-top:24px;">Surfaces &amp; ink</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip-color" style="background:var(--bg);"></div><div class="sw-info"><div class="sw-name">Background</div><div class="sw-hex">--bg · #f5f8f7</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--surface); border-bottom:1px solid var(--line);"></div><div class="sw-info"><div class="sw-name">Surface</div><div class="sw-hex">--surface · #ffffff</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--ink);"></div><div class="sw-info"><div class="sw-name">Ink</div><div class="sw-hex">--ink · #15252b</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--ink-soft);"></div><div class="sw-info"><div class="sw-name">Ink soft</div><div class="sw-hex">--ink-soft · #46585e</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--ink-faint);"></div><div class="sw-info"><div class="sw-name">Ink faint</div><div class="sw-hex">--ink-faint · #7d8d92</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--line-strong);"></div><div class="sw-info"><div class="sw-name">Line strong</div><div class="sw-hex">--line-strong · #cfdcda</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--deep);"></div><div class="sw-info"><div class="sw-name">Deep</div><div class="sw-hex">--deep · #0b343c</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--deep-2);"></div><div class="sw-info"><div class="sw-name">Deep 2</div><div class="sw-hex">--deep-2 · #0e424b</div></div></div>
+    </div>
+  </section>
+
+  <!-- ACCENTS -->
+  <section class="block" id="accents">
+    <h2>Accent palettes</h2>
+    <p class="lead">Each palette is a 4-token group — primary, bright, ink, wash. Switch the whole theme by setting <code class="tok">data-accent</code> on any scope. Click to preview live.</p>
+    <div class="row" style="gap:10px;">
+      <button class="btn btn-ghost" onclick="document.body.dataset.accent='teal'">Teal</button>
+      <button class="btn btn-ghost" onclick="document.body.dataset.accent='blue'">Blue</button>
+      <button class="btn btn-ghost" onclick="document.body.dataset.accent='emerald'">Emerald</button>
+    </div>
+    <div class="swatches" style="grid-template-columns:repeat(4,1fr);">
+      <div class="sw"><div class="chip-color" style="background:var(--accent);"></div><div class="sw-info"><div class="sw-name">Accent</div><div class="sw-hex">--accent</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--accent-bright);"></div><div class="sw-info"><div class="sw-name">Accent bright</div><div class="sw-hex">--accent-bright</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--accent-ink);"></div><div class="sw-info"><div class="sw-name">Accent ink</div><div class="sw-hex">--accent-ink</div></div></div>
+      <div class="sw"><div class="chip-color" style="background:var(--accent-wash); border-bottom:1px solid var(--line);"></div><div class="sw-info"><div class="sw-name">Accent wash</div><div class="sw-hex">--accent-wash</div></div></div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="block" id="type">
+    <h2>Typography</h2>
+    <p class="lead">Three families with distinct jobs: <strong>Bricolage Grotesque</strong> for display, <strong>DM Sans</strong> for body &amp; UI, <strong>Space Mono</strong> for the technical voice — eyebrows, formulas, element tiles.</p>
+    <div class="panel" style="margin-top:28px;">
+      <div class="type-row"><div class="ty-meta"><div class="ty-name">Display / H1</div><div class="ty-spec">Bricolage · 800 · clamp 38–62</div></div><div style="font-family:var(--display); font-weight:800; font-size:42px; letter-spacing:-0.02em; line-height:1.05;">Chemistry, finally clear</div></div>
+      <div class="type-row"><div class="ty-meta"><div class="ty-name">Heading / H2</div><div class="ty-spec">Bricolage · 700 · 30–46</div></div><div style="font-family:var(--display); font-weight:700; font-size:32px; letter-spacing:-0.02em;">Built for your exam</div></div>
+      <div class="type-row"><div class="ty-meta"><div class="ty-name">Subhead / H3</div><div class="ty-spec">Bricolage · 700 · 24</div></div><div style="font-family:var(--display); font-weight:700; font-size:24px;">IB Chemistry (HL &amp; SL)</div></div>
+      <div class="type-row"><div class="ty-meta"><div class="ty-name">Body</div><div class="ty-spec">DM Sans · 400 · 17/1.6</div></div><div style="font-size:17px; color:var(--ink-soft); max-width:440px;">Structured lessons, quizzes, and live tutoring — guided by someone who's been in your seat.</div></div>
+      <div class="type-row" style="border-bottom:none;"><div class="ty-meta"><div class="ty-name">Eyebrow / Mono</div><div class="ty-spec">Space Mono · 700 · 12 · tracked</div></div><div class="eyebrow">Who it's for</div></div>
+    </div>
+  </section>
+
+  <!-- SPACING -->
+  <section class="block" id="spacing">
+    <h2>Spacing &amp; radii</h2>
+    <p class="lead">A step scale drives rhythm; sections breathe at <code class="tok">--sp-section</code> (96px). Radii range from tiles to pills.</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr;">
+      <div class="panel">
+        <div class="label">Spacing scale</div>
+        <div style="margin-top:18px; display:grid; gap:12px;">
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-2 8</span><div class="sp-bar" style="width:8px;"></div></div>
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-4 16</span><div class="sp-bar" style="width:16px;"></div></div>
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-5 22</span><div class="sp-bar" style="width:22px;"></div></div>
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-6 28</span><div class="sp-bar" style="width:28px;"></div></div>
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-7 40</span><div class="sp-bar" style="width:40px;"></div></div>
+          <div style="display:flex; align-items:center; gap:14px;"><span style="font-family:var(--mono); font-size:11px; width:64px; color:var(--ink-faint);">--sp-8 56</span><div class="sp-bar" style="width:56px;"></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="label">Radii</div>
+        <div style="margin-top:18px; display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+          <div class="stack"><div style="width:72px; height:72px; background:var(--accent-wash); border:1.5px solid var(--accent); border-radius:var(--radius-tile);"></div><span style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">tile 10</span></div>
+          <div class="stack"><div style="width:72px; height:72px; background:var(--accent-wash); border:1.5px solid var(--accent); border-radius:var(--radius-sm);"></div><span style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">sm 12</span></div>
+          <div class="stack"><div style="width:72px; height:72px; background:var(--accent-wash); border:1.5px solid var(--accent); border-radius:var(--radius);"></div><span style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">lg 18</span></div>
+          <div class="stack"><div style="width:72px; height:36px; background:var(--accent-wash); border:1.5px solid var(--accent); border-radius:var(--radius-pill);"></div><span style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">pill</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="block" id="buttons">
+    <h2>Buttons</h2>
+    <p class="lead">Pill buttons with a 2px lift on hover. Four variants for light and dark surfaces.</p>
+    <div class="row">
+      <button class="btn btn-primary">Start for free →</button>
+      <button class="btn btn-ghost">See plans</button>
+    </div>
+    <div class="row">
+      <div class="panel" style="background:var(--deep); display:flex; gap:14px; flex-wrap:wrap;">
+        <button class="btn btn-white">Choose plan</button>
+        <button class="btn btn-dark" style="border:1.5px solid rgba(255,255,255,.25);">Secondary dark</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOTIF -->
+  <section class="block" id="motif">
+    <h2>Chemistry motif</h2>
+    <p class="lead">Hexagons and periodic-style element tiles are the accent language — used sparingly. Tiles carry a mono symbol and number; the wash variant marks emphasis.</p>
+    <div class="row">
+      <div class="el-tile"><span class="num">1</span><span class="sym">H</span></div>
+      <div class="el-tile is-accent"><span class="num">6</span><span class="sym">C</span></div>
+      <div class="el-tile"><span class="num">8</span><span class="sym">O</span></div>
+      <div class="el-tile is-accent"><span class="num">7</span><span class="sym">N</span></div>
+      <div class="el-tile"><span class="num">11</span><span class="sym">Na</span></div>
+      <span class="hex hex-wash" style="width:56px; height:64px; font-size:17px;">IB</span>
+      <span class="hex" style="width:56px; height:64px; background:var(--accent);"></span>
+      <span class="hex" style="width:56px; height:64px; background:var(--accent-bright);"></span>
+    </div>
+    <div class="panel" style="margin-top:20px;">
+      <div class="label">Balanced equation chip</div>
+      <div style="margin-top:14px; font-family:var(--mono); font-size:24px; font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span>2 H<sub style="font-size:.62em;">2</sub></span><span style="color:var(--ink-faint);">+</span>
+        <span>O<sub style="font-size:.62em;">2</sub></span><span style="color:var(--accent);">→</span>
+        <span>2 H<sub style="font-size:.62em;">2</sub>O</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section class="block" id="components">
+    <h2>Components</h2>
+    <p class="lead">Cards, chips, badges and the pricing feature row — the recurring building blocks.</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="card" style="padding:26px;">
+        <span class="hex hex-wash" style="width:52px; height:58px; font-size:17px;">IB</span>
+        <h3 style="font-size:22px; margin-top:20px;">IB Chemistry</h3>
+        <p style="color:var(--ink-soft); margin-top:10px; font-size:15.5px;">Full syllabus, Paper 1–3 strategy and support for a top score.</p>
+        <span style="display:inline-flex; align-items:center; gap:7px; margin-top:18px; font-weight:600; color:var(--accent-ink); font-size:15px;">Learn more →</span>
+      </div>
+      <div class="card" style="padding:26px;">
+        <div style="display:flex; gap:3px; color:var(--accent);">★★★★★</div>
+        <blockquote style="margin:16px 0 0; font-family:var(--display); font-weight:600; font-size:18px; letter-spacing:-0.01em;">"First time organic chemistry actually made sense."</blockquote>
+        <div style="display:flex; align-items:center; gap:12px; margin-top:20px;">
+          <span class="hex hex-wash" style="width:40px; height:45px; font-size:15px;">M</span>
+          <div><div style="font-weight:600; font-size:14px;">Marta K.</div><div style="font-size:13px; color:var(--ink-faint);">IB Chemistry HL</div></div>
+        </div>
+      </div>
+      <div class="panel" style="background:var(--deep); color:#fff; position:relative;">
+        <span class="badge-popular" style="position:absolute; top:-12px; left:50%; transform:translateX(-50%);">Most popular</span>
+        <h3 style="color:#fff; font-size:22px;">Premium</h3>
+        <div style="display:flex; align-items:baseline; gap:4px; margin-top:14px;"><span style="font-family:var(--display); font-weight:800; font-size:44px; letter-spacing:-0.04em;">€39</span><span style="font-family:var(--mono); font-size:14px; color:rgba(255,255,255,.65);">/mo</span></div>
+        <div style="margin-top:18px; display:grid; gap:10px; font-size:14.5px;">
+          <div style="display:flex; gap:10px;"><span style="color:var(--accent-bright);">✓</span> Direct teacher chat</div>
+          <div style="display:flex; gap:10px;"><span style="color:var(--accent-bright);">✓</span> Live Zoom sessions</div>
+          <div style="display:flex; gap:10px; color:rgba(255,255,255,.45);"><span>✕</span> <span style="text-decoration:line-through;">Self-paced only</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:20px;">
+      <span class="chip">dr. med.</span>
+      <span class="chip">15+ godina iskustva</span>
+      <span class="chip">IB &amp; prijemni specijalist</span>
+      <span class="badge-popular">Most popular</span>
+    </div>
+  </section>
+</main>
+</body>
+</html>

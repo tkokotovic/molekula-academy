@@ -1,0 +1,278 @@
+<!-- ============================================
+     MOLEKULA ACADEMY — Section 01: Navigation Bar
+     Two variants: light (default) + dark (for hero overlay)
+     ============================================ -->
+
+<style>
+  :root {
+    --brand-dark: #0d1a2e;
+    --brand-teal: #0d7a6a;
+    --brand-teal-hover: #0a6357;
+    --brand-teal-light: #4dd9c0;
+    --text-muted: #4a5568;
+    --border: #d1d5db;
+    --bg-light: #f3f4f6;
+  }
+
+  .ma-nav {
+    background: #ffffff;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Scrolled state — add class "ma-nav--scrolled" via JS */
+  .ma-nav--scrolled {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  /* ── Logo ── */
+  .ma-nav__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .ma-nav__logo-icon {
+    width: 34px;
+    height: 38px;
+    background: var(--brand-teal);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ma-nav__logo-icon span {
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    display: inline-block;
+    transform: scaleX(1.35);
+    line-height: 1;
+  }
+  .ma-nav__logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+  .ma-nav__logo-text span { color: var(--brand-teal); }
+
+  /* ── Links ── */
+  .ma-nav__links {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ma-nav__links a {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 450;
+    transition: color 0.15s;
+  }
+  .ma-nav__links a:hover,
+  .ma-nav__links a.active { color: var(--brand-teal); }
+
+  /* ── Right side ── */
+  .ma-nav__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Language toggle */
+  .ma-nav__lang {
+    display: flex;
+    align-items: center;
+    background: var(--bg-light);
+    border-radius: 6px;
+    padding: 2px;
+    margin-right: 8px;
+  }
+  .ma-nav__lang-btn {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #374151;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .ma-nav__lang-btn.active {
+    background: #ffffff;
+    color: var(--brand-teal);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+
+  /* Login button */
+  .ma-nav__btn-login {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--brand-dark);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    font-family: inherit;
+  }
+  .ma-nav__btn-login:hover { border-color: var(--brand-teal); color: var(--brand-teal); }
+
+  /* CTA button */
+  .ma-nav__btn-cta {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--brand-teal);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .ma-nav__btn-cta:hover { background: var(--brand-teal-hover); }
+
+  /* ── Dark variant ── */
+  .ma-nav--dark {
+    background: var(--brand-dark);
+    border-bottom: 1px solid #1e2d42;
+  }
+  .ma-nav--dark .ma-nav__logo-text { color: #ffffff; }
+  .ma-nav--dark .ma-nav__links a { color: #94a3b8; }
+  .ma-nav--dark .ma-nav__links a:hover { color: var(--brand-teal-light); }
+  .ma-nav--dark .ma-nav__lang { background: #1e2d42; }
+  .ma-nav--dark .ma-nav__lang-btn { color: #64748b; }
+  .ma-nav--dark .ma-nav__lang-btn.active { background: #2d3f57; color: #e2e8f0; box-shadow: none; }
+  .ma-nav--dark .ma-nav__btn-login { color: #e2e8f0; border-color: #2d3f57; }
+  .ma-nav--dark .ma-nav__btn-login:hover { border-color: var(--brand-teal-light); color: var(--brand-teal-light); }
+
+  /* ── Mobile hamburger (≤768px) ── */
+  .ma-nav__hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px;
+    background: none;
+    border: none;
+  }
+  .ma-nav__hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--brand-dark);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .ma-nav__mobile-menu {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 16px 24px 20px;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .ma-nav__mobile-menu.open { display: flex; }
+  .ma-nav__mobile-menu a {
+    font-size: 15px;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-family: 'Inter', sans-serif;
+  }
+  .ma-nav__mobile-menu .ma-nav__btn-cta {
+    margin-top: 12px;
+    text-align: center;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .ma-nav__links,
+    .ma-nav__lang,
+    .ma-nav__btn-login { display: none; }
+    .ma-nav__hamburger { display: flex; }
+  }
+</style>
+
+<!-- Light nav (default) -->
+<nav class="ma-nav" id="main-nav">
+  <a class="ma-nav__logo" href="/">
+    <div class="ma-nav__logo-icon">
+      <span>M</span>
+    </div>
+    <span class="ma-nav__logo-text">Molekula <span>Academy</span></span>
+  </a>
+
+  <ul class="ma-nav__links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/blog">Blog</a></li>
+    <li><a href="/pricing">Pricing</a></li>
+  </ul>
+
+  <div class="ma-nav__right">
+    <div class="ma-nav__lang">
+      <button class="ma-nav__lang-btn active" onclick="setLang('hr', this)">HR</button>
+      <button class="ma-nav__lang-btn" onclick="setLang('en', this)">EN</button>
+    </div>
+    <a href="/login" class="ma-nav__btn-login">Log in</a>
+    <a href="/signup" class="ma-nav__btn-cta">Get started</a>
+    <button class="ma-nav__hamburger" onclick="toggleMenu()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile dropdown menu -->
+<div class="ma-nav__mobile-menu" id="mobile-menu">
+  <a href="/">Home</a>
+  <a href="/about">About</a>
+  <a href="/blog">Blog</a>
+  <a href="/pricing">Pricing</a>
+  <a href="/login">Log in</a>
+  <a href="/signup" class="ma-nav__btn-cta">Get started →</a>
+</div>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('mobile-menu').classList.toggle('open');
+  }
+  function setLang(lang, btn) {
+    document.querySelectorAll('.ma-nav__lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Hook into your i18n system here: e.g. window.location = '/' + lang + window.location.pathname
+  }
+  // Scroll effect — adds frosted glass on scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('main-nav').classList.toggle('ma-nav--scrolled', window.scrollY > 20);
+  });
+</script>

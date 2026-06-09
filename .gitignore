@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Database
+backend/molekula.db
+backend/molekula.db-shm
+backend/molekula.db-wal
+
+# Uploads (user-uploaded files — not committed)
+backend/uploads/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
