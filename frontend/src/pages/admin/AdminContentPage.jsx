@@ -1,9 +1,207 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   getCourses, createCourse, updateCourse, setCourseStatus, deleteCourse,
   getTopics, createTopic, updateTopic, setTopicStatus, deleteTopicById,
   getLessonsByTopic, createLesson, updateLesson, setLessonStatus, deleteLessonById,
 } from '../../api/client';
+
+// ─── Block modal ──────────────────────────────────────────────────────────────
+
+function BlockModal({ initial, lessonId, onSave, onClose }) {
+  const [type,    setType]    = useState(initial?.type    || 'text');
+  const [content, setContent] = useState(
+    initial ? JSON.stringify(initial.content || {}, null, 2) : '{}'
+  );
+  const [saving, setSaving] = useState(false);
+  const [err,    setErr]    = useState('');
+
+  // Content template when type changes
+  useEffect(() => {
+    if (initial) return;
+    const templates = {
+      text:     '{\n  "text": ""\n}',
+      video:    '{\n  "url": "",\n  "caption": ""\n}',
+      equation: '{\n  "latex": "",\n  "caption": ""\n}',
+      image:    '{\n  "url": "",\n  "alt": "",\n  "caption": ""\n}',
+      summary:  '{\n  "text": ""\n}',
+      link:     '{\n  "url": "",\n  "label": ""\n}',
+      pdf:      '{\n  "url": "",\n  "label": ""\n}',
+      table:    '{\n  "caption": "",\n  "headers": [],\n  "rows": []\n}',
+    };
+    setContent(templates[type] || '{}');
+  }, [type]);
+
+  async function submit(e) {
+    e.preventDefault();
+    let parsed;
+    try { parsed = JSON.parse(content); }
+    catch { setErr('Neispravan JSON sadržaj.'); return; }
+    setSaving(true); setErr('');
+    try {
+      await onSave(type, parsed);
+      onClose();
+    } catch (ex) {
+      setErr(ex.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--line)', padding: 28, width: 520, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>{initial ? 'Uredi blok' : 'Novi blok'}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--ink-soft)', padding: 4 }}>×</button>
+        </div>
+        <form onSubmit={submit}>
+          {!initial && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 8, fontFamily: 'var(--mono)', letterSpacing: '.06em', textTransform: 'uppercase' }}>Vrsta bloka</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {BLOCK_TYPES.map(bt => (
+                  <button
+                    key={bt.type}
+                    type="button"
+                    onClick={() => setType(bt.type)}
+                    style={{ padding: '6px 12px', borderRadius: 8, border: `1.5px solid ${type === bt.type ? 'var(--accent)' : 'var(--line)'}`, background: type === bt.type ? 'var(--accent-wash)' : 'var(--bg)', color: type === bt.type ? 'var(--accent-ink)' : 'var(--ink-soft)', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    {bt.icon} {bt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 6, fontFamily: 'var(--mono)', letterSpacing: '.06em', textTransform: 'uppercase' }}>
+              Sadržaj (JSON)
+            </div>
+            <textarea
+              style={{ width: '100%', boxSizing: 'border-box', minHeight: 160, padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 13, fontFamily: 'var(--mono)', resize: 'vertical' }}
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+          {err && <p style={{ color: '#ef4444', fontSize: 13, margin: '0 0 8px' }}>{err}</p>}
+          <button type="submit" disabled={saving} style={{ width: '100%', padding: '10px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? .6 : 1 }}>
+            {saving ? 'Snimam…' : 'Spremi blok'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Blocks column ────────────────────────────────────────────────────────────
+
+function BlocksColumn({ lesson, onClose }) {
+  const [blocks,  setBlocks]  = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal,   setModal]   = useState(null); // null | 'new' | block-obj
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setBlocks(await getLessonBlocks(lesson.id)); }
+    finally { setLoading(false); }
+  }, [lesson.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSave(type, content) {
+    if (modal === 'new') {
+      const b = await createLessonBlock(lesson.id, type, content);
+      setBlocks(bs => [...bs, b]);
+    } else {
+      const b = await updateLessonBlock(modal.id, content);
+      setBlocks(bs => bs.map(x => x.id === b.id ? b : x));
+    }
+  }
+
+  async function handleDelete(block) {
+    if (!window.confirm('Obriši ovaj blok sadržaja?')) return;
+    await deleteLessonBlock(block.id);
+    setBlocks(bs => bs.filter(x => x.id !== block.id));
+  }
+
+  async function move(block, dir) {
+    const idx = blocks.findIndex(b => b.id === block.id);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= blocks.length) return;
+    const reordered = [...blocks];
+    [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
+    setBlocks(reordered);
+    await reorderLessonBlocks(lesson.id, reordered.map(b => b.id));
+  }
+
+  return (
+    <div style={{ flex: '1 1 0', minWidth: 240, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', borderLeft: '1px solid var(--line)' }}>
+      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Sadržaj</span>
+          <span style={{ marginLeft: 6, fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-soft)' }}>{lesson.title}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => setModal('new')}
+            title="Novi blok"
+            style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, width: 26, height: 26, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >＋</button>
+          <button
+            onClick={onClose}
+            title="Zatvori"
+            style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 7, width: 26, height: 26, fontSize: 16, cursor: 'pointer', color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >×</button>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+        {loading && <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontSize: 13 }}>Učitavam…</div>}
+        {!loading && blocks.length === 0 && (
+          <div style={{ padding: '32px 12px', textAlign: 'center', color: 'var(--ink-soft)', fontSize: 13, fontStyle: 'italic' }}>
+            Nema blokova sadržaja.<br />Klikni ＋ za dodavanje.
+          </div>
+        )}
+        {blocks.map((b, i) => {
+          const bt = BLOCK_TYPES.find(x => x.type === b.type);
+          return (
+            <div
+              key={b.id}
+              style={{ padding: '10px 10px', borderRadius: 9, marginBottom: 4, border: '1px solid var(--line)', background: 'var(--surface)' }}
+            >
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{bt?.icon || '📦'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
+                    {bt?.label || b.type}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', wordBreak: 'break-word', lineHeight: 1.35 }}>
+                    {blockPreview(b)}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
+                  <button onClick={() => move(b, -1)} disabled={i === 0}          style={{ background: 'none', border: 'none', cursor: i === 0 ? 'default' : 'pointer', color: i === 0 ? 'var(--line)' : 'var(--ink-soft)', fontSize: 12, padding: 2 }}>▲</button>
+                  <button onClick={() => move(b, +1)} disabled={i === blocks.length-1} style={{ background: 'none', border: 'none', cursor: i === blocks.length-1 ? 'default' : 'pointer', color: i === blocks.length-1 ? 'var(--line)' : 'var(--ink-soft)', fontSize: 12, padding: 2 }}>▼</button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => setModal(b)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink-soft)', cursor: 'pointer', fontWeight: 600 }}>Uredi</button>
+                <button onClick={() => handleDelete(b)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid color-mix(in srgb,#ef4444 30%,transparent)', background: 'color-mix(in srgb,#ef4444 8%,transparent)', color: '#dc2626', cursor: 'pointer', fontWeight: 600 }}>Obriši</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {modal && (
+        <BlockModal
+          initial={modal === 'new' ? null : modal}
+          lessonId={lesson.id}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -363,12 +561,15 @@ function Row({ label, status, isSelected, onClick, onEdit, onDelete, statusLoadi
 // ─── AdminContentPage ─────────────────────────────────────────────────────────
 
 export default function AdminContentPage() {
+  const navigate = useNavigate();
+
   // ── state ──
   const [courses,       setCourses]       = useState([]);
   const [topics,        setTopics]        = useState([]);
   const [lessons,       setLessons]       = useState([]);
   const [selCourse,     setSelCourse]     = useState(null);
   const [selTopic,      setSelTopic]      = useState(null);
+  const [selLesson,     setSelLesson]     = useState(null);
   const [loadingC,      setLoadingC]      = useState(true);
   const [loadingT,      setLoadingT]      = useState(false);
   const [loadingL,      setLoadingL]      = useState(false);
@@ -387,13 +588,13 @@ export default function AdminContentPage() {
 
   const loadTopics = useCallback((courseId) => {
     setLoadingT(true);
-    setTopics([]); setLessons([]); setSelTopic(null);
+    setTopics([]); setLessons([]); setSelTopic(null); setSelLesson(null);
     getTopics(courseId).then(setTopics).catch(() => {}).finally(() => setLoadingT(false));
   }, []);
 
   const loadLessons = useCallback((topicId) => {
     setLoadingL(true);
-    setLessons([]);
+    setLessons([]); setSelLesson(null);
     getLessonsByTopic(topicId).then(setLessons).catch(() => {}).finally(() => setLoadingL(false));
   }, []);
 
@@ -520,17 +721,28 @@ export default function AdminContentPage() {
             : lessons.length === 0
               ? <Empty>Nema lekcija</Empty>
               : lessons.map(l => (
-                  <Row
-                    key={l.id}
-                    label={l.title}
-                    status={l.status || 'draft'}
-                    isSelected={false}
-                    onClick={() => {}}
-                    onEdit={() => setLessonModal(l)}
-                    onDelete={() => handleDeleteLesson(l)}
-                    statusLoading={statusBusy[`l-${l.id}`]}
-                    onStatusClick={() => cycleStatus(`l-${l.id}`, l.id, l.status || 'draft', setLessonStatus)}
-                  />
+                  <div key={l.id}>
+                    <Row
+                      label={l.title}
+                      status={l.status || 'draft'}
+                      isSelected={selLesson?.id === l.id}
+                      onClick={() => setSelLesson(l)}
+                      onEdit={() => setLessonModal(l)}
+                      onDelete={() => handleDeleteLesson(l)}
+                      statusLoading={statusBusy[`l-${l.id}`]}
+                      onStatusClick={() => cycleStatus(`l-${l.id}`, l.id, l.status || 'draft', setLessonStatus)}
+                    />
+                    {selLesson?.id === l.id && (
+                      <div style={{ padding: '4px 10px 8px' }}>
+                        <button
+                          onClick={() => navigate(`/admin/lessons/${l.id}/edit`)}
+                          style={{ width: '100%', padding: '7px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                        >
+                          ✏️ Uredi sadržaj lekcije
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))
         }
       </Column>

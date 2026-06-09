@@ -170,6 +170,102 @@ export async function getLessonBlocks(lessonId) {
   return data.blocks;
 }
 
+export async function createLessonBlock(lessonId, type, content) {
+  const data = await apiFetch(`/api/teacher/lessons/${lessonId}/blocks`, {
+    method: 'POST',
+    body: JSON.stringify({ type, content }),
+  });
+  return data.block;
+}
+
+export async function updateLessonBlock(blockId, content) {
+  const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ content }),
+  });
+  return data.block;
+}
+
+export async function deleteLessonBlock(blockId) {
+  return apiFetch(`/api/teacher/blocks/${blockId}`, { method: 'DELETE' });
+}
+
+export async function reorderLessonBlocks(lessonId, ids) {
+  const data = await apiFetch(`/api/teacher/lessons/${lessonId}/blocks/reorder`, {
+    method: 'PATCH',
+    body: JSON.stringify({ ids }),
+  });
+  return data.blocks;
+}
+
+// ─── Question bank ────────────────────────────────────────────────────────────
+
+export async function getQuestions(params = {}) {
+  const qs = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+  ).toString();
+  const data = await apiFetch(`/api/teacher/questions${qs ? `?${qs}` : ''}`);
+  return data.questions;
+}
+
+export async function createQuestion(fields) {
+  const data = await apiFetch('/api/teacher/questions', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.question;
+}
+
+export async function updateQuestion(id, fields) {
+  const data = await apiFetch(`/api/teacher/questions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+  return data.question;
+}
+
+export async function setQuestionStatus(id, status) {
+  const data = await apiFetch(`/api/teacher/questions/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  return data.question;
+}
+
+export async function deleteQuestion(id) {
+  return apiFetch(`/api/teacher/questions/${id}`, { method: 'DELETE' });
+}
+
+// ─── Teacher quizzes ──────────────────────────────────────────────────────────
+
+export async function getTeacherQuizzes(params = {}) {
+  const qs = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+  ).toString();
+  const data = await apiFetch(`/api/teacher/quizzes${qs ? `?${qs}` : ''}`);
+  return data.quizzes;
+}
+
+export async function createTeacherQuiz(fields) {
+  const data = await apiFetch('/api/teacher/quizzes', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.quiz;
+}
+
+export async function updateTeacherQuiz(id, fields) {
+  const data = await apiFetch(`/api/teacher/quizzes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+  return data.quiz;
+}
+
+export async function deleteTeacherQuiz(id) {
+  return apiFetch(`/api/teacher/quizzes/${id}`, { method: 'DELETE' });
+}
+
 // ─── Student progress ─────────────────────────────────────────────────────────
 
 export async function getLessonProgress(lessonId) {

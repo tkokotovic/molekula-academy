@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { login, isAuthenticated } from '../api/client';
+import { login, isAuthenticated, getToken } from '../api/client';
+
+function getRoleFromToken(token) {
+  try { return JSON.parse(atob(token.split('.')[1])).role; } catch { return null; }
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  if (isAuthenticated()) return <Navigate to="/courses" replace />;
+  if (isAuthenticated()) {
+    const role = getRoleFromToken(getToken());
+    return <Navigate to={role === 'teacher' || role === 'owner' ? '/admin' : '/courses'} replace />;
+  }
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -16,8 +23,9 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/courses');
+      const { token } = await login(email, password);
+      const role = getRoleFromToken(token);
+      navigate(role === 'teacher' || role === 'owner' ? '/admin' : '/courses');
     } catch (err) {
       setError(err.message);
     } finally {

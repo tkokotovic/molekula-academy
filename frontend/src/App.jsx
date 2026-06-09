@@ -1,6 +1,7 @@
+import { Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/AppShell';
-import AdminShell from './components/AdminShell';
+import TeacherShell from './components/TeacherShell';
 import CoursesPage from './pages/CoursesPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import LessonPage from './pages/LessonPage';
@@ -15,11 +16,30 @@ import AdminStudentDetailPage from './pages/admin/AdminStudentDetailPage';
 import AdminRevenuePage from './pages/admin/AdminRevenuePage';
 import AdminContentPage from './pages/admin/AdminContentPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
+import AdminQuestionsPage from './pages/admin/AdminQuestionsPage';
+import LessonEditorPage from './pages/admin/LessonEditorPage';
 import LoginPage from './pages/LoginPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import LandingPage from './pages/LandingPage';
 import { isAuthenticated, getToken } from './api/client';
+
+// ─── Error boundary (dev debugging) ───────────────────────────────────────────
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'monospace', color: '#dc2626', whiteSpace: 'pre-wrap', fontSize: 13 }}>
+          <b>Render error:</b>{'\n'}{this.state.error?.message}{'\n\n'}{this.state.error?.stack}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 
@@ -30,7 +50,6 @@ function RequireAuth({ children }) {
 
 function RequireTeacher({ children }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
-  // Decode role from JWT payload (no extra fetch needed)
   try {
     const payload = JSON.parse(atob(getToken().split('.')[1]));
     if (payload.role !== 'teacher' && payload.role !== 'owner') {
@@ -39,7 +58,7 @@ function RequireTeacher({ children }) {
   } catch {
     return <Navigate to="/login" replace />;
   }
-  return <AppShell><AdminShell>{children}</AdminShell></AppShell>;
+  return <TeacherShell>{children}</TeacherShell>;
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
@@ -72,6 +91,8 @@ export default function App() {
         <Route path="/admin/revenue"            element={<RequireTeacher><AdminRevenuePage /></RequireTeacher>} />
         <Route path="/admin/content"            element={<RequireTeacher><AdminContentPage /></RequireTeacher>} />
         <Route path="/admin/messages"           element={<RequireTeacher><AdminMessagesPage /></RequireTeacher>} />
+        <Route path="/admin/questions"           element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
+        <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
       </Routes>
     </BrowserRouter>
   );
