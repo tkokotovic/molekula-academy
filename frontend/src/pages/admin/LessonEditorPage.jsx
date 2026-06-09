@@ -13,6 +13,7 @@ import {
   deleteLessonBlock, reorderLessonBlocks,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
+import SmilesDrawer from 'smiles-drawer';
 
 // ─── Block type registry ───────────────────────────────────────────────────────
 
@@ -87,6 +88,35 @@ const Field = ({ label, hint, children }) => (
     {children}
   </label>
 );
+
+// ─── SMILES → 2D structure SVG ────────────────────────────────────────────────
+
+function MoleculeCanvas({ smiles, width = 300, height = 220 }) {
+  const svgRef = useRef(null);
+  const drawer = useRef(null);
+
+  useEffect(() => {
+    drawer.current = new SmilesDrawer.SvgDrawer({ width, height });
+  }, [width, height]);
+
+  useEffect(() => {
+    if (!smiles?.trim() || !svgRef.current || !drawer.current) return;
+    SmilesDrawer.parse(
+      smiles.trim(),
+      tree => drawer.current.draw(tree, svgRef.current, 'light'),
+      _err => { if (svgRef.current) svgRef.current.innerHTML = ''; }
+    );
+  }, [smiles]);
+
+  return (
+    <svg
+      ref={svgRef}
+      width={width}
+      height={height}
+      style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}
+    />
+  );
+}
 
 // ─── Visual block renderers (these ARE the editable content) ───────────────────
 
@@ -244,15 +274,29 @@ function SummaryBlock({ content, onChange }) {
   );
 }
 
+function renderKatex(latex, el) {
+  if (!el || !latex) return;
+  const go = () => {
+    try { window.katex.render(latex, el, { throwOnError: false, displayMode: true }); }
+    catch { el.textContent = latex; }
+  };
+  if (window.katex) go();
+  else window.addEventListener('load', go, { once: true });
+}
+
 function EquationBlock({ content, onChange }) {
   const [editing, setEditing] = useState(!content.latex);
   const previewRef = useRef(null);
+  const liveRef    = useRef(null);
 
+  // Full-size preview (display mode)
   useEffect(() => {
-    if (!editing && previewRef.current && content.latex && window.katex) {
-      try { window.katex.render(content.latex, previewRef.current, { throwOnError: false, displayMode: true }); }
-      catch { previewRef.current.textContent = content.latex; }
-    }
+    if (!editing) renderKatex(content.latex, previewRef.current);
+  }, [content.latex, editing]);
+
+  // Live preview while editing
+  useEffect(() => {
+    if (editing) renderKatex(content.latex, liveRef.current);
   }, [content.latex, editing]);
 
   if (editing) {
@@ -264,9 +308,13 @@ function EquationBlock({ content, onChange }) {
           style={{ ...inp, minHeight: 72, resize: 'vertical', fontFamily: 'var(--mono)', fontSize: 13 }}
           value={content.latex || ''}
           onChange={e => onChange({ ...content, latex: e.target.value })}
-          placeholder="\ce{H_2SO_4 + 2NaOH -> Na_2SO_4 + 2H_2O}"
+          placeholder="\ce{H2SO4 + 2NaOH -> Na2SO4 + 2H2O}"
           spellCheck={false}
         />
+        <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 6, fontFamily: 'var(--mono)', lineHeight: 1.7 }}>
+          {'Kemija: \\ce{H2SO4} · Reakcija: \\ce{A -> B} · Ekvilibrij: \\ce{A <=> B}'}<br/>
+          {'Matematika: E=mc^2 · Razlomak: \\frac{1}{2} · Integral: \\int_a^b f(x)\\,dx'}
+        </div>
         <input
           style={{ ...inp, marginTop: 8 }}
           value={content.caption || ''}
@@ -275,7 +323,7 @@ function EquationBlock({ content, onChange }) {
         />
         {content.latex && (
           <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '14px 20px', marginTop: 10, textAlign: 'center', overflowX: 'auto' }}>
-            <div ref={previewRef} />
+            <div ref={liveRef} />
           </div>
         )}
         <button type="button" onClick={() => setEditing(false)}
@@ -374,9 +422,14 @@ function MediaSettings({ type, content, onChange }) {
     case 'molecule3d':
       return (
         <>
-          <Field label="SMILES notacija" hint="npr. CCO za etanol">
+          <Field label="SMILES notacija" hint="npr. CCO (etanol) · c1ccccc1 (benzen) · CC(=O)O (octena kiselina)">
             <input style={{ ...inp, fontFamily: 'var(--mono)' }} value={content.smiles || ''} onChange={e => onChange({ ...content, smiles: e.target.value })} placeholder="C(C(=O)O)N" />
           </Field>
+          {content.smiles && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px', marginBottom: 12, textAlign: 'center' }}>
+              <MoleculeCanvas smiles={content.smiles} width={260} height={180} />
+            </div>
+          )}
           <Field label="Ime molekule">
             <input style={inp} value={content.name || ''} onChange={e => onChange({ ...content, name: e.target.value })} placeholder="npr. Glicin" />
           </Field>
@@ -565,15 +618,19 @@ function MediaPreview({ type, content, onOpenSettings }) {
       );
 
     case 'molecule3d':
+      if (content.smiles) {
+        return (
+          <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px solid color-mix(in srgb, var(--accent) 25%, transparent)', borderRadius: 10, padding: '16px 24px', textAlign: 'center' }}>
+            {content.name && <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', marginBottom: 8 }}>{content.name}</div>}
+            <MoleculeCanvas smiles={content.smiles} width={320} height={220} />
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-faint)', marginTop: 6 }}>{content.smiles}</div>
+          </div>
+        );
+      }
       return (
-        <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px solid color-mix(in srgb, var(--accent) 25%, transparent)', borderRadius: 10, padding: '20px 24px', textAlign: 'center' }}>
+        <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px dashed color-mix(in srgb, var(--accent) 35%, transparent)', borderRadius: 10, padding: '32px 24px', textAlign: 'center', cursor: 'pointer' }} onClick={onOpenSettings}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>⚗️</div>
-          {content.name ? (
-            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', marginBottom: 4 }}>{content.name}</div>
-          ) : (
-            <div style={{ color: 'var(--ink-faint)', fontSize: 14 }}>Klikni ⚙ za unos molekule</div>
-          )}
-          {content.smiles && <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>{content.smiles}</div>}
+          <div style={{ color: 'var(--ink-faint)', fontSize: 14 }}>Klikni ⚙ za unos SMILES notacije molekule</div>
         </div>
       );
 
