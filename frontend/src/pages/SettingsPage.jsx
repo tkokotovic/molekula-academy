@@ -98,17 +98,18 @@ function StatusBanner({ type, message }) {
 // ─── Profile section ──────────────────────────────────────────────────────────
 
 function ProfileSection({ user, onUpdate, t }) {
-  const [name,    setName]    = useState(user.name);
-  const [email,   setEmail]   = useState(user.email);
-  const [loading, setLoading] = useState(false);
-  const [status,  setStatus]  = useState(null);
+  const [name,     setName]     = useState(user.name);
+  const [email,    setEmail]    = useState(user.email);
+  const [examDate, setExamDate] = useState(user.exam_date ? user.exam_date.slice(0, 10) : '');
+  const [loading,  setLoading]  = useState(false);
+  const [status,   setStatus]   = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setStatus(null);
     try {
-      const updated = await updateProfile({ name, email });
+      const updated = await updateProfile({ name, email, exam_date: examDate || null });
       onUpdate(updated);
       setStatus({ type: 'success', message: t('Profil uspješno ažuriran.', 'Profile updated successfully.') });
     } catch (err) {
@@ -127,6 +128,9 @@ function ProfileSection({ user, onUpdate, t }) {
         </Field>
         <Field label="E-mail">
           <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ana@email.com" />
+        </Field>
+        <Field label={t('Datum ispita / mature', 'Exam date')}>
+          <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} />
         </Field>
         <SaveButton loading={loading} label={t('Spremi promjene', 'Save changes')} />
       </form>

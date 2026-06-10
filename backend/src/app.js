@@ -68,6 +68,9 @@ const { studentRouter: sessStudentRouter, teacherRouter: sessTeacherRouter } = r
 app.use('/api/student', sessStudentRouter);
 app.use('/api/teacher', sessTeacherRouter);
 
+// Notifications
+app.use('/api/student', require('./routes/notifications'));
+
 // File upload
 app.use('/api/teacher/upload', require('./routes/upload'));
 

@@ -48,7 +48,12 @@ function calculateStreak(activityDates) {
  * Counts only published lessons (status = 'published').
  */
 function buildCourseStats(studentId) {
-  const courses = db.prepare("SELECT * FROM courses WHERE status = 'published' ORDER BY position, created_at").all();
+  const courses = db.prepare(`
+    SELECT c.* FROM courses c
+    JOIN enrollments e ON c.id = e.course_id
+    WHERE e.student_id = ? AND c.status = 'published'
+    ORDER BY e.enrolled_at ASC
+  `).all(studentId);
 
   return courses.map(course => {
     // All published lessons under this course

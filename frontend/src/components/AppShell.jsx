@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logout, getMe, getStudentSessions } from '../api/client';
+import { logout, getMe, getStudentSessions, getNotifications, markNotificationRead, markAllNotificationsRead } from '../api/client';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +144,165 @@ function Sidebar({ lang, onNav, nextSession }) {
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
+// ─── NotifDropdown ────────────────────────────────────────────────────────────
+
+function NotifDropdown({ lang }) {
+  const [open,   setOpen]   = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const ref = useRef(null);
+  const navigate = useNavigate();
+
+  const load = useCallback(async () => {
+    try {
+      const data = await getNotifications();
+      setNotifs(data.notifications ?? []);
+      setUnread(data.unread ?? 0);
+    } catch {}
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  async function handleClick(n) {
+    if (!n.read_at) {
+      await markNotificationRead(n.id);
+      setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
+      setUnread(u => Math.max(0, u - 1));
+    }
+    if (n.action_url) { setOpen(false); navigate(n.action_url); }
+  }
+
+  async function handleReadAll(e) {
+    e.stopPropagation();
+    await markAllNotificationsRead();
+    setNotifs(prev => prev.map(x => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })));
+    setUnread(0);
+  }
+
+  function timeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return lang === 'en' ? 'just now'         : 'upravo';
+    if (m < 60) return lang === 'en' ? `${m}m ago`        : `prije ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return lang === 'en' ? `${h}h ago`        : `prije ${h}h`;
+    const d = Math.floor(h / 24);
+    return lang === 'en' ? `${d}d ago` : `prije ${d}d`;
+  }
+
+  const TYPE_COLOUR = { session: '#6366f1', homework: '#f59e0b', quiz: '#1ec8b6', general: 'var(--accent)' };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className="icon-btn hide-sm"
+        aria-label="Notifications"
+        onClick={() => setOpen(o => !o)}
+        style={{ position: 'relative' }}
+      >
+        <Icon.bell width={18} height={18} />
+        {unread > 0 && (
+          <span style={{
+            position: 'absolute', top: 4, right: 4,
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#d6492f', border: '1.5px solid var(--surface)',
+          }} />
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          width: 340, maxHeight: 440, overflowY: 'auto',
+          background: 'var(--surface)', border: '1.5px solid var(--line)',
+          borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+          zIndex: 9999,
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px 10px',
+            borderBottom: '1px solid var(--line)',
+          }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
+              {lang === 'en' ? 'Notifications' : 'Obavijesti'}
+              {unread > 0 && (
+                <span style={{
+                  marginLeft: 8, padding: '1px 7px', borderRadius: 99,
+                  background: '#d6492f', color: '#fff',
+                  fontSize: 11, fontWeight: 700,
+                }}>{unread}</span>
+              )}
+            </span>
+            {unread > 0 && (
+              <button
+                onClick={handleReadAll}
+                style={{
+                  fontSize: 12, color: 'var(--accent-ink)', background: 'none',
+                  border: 'none', cursor: 'pointer', padding: 0,
+                }}
+              >
+                {lang === 'en' ? 'Mark all read' : 'Označi sve pročitanim'}
+              </button>
+            )}
+          </div>
+
+          {/* List */}
+          {notifs.length === 0 ? (
+            <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: 13.5 }}>
+              {lang === 'en' ? 'No notifications yet.' : 'Nema obavijesti.'}
+            </div>
+          ) : notifs.map(n => (
+            <button
+              key={n.id}
+              onClick={() => handleClick(n)}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                width: '100%', padding: '12px 16px',
+                background: n.read_at ? 'transparent' : 'color-mix(in srgb, var(--accent) 5%, transparent)',
+                border: 'none', borderBottom: '1px solid var(--line)',
+                cursor: 'pointer', textAlign: 'left',
+                transition: 'background .1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = n.read_at ? 'transparent' : 'color-mix(in srgb, var(--accent) 5%, transparent)'; }}
+            >
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                marginTop: 5,
+                background: n.read_at ? 'var(--line)' : (TYPE_COLOUR[n.type] ?? 'var(--accent)'),
+              }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: n.read_at ? 400 : 600, color: 'var(--ink)', marginBottom: 2 }}>
+                  {lang === 'en' ? n.title_en : n.title_hr}
+                </div>
+                {(lang === 'en' ? n.body_en : n.body_hr) && (
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.4 }}>
+                    {lang === 'en' ? n.body_en : n.body_hr}
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 4, fontFamily: 'var(--mono)' }}>
+                  {timeAgo(n.created_at)}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+
 function Topbar({ user, lang, setLang, theme, setTheme, onMenu }) {
   const navigate  = useNavigate();
   const initials  = user
@@ -192,10 +351,7 @@ function Topbar({ user, lang, setLang, theme, setTheme, onMenu }) {
       </button>
 
       {/* Notifications */}
-      <button className="icon-btn hide-sm" aria-label="Notifications">
-        <Icon.bell width={18} height={18} />
-        <span className="dot" />
-      </button>
+      <NotifDropdown lang={lang} />
 
       {/* Avatar / logout */}
       <button className="avatar-btn" onClick={handleLogout} title={lang === 'en' ? 'Log out' : 'Odjava'}>

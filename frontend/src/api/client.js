@@ -566,3 +566,17 @@ export async function updateSession(id, fields) {
 export async function deleteSession(id) {
   return apiFetch(`/api/teacher/sessions/${id}`, { method: 'DELETE' });
 }
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function getNotifications() {
+  return apiFetch('/api/student/notifications');
+}
+
+export async function markNotificationRead(id) {
+  return apiFetch(`/api/student/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead() {
+  return apiFetch('/api/student/notifications/read-all', { method: 'PATCH' });
+}
