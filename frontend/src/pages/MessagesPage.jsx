@@ -25,7 +25,7 @@ function groupByDay(messages) {
   for (const msg of messages) {
     const day = new Date(msg.created_at).toDateString();
     if (day !== lastDay) {
-      groups.push({ type: 'divider', label: formatDay(msg.created_at) });
+      groups.push({ type: 'divider', day, label: formatDay(msg.created_at) });
       lastDay = day;
     }
     groups.push({ type: 'message', ...msg });
@@ -361,10 +361,10 @@ export default function MessagesPage() {
                 {t('Još nema poruka. Postavi svoje prvo pitanje!', 'No messages yet. Ask your first question!')}
               </div>
             )}
-            {items.map((item, i) =>
+            {items.map(item =>
               item.type === 'divider'
-                ? <DayDivider key={i} label={item.label} />
-                : <Bubble key={item.id} msg={item} />
+                ? <DayDivider key={`divider-${item.day}`} label={item.label} />
+                : <Bubble key={`msg-${item.id}`} msg={item} />
             )}
             <div ref={bottomRef} />
           </div>
