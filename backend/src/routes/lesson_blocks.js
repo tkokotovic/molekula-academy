@@ -10,6 +10,9 @@ const VALID_TYPES = [
   'video', 'molecule3d', 'table', 'link', 'flashcard', 'summary',
 ];
 
+// Block-level access: public = everyone, basic = basic+premium, premium = premium only
+const VALID_VISIBILITY = ['public', 'basic', 'premium'];
+
 function parseBlock(row) {
   if (!row) return null;
   return {
@@ -29,7 +32,7 @@ function nextPosition(lessonId) {
 
 router.post('/lessons/:lessonId/blocks', requireAuth, requireTeacher, (req, res) => {
   const { lessonId } = req.params;
-  const { type, content } = req.body;
+  const { type, content, visibility } = req.body;
 
   const lesson = db.prepare('SELECT id FROM lessons WHERE id = ?').get(lessonId);
   if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
@@ -40,14 +43,17 @@ router.post('/lessons/:lessonId/blocks', requireAuth, requireTeacher, (req, res)
   if (!VALID_TYPES.includes(type)) {
     return res.status(400).json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` });
   }
+  if (visibility !== undefined && !VALID_VISIBILITY.includes(visibility)) {
+    return res.status(400).json({ error: `visibility must be one of: ${VALID_VISIBILITY.join(', ')}` });
+  }
 
   const contentJson = JSON.stringify(content || {});
   const position = nextPosition(lessonId);
 
   const result = db.prepare(`
-    INSERT INTO lesson_blocks (lesson_id, type, content, position)
-    VALUES (?, ?, ?, ?)
-  `).run(lessonId, type, contentJson, position);
+    INSERT INTO lesson_blocks (lesson_id, type, content, position, visibility)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(lessonId, type, contentJson, position, visibility || 'public');
 
   const block = parseBlock(db.prepare('SELECT * FROM lesson_blocks WHERE id = ?').get(result.lastInsertRowid));
   return res.status(201).json({ block });
@@ -95,14 +101,20 @@ router.patch('/lessons/:lessonId/blocks/reorder', requireAuth, requireTeacher, (
 
 router.patch('/blocks/:id', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
-  const { content } = req.body;
+  const { content, visibility } = req.body;
 
   const existing = db.prepare('SELECT * FROM lesson_blocks WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Block not found' });
 
-  const newContent = content !== undefined ? JSON.stringify(content) : existing.content;
+  if (visibility !== undefined && !VALID_VISIBILITY.includes(visibility)) {
+    return res.status(400).json({ error: `visibility must be one of: ${VALID_VISIBILITY.join(', ')}` });
+  }
 
-  db.prepare('UPDATE lesson_blocks SET content = ? WHERE id = ?').run(newContent, id);
+  const newContent    = content    !== undefined ? JSON.stringify(content) : existing.content;
+  const newVisibility = visibility !== undefined ? visibility              : existing.visibility;
+
+  db.prepare('UPDATE lesson_blocks SET content = ?, visibility = ? WHERE id = ?')
+    .run(newContent, newVisibility, id);
 
   const block = parseBlock(db.prepare('SELECT * FROM lesson_blocks WHERE id = ?').get(id));
   return res.json({ block });

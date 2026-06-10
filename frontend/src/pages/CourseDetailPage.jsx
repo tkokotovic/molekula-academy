@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  getCourses, getTopics, createTopic, deleteTopicById, getLessonsByTopic,
+  getStudentCourse, getStudentCourseTopics, createTopic, deleteTopicById,
+  getStudentLessonsByTopic,
 } from '../api/client';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -108,7 +109,7 @@ function TopicCard({ topic, courseId, onDelete }) {
 
   useEffect(() => {
     setLoadingLessons(true);
-    getLessonsByTopic(topic.id)
+    getStudentLessonsByTopic(topic.id)
       .then(setLessons)
       .catch(() => setLessons([]))
       .finally(() => setLoadingLessons(false));
@@ -206,11 +207,11 @@ export default function CourseDetailPage() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [allCourses, topicList] = await Promise.all([
-        getCourses(),
-        getTopics(Number(courseId)),
+      const [courseData, topicList] = await Promise.all([
+        getStudentCourse(Number(courseId)),
+        getStudentCourseTopics(Number(courseId)),
       ]);
-      setCourse(allCourses.find(c => c.id === Number(courseId)) || null);
+      setCourse(courseData);
       setTopics(topicList);
     } finally {
       setLoading(false);

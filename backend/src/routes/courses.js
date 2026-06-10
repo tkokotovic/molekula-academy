@@ -37,7 +37,7 @@ router.get('/', (req, res) => {
   const rows = db.prepare(`
     SELECT id, title, description, slug, cover_image_url, target_audience,
            status, position, created_at, updated_at
-    FROM courses WHERE status = 'published'
+    FROM courses WHERE status = 'published' AND is_library = 0
     ORDER BY position, created_at
   `).all();
   return res.json({ courses: rows.map(parseCourse) });
@@ -68,9 +68,17 @@ teacher.post('/', requireAuth, requireTeacher, (req, res) => {
   return res.status(201).json({ course });
 });
 
-// GET /api/teacher/courses — all (draft + published + archived)
+// GET /api/teacher/courses — all (draft + published + archived) with counts
 teacher.get('/', requireAuth, requireTeacher, (req, res) => {
-  const rows = db.prepare('SELECT * FROM courses ORDER BY position, created_at').all();
+  const rows = db.prepare(`
+    SELECT c.*,
+      (SELECT COUNT(*) FROM topics t WHERE t.course_id = c.id) AS topic_count,
+      (SELECT COUNT(*) FROM lessons l JOIN topics t ON l.topic_id = t.id WHERE t.course_id = c.id) AS lesson_count,
+      (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
+    FROM courses c
+    WHERE c.is_library = 0
+    ORDER BY c.position, c.created_at
+  `).all();
   return res.json({ courses: rows.map(parseCourse) });
 });
 

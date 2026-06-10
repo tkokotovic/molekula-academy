@@ -10,7 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
-  deleteLessonBlock, reorderLessonBlocks,
+  deleteLessonBlock, reorderLessonBlocks, setBlockVisibility,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import SmilesDrawer from 'smiles-drawer';
@@ -39,6 +39,24 @@ const BLOCK_TYPES = [
 ];
 
 const TYPE_MAP = Object.fromEntries(BLOCK_TYPES.map(b => [b.type, b]));
+
+// ─── Block visibility (R07) ────────────────────────────────────────────────────
+// public  → svi vide (i besplatni pregled)
+// basic   → vide Basic + Premium pretplatnici
+// premium → vide samo Premium pretplatnici
+const VIS_ORDER = ['public', 'basic', 'premium'];
+const VIS_META = {
+  public:  { label: 'Svi',     icon: '🌐', color: '#475569', bg: 'color-mix(in srgb,#475569 8%,transparent)',  border: 'color-mix(in srgb,#475569 28%,transparent)' },
+  basic:   { label: 'Basic',   icon: '●',  color: '#1d4ed8', bg: 'color-mix(in srgb,#1d4ed8 9%,transparent)',  border: 'color-mix(in srgb,#1d4ed8 30%,transparent)' },
+  premium: { label: 'Premium', icon: '★',  color: '#b45309', bg: 'color-mix(in srgb,#b45309 10%,transparent)', border: 'color-mix(in srgb,#b45309 32%,transparent)' },
+};
+const nextVisibility = (v) => VIS_ORDER[(VIS_ORDER.indexOf(v) + 1) % VIS_ORDER.length];
+// Which plans can see a block of given visibility
+const planSees = (visibility, plan) => {
+  if (visibility === 'public') return true;
+  if (visibility === 'basic')  return plan === 'basic' || plan === 'premium';
+  return plan === 'premium';
+};
 
 const DEFAULT_CONTENT = {
   heading:    { text: '', level: 2 },
@@ -754,7 +772,7 @@ const MEDIA_TYPES = new Set(['molecule3d', 'image', 'gif', 'video', 'graph', 'py
 // Blocks that are always directly editable (no settings needed)
 const INLINE_TYPES = new Set(['heading', 'text', 'quote', 'callout', 'warning', 'summary', 'equation', 'divider', 'table']);
 
-function NotionBlock({ block, onUpdate, onDelete, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
+function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
   const [draft, setDraft]               = useState(block.content || {});
   const [showSettings, setShowSettings] = useState(false);
   const [isHovered, setIsHovered]       = useState(false);
@@ -854,30 +872,50 @@ function NotionBlock({ block, onUpdate, onDelete, dragAttributes, dragListeners,
         ) : null}
       </div>
 
-      {/* Right controls: settings + delete */}
+      {/* Right controls: visibility (always shown) + settings/delete (on hover) */}
       <div style={{
-        position: 'absolute', right: -76, top: 8,
-        display: 'flex', gap: 4,
-        opacity: isHovered ? 1 : 0, transition: 'opacity .15s',
-        pointerEvents: isHovered ? 'auto' : 'none',
+        position: 'absolute', right: -118, top: 8,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6,
       }}>
-        {isMedia && (
+        {(() => {
+          const vis = block.visibility || 'public';
+          const m = VIS_META[vis];
+          return (
+            <button
+              onClick={() => onSetVisibility(nextVisibility(vis))}
+              title={`Vidljivost: ${m.label} — klikni za promjenu`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                background: m.bg, border: `1px solid ${m.border}`, borderRadius: 20,
+                padding: '2px 9px', cursor: 'pointer', color: m.color,
+                fontSize: 11, fontWeight: 700, fontFamily: 'var(--mono)', whiteSpace: 'nowrap',
+              }}
+            >{m.icon} {m.label}</button>
+          );
+        })()}
+        <div style={{
+          display: 'flex', gap: 4,
+          opacity: isHovered ? 1 : 0, transition: 'opacity .15s',
+          pointerEvents: isHovered ? 'auto' : 'none',
+        }}>
+          {isMedia && (
+            <button
+              onClick={() => setShowSettings(s => !s)}
+              title="Postavke"
+              style={{
+                background: showSettings ? 'var(--accent-wash)' : 'var(--surface)',
+                border: `1px solid ${showSettings ? 'var(--accent)' : 'var(--line)'}`,
+                borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
+                color: showSettings ? 'var(--accent-ink)' : 'var(--ink-soft)', fontSize: 13,
+              }}
+            >⚙</button>
+          )}
           <button
-            onClick={() => setShowSettings(s => !s)}
-            title="Postavke"
-            style={{
-              background: showSettings ? 'var(--accent-wash)' : 'var(--surface)',
-              border: `1px solid ${showSettings ? 'var(--accent)' : 'var(--line)'}`,
-              borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
-              color: showSettings ? 'var(--accent-ink)' : 'var(--ink-soft)', fontSize: 13,
-            }}
-          >⚙</button>
-        )}
-        <button
-          onClick={onDelete}
-          title="Obriši blok"
-          style={{ background: 'color-mix(in srgb,#ef4444 8%,transparent)', border: '1px solid color-mix(in srgb,#ef4444 25%,transparent)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 13 }}
-        >🗑</button>
+            onClick={onDelete}
+            title="Obriši blok"
+            style={{ background: 'color-mix(in srgb,#ef4444 8%,transparent)', border: '1px solid color-mix(in srgb,#ef4444 25%,transparent)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 13 }}
+          >🗑</button>
+        </div>
       </div>
 
       {/* Inline settings panel for media blocks */}
@@ -935,6 +973,109 @@ function AddBlockButton({ onClick }) {
   );
 }
 
+// ─── Preview-as-student (R07) ──────────────────────────────────────────────────
+
+// Read-only KaTeX render for the preview column
+function EquationPreview({ latex }) {
+  const ref = useRef(null);
+  useEffect(() => { renderKatex(latex, ref.current); }, [latex]);
+  return <div ref={ref} style={{ overflowX: 'auto', padding: '4px 0' }} />;
+}
+
+// Compact read-only rendering of a single block for the preview columns
+function PreviewBlock({ block }) {
+  const { type, content = {} } = block;
+  const cap = content.caption || content.title || content.label;
+  const mediaBox = (icon, primary) => (
+    <div style={{ border: '1px dashed var(--line)', borderRadius: 8, padding: '14px 16px', background: 'var(--surface)', color: 'var(--ink-soft)', fontSize: 13 }}>
+      <span style={{ marginRight: 8 }}>{icon}</span>{primary}
+      {cap && <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 4 }}>{cap}</div>}
+    </div>
+  );
+  switch (type) {
+    case 'heading': {
+      const Tag = `h${content.level || 2}`;
+      return <Tag style={{ fontFamily: 'var(--display)', color: 'var(--ink)', margin: '6px 0' }}>{content.text || '—'}</Tag>;
+    }
+    case 'text':
+      return <div style={{ color: 'var(--ink)', lineHeight: 1.6, fontSize: 14 }} dangerouslySetInnerHTML={{ __html: content.html || '' }} />;
+    case 'quote':
+      return <blockquote style={{ borderLeft: '3px solid var(--accent)', margin: 0, padding: '4px 14px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>{content.text}{content.attribution && <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ink-faint)' }}>— {content.attribution}</div>}</blockquote>;
+    case 'callout':
+      return <div style={{ background: 'var(--accent-wash)', borderRadius: 8, padding: '10px 14px', color: 'var(--accent-ink)', fontSize: 14 }}>💡 {content.text}</div>;
+    case 'warning':
+      return <div style={{ background: 'color-mix(in srgb,#f59e0b 12%,transparent)', borderRadius: 8, padding: '10px 14px', color: '#92400e', fontSize: 14 }}>⚠️ {content.text}</div>;
+    case 'summary':
+      return <ul style={{ margin: '4px 0', paddingLeft: 20, color: 'var(--ink)', fontSize: 14 }}>{(content.items || []).filter(Boolean).map((it, i) => <li key={i}>{it}</li>)}</ul>;
+    case 'equation':
+      return <EquationPreview latex={content.latex} />;
+    case 'divider':
+      return <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0' }} />;
+    case 'table':
+      return (
+        <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
+          <thead><tr>{(content.headers || []).map((h, i) => <th key={i} style={{ border: '1px solid var(--line)', padding: '5px 8px', textAlign: 'left', background: 'var(--surface)' }}>{h}</th>)}</tr></thead>
+          <tbody>{(content.rows || []).map((r, ri) => <tr key={ri}>{r.map((c, ci) => <td key={ci} style={{ border: '1px solid var(--line)', padding: '5px 8px' }}>{c}</td>)}</tr>)}</tbody>
+        </table>
+      );
+    case 'image': case 'gif':
+      return content.url
+        ? <figure style={{ margin: 0 }}><img src={content.url} alt={content.alt || ''} style={{ maxWidth: '100%', borderRadius: 8 }} />{cap && <figcaption style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 4 }}>{cap}</figcaption>}</figure>
+        : mediaBox('🖼️', 'Slika');
+    case 'molecule3d':
+      return content.smiles ? <MoleculeCanvas smiles={content.smiles} /> : mediaBox('⚗️', 'Molekula');
+    case 'video':   return mediaBox('🎬', content.url || 'Video');
+    case 'pdf':     return mediaBox('📄', content.label || content.url || 'PDF dokument');
+    case 'link':    return mediaBox('🔗', content.title || content.url || 'Vanjski link');
+    case 'quiz_link': return mediaBox('🧪', content.label || 'Kviz');
+    case 'graph':   return mediaBox('📈', cap || 'Graf');
+    case 'python':  return mediaBox('🐍', cap || 'Python / kod');
+    default:        return mediaBox('▫️', TYPE_MAP[type]?.label || type);
+  }
+}
+
+function PreviewColumn({ plan, blocks }) {
+  const m = VIS_META[plan === 'basic' ? 'basic' : 'premium'];
+  const visibleCount = blocks.filter(b => planSees(b.visibility || 'public', plan)).length;
+  return (
+    <div style={{ flex: 1, minWidth: 0, border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--bg)' }}>
+      <div style={{ padding: '10px 16px', background: m.bg, borderBottom: `1px solid ${m.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: 800, color: m.color, fontFamily: 'var(--display)', fontSize: 15 }}>{m.icon} {plan === 'basic' ? 'Basic pretplatnik' : 'Premium pretplatnik'}</span>
+        <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>{visibleCount}/{blocks.length} blokova</span>
+      </div>
+      <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '64vh', overflowY: 'auto' }}>
+        {blocks.length === 0 && <div style={{ color: 'var(--ink-faint)', fontSize: 13, textAlign: 'center', padding: 24 }}>Nema blokova.</div>}
+        {blocks.map(b => planSees(b.visibility || 'public', plan)
+          ? <div key={b.id}><PreviewBlock block={b} /></div>
+          : <div key={b.id} style={{ border: '1px dashed var(--line)', borderRadius: 8, padding: '10px 14px', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)' }}>
+              🔒 {VIS_META[b.visibility].label} sadržaj — skriveno
+            </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StudentPreviewModal({ blocks, onClose }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg)', borderRadius: 16, padding: 24, width: 'min(1100px, 96vw)', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)', letterSpacing: '.06em', textTransform: 'uppercase' }}>Pregled kao student</div>
+            <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'var(--display)', color: 'var(--ink)' }}>Što vidi koji plan</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', color: 'var(--ink-soft)', fontSize: 13, fontWeight: 600 }}>Zatvori ×</button>
+        </div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <PreviewColumn plan="basic" blocks={blocks} />
+          <PreviewColumn plan="premium" blocks={blocks} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── LessonEditorPage ──────────────────────────────────────────────────────────
 
 export default function LessonEditorPage() {
@@ -946,6 +1087,7 @@ export default function LessonEditorPage() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
   const [showPicker, setShowPicker] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -982,6 +1124,13 @@ export default function LessonEditorPage() {
     if (!window.confirm(`Obriši blok "${TYPE_MAP[block.type]?.label || block.type}"?`)) return;
     await deleteLessonBlock(block.id);
     setBlocks(bs => bs.filter(b => b.id !== block.id));
+  }
+
+  async function handleSetVisibility(block, visibility) {
+    // optimistic — visibility changes are cheap and frequent
+    setBlocks(bs => bs.map(b => b.id === block.id ? { ...b, visibility } : b));
+    try { await setBlockVisibility(block.id, visibility); }
+    catch { setBlocks(bs => bs.map(b => b.id === block.id ? { ...b, visibility: block.visibility } : b)); }
   }
 
   async function handleDragEnd(event) {
@@ -1024,6 +1173,10 @@ export default function LessonEditorPage() {
         <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
           {blocks.length} {blocks.length === 1 ? 'blok' : 'blokova'}
         </span>
+        <button onClick={() => setShowPreview(true)} disabled={blocks.length === 0}
+          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 16px', fontWeight: 600, fontSize: 14, cursor: blocks.length === 0 ? 'default' : 'pointer', opacity: blocks.length === 0 ? 0.5 : 1 }}>
+          👁 Pregled kao student
+        </button>
         <button onClick={() => setShowPicker(true)}
           style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
           ＋ Dodaj blok
@@ -1069,6 +1222,7 @@ export default function LessonEditorPage() {
                       block={block}
                       onUpdate={content => handleUpdate(block, content)}
                       onDelete={() => handleDelete(block)}
+                      onSetVisibility={vis => handleSetVisibility(block, vis)}
                     />
                   </div>
                 ))}
@@ -1081,6 +1235,7 @@ export default function LessonEditorPage() {
       </div>
 
       {showPicker && <BlockPicker onPick={handleAddBlock} onClose={() => setShowPicker(false)} />}
+      {showPreview && <StudentPreviewModal blocks={blocks} onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

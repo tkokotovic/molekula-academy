@@ -11,11 +11,18 @@ import ProgressPage from './pages/ProgressPage';
 import MessagesPage from './pages/MessagesPage';
 import SchedulePage from './pages/SchedulePage';
 import SettingsPage from './pages/SettingsPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminStudentsPage from './pages/admin/AdminStudentsPage';
 import AdminStudentDetailPage from './pages/admin/AdminStudentDetailPage';
-import AdminRevenuePage from './pages/admin/AdminRevenuePage';
+import AdminGroupsPage from './pages/admin/AdminGroupsPage';
+import AdminCoursesPage from './pages/admin/AdminCoursesPage';
 import AdminContentPage from './pages/admin/AdminContentPage';
+import AdminHomeworksPage from './pages/admin/AdminHomeworksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
+import AdminBroadcastsPage from './pages/admin/AdminBroadcastsPage';
+import AdminSessionsPage from './pages/admin/AdminSessionsPage';
+import AdminRevenuePage from './pages/admin/AdminRevenuePage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage';
 import LessonEditorPage from './pages/admin/LessonEditorPage';
 import LoginPage from './pages/LoginPage';
@@ -84,14 +91,21 @@ export default function App() {
         <Route path="/messages"          element={<RequireAuth><MessagesPage /></RequireAuth>} />
         <Route path="/settings"          element={<RequireAuth><SettingsPage /></RequireAuth>} />
 
-        {/* Admin panel — teacher/owner only, wrapped in AppShell + AdminShell */}
-        <Route path="/admin"                    element={<Navigate to="/admin/students" replace />} />
-        <Route path="/admin/students"           element={<RequireTeacher><AdminStudentsPage /></RequireTeacher>} />
-        <Route path="/admin/students/:id"       element={<RequireTeacher><AdminStudentDetailPage /></RequireTeacher>} />
-        <Route path="/admin/revenue"            element={<RequireTeacher><AdminRevenuePage /></RequireTeacher>} />
-        <Route path="/admin/content"            element={<RequireTeacher><AdminContentPage /></RequireTeacher>} />
-        <Route path="/admin/messages"           element={<RequireTeacher><AdminMessagesPage /></RequireTeacher>} />
-        <Route path="/admin/questions"           element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
+        {/* Admin panel — teacher/owner only */}
+        <Route path="/admin"                        element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard"              element={<RequireTeacher><AdminDashboardPage /></RequireTeacher>} />
+        <Route path="/admin/students"               element={<RequireTeacher><AdminStudentsPage /></RequireTeacher>} />
+        <Route path="/admin/students/:id"           element={<RequireTeacher><AdminStudentDetailPage /></RequireTeacher>} />
+        <Route path="/admin/groups"                 element={<RequireTeacher><AdminGroupsPage /></RequireTeacher>} />
+        <Route path="/admin/courses"                element={<RequireTeacher><AdminCoursesPage /></RequireTeacher>} />
+        <Route path="/admin/content"                element={<RequireTeacher><AdminContentPage /></RequireTeacher>} />
+        <Route path="/admin/homeworks"              element={<RequireTeacher><AdminHomeworksPage /></RequireTeacher>} />
+        <Route path="/admin/messages"               element={<RequireTeacher><AdminMessagesPage /></RequireTeacher>} />
+        <Route path="/admin/broadcasts"             element={<RequireTeacher><AdminBroadcastsPage /></RequireTeacher>} />
+        <Route path="/admin/sessions"               element={<RequireTeacher><AdminSessionsPage /></RequireTeacher>} />
+        <Route path="/admin/revenue"                element={<RequireTeacher><AdminRevenuePage /></RequireTeacher>} />
+        <Route path="/admin/reports"                element={<RequireTeacher><AdminReportsPage /></RequireTeacher>} />
+        <Route path="/admin/questions"              element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
       </Routes>
     </BrowserRouter>

@@ -21,6 +21,9 @@ app.use('/api/teacher', require('./routes/lessons'));
 // Lesson blocks (mounted at /api/teacher — handles /lessons/:id/blocks AND /blocks/:id)
 app.use('/api/teacher', require('./routes/lesson_blocks'));
 
+// Student lesson blocks — plan-filtered by visibility (R07 enforcement)
+app.use('/api/student', require('./routes/student_lessons'));
+
 // Questions bank
 app.use('/api/teacher/questions', require('./routes/questions'));
 

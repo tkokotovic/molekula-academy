@@ -165,9 +165,79 @@ export async function deleteLessonById(id) {
   return apiFetch(`/api/teacher/lessons/${id}`, { method: 'DELETE' });
 }
 
+// ─── Master lesson library + forks ─────────────────────────────────────────────
+
+export async function getLibraryLessons() {
+  const data = await apiFetch('/api/teacher/library/lessons');
+  return data.lessons;
+}
+
+export async function createLibraryLesson(fields) {
+  const data = await apiFetch('/api/teacher/library/lessons', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.lesson;
+}
+
+// Copy a master lesson (+ its blocks) into a course topic as an independent fork
+export async function forkLesson(masterLessonId, topicId) {
+  const data = await apiFetch(`/api/teacher/lessons/${masterLessonId}/fork`, {
+    method: 'POST',
+    body: JSON.stringify({ topicId }),
+  });
+  return data.lesson;
+}
+
+// List a master lesson's forks with per-fork in-sync/differs status
+export async function getLessonForks(masterLessonId) {
+  return apiFetch(`/api/teacher/lessons/${masterLessonId}/forks`);
+}
+
+// Replace selected forks' blocks with the master's current content
+export async function pushLessonToForks(masterLessonId, forkIds) {
+  return apiFetch(`/api/teacher/lessons/${masterLessonId}/push`, {
+    method: 'POST',
+    body: JSON.stringify({ forkIds }),
+  });
+}
+
 export async function getLessonBlocks(lessonId) {
   const data = await apiFetch(`/api/teacher/lessons/${lessonId}/blocks`);
   return data.blocks;
+}
+
+// Student lesson view — returns only blocks the student's plan is allowed to see
+export async function getStudentLessonBlocks(lessonId) {
+  const data = await apiFetch(`/api/student/lessons/${lessonId}/blocks`);
+  return data.blocks;
+}
+
+// ─── Student content reads (published-only, no teacher_notes) ──────────────────
+
+export async function getStudentCourses() {
+  const data = await apiFetch('/api/courses');
+  return data.courses;
+}
+
+export async function getStudentCourse(courseId) {
+  const data = await apiFetch(`/api/student/courses/${courseId}`);
+  return data.course;
+}
+
+export async function getStudentCourseTopics(courseId) {
+  const data = await apiFetch(`/api/student/courses/${courseId}/topics`);
+  return data.topics;
+}
+
+export async function getStudentLessonsByTopic(topicId) {
+  const data = await apiFetch(`/api/student/topics/${topicId}/lessons`);
+  return data.lessons;
+}
+
+export async function getStudentLesson(lessonId) {
+  const data = await apiFetch(`/api/student/lessons/${lessonId}`);
+  return data.lesson;
 }
 
 export async function createLessonBlock(lessonId, type, content) {
@@ -188,6 +258,15 @@ export async function updateLessonBlock(blockId, content) {
 
 export async function deleteLessonBlock(blockId) {
   return apiFetch(`/api/teacher/blocks/${blockId}`, { method: 'DELETE' });
+}
+
+// Set a block's access level: 'public' | 'basic' | 'premium'
+export async function setBlockVisibility(blockId, visibility) {
+  const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ visibility }),
+  });
+  return data.block;
 }
 
 export async function reorderLessonBlocks(lessonId, ids) {
@@ -386,4 +465,16 @@ export async function setStudentSubscription(id, tier) {
 
 export async function getAdminRevenue() {
   return apiFetch('/api/admin/revenue');
+}
+
+export async function getAdminDashboard() {
+  return apiFetch('/api/admin/dashboard');
+}
+
+export async function updateStudentProfile(id, fields) {
+  const data = await apiFetch(`/api/admin/students/${id}/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
+  return data.user;
 }

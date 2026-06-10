@@ -412,6 +412,62 @@ db.exec(`
     FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
     FOREIGN KEY (quiz_attempt_id) REFERENCES quiz_attempts(id) ON DELETE SET NULL
   );
+
+  -- Course enrollments — created when a student buys a packet and picks a course.
+  CREATE TABLE IF NOT EXISTS enrollments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    enrolled_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+  );
 `);
+
+// ─── Migrations ───────────────────────────────────────────────────────────────
+
+const migrations = [
+  // Add exam_date and notes fields to users
+  `ALTER TABLE users ADD COLUMN exam_date TEXT`,
+  `ALTER TABLE users ADD COLUMN admin_notes TEXT`,
+  // Lesson fork model: a fork points back to the master lesson it was copied from
+  `ALTER TABLE lessons ADD COLUMN master_lesson_id INTEGER`,
+  // Flag the hidden system course that holds the master lesson library
+  `ALTER TABLE courses ADD COLUMN is_library INTEGER NOT NULL DEFAULT 0`,
+  // Block-level visibility: public (everyone) | basic (basic+premium) | premium (premium only)
+  `ALTER TABLE lesson_blocks ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'`,
+];
+
+for (const sql of migrations) {
+  try { db.exec(sql); } catch (_) { /* column already exists */ }
+}
+
+// ─── Master lesson library bootstrap ──────────────────────────────────────────
+// The library is a hidden system course + topic. Master lessons live there as
+// normal `lessons` rows, so the existing lesson editor works on them unchanged.
+// Forking deep-copies a master lesson (+ its blocks) into a real course topic.
+
+function getLibraryTopicId() {
+  let course = db.prepare('SELECT id FROM courses WHERE is_library = 1').get();
+  if (!course) {
+    const slug = `__library__-${Date.now()}`;
+    const info = db.prepare(`
+      INSERT INTO courses (title, description, slug, status, is_library)
+      VALUES (?, ?, ?, 'archived', 1)
+    `).run('Biblioteka lekcija', 'Sustavna biblioteka master lekcija', slug);
+    course = { id: info.lastInsertRowid };
+  }
+  let topic = db.prepare('SELECT id FROM topics WHERE course_id = ?').get(course.id);
+  if (!topic) {
+    const info = db.prepare(`
+      INSERT INTO topics (course_id, title, status) VALUES (?, 'Sve lekcije', 'archived')
+    `).run(course.id);
+    topic = { id: info.lastInsertRowid };
+  }
+  return topic.id;
+}
+
+db.getLibraryTopicId = getLibraryTopicId;
 
 module.exports = db;

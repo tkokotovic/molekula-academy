@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getCourses } from '../api/client';
+import { getStudentCourses } from '../api/client';
 
 const STATUS_LABELS = { draft: 'Nacrt', published: 'Objavljeno', archived: 'Arhivirano' };
 const STATUS_COLORS = {
@@ -24,7 +24,7 @@ export default function CoursesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setCourses(await getCourses()); }
+    try { setCourses(await getStudentCourses()); }
     finally { setLoading(false); }
   }, []);
 

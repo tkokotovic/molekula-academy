@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
-  getLesson, getLessonsByTopic, getLessonBlocks,
+  getStudentLesson, getStudentLessonsByTopic, getStudentLessonBlocks,
   getLessonProgress, markLessonProgress,
 } from '../api/client';
 
@@ -427,9 +427,9 @@ export default function LessonPage() {
     setError('');
     try {
       const [lessonData, blocksData, siblingData] = await Promise.all([
-        getLesson(lessonId),
-        getLessonBlocks(lessonId),
-        getLessonsByTopic(topicId),
+        getStudentLesson(lessonId),
+        getStudentLessonBlocks(lessonId),
+        getStudentLessonsByTopic(topicId),
       ]);
       setLesson(lessonData);
       setBlocks(blocksData);

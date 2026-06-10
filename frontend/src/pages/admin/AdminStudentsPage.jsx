@@ -148,7 +148,7 @@ export default function AdminStudentsPage() {
           {/* Table header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 100px 80px 80px 90px 100px',
+            gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px',
             padding: '10px 16px',
             borderBottom: '1px solid var(--line)',
             fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em',
@@ -156,6 +156,7 @@ export default function AdminStudentsPage() {
           }}>
             <span>{t('Ime', 'Name')}</span>
             <span>Email</span>
+            <span>{t('Kolegij', 'Course')}</span>
             <span>{t('Plan', 'Plan')}</span>
             <span>{t('Lekcije', 'Lessons')}</span>
             <span>{t('Kvizovi', 'Quizzes')}</span>
@@ -168,7 +169,7 @@ export default function AdminStudentsPage() {
               key={s.id}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 100px 80px 80px 90px 100px',
+                gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px',
                 padding: '12px 16px',
                 borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
                 alignItems: 'center',
@@ -183,6 +184,20 @@ export default function AdminStudentsPage() {
               <span style={{ fontSize: 13, color: 'var(--ink-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {s.email}
               </span>
+              <div style={{ overflow: 'hidden' }}>
+                {s.enrolled_course ? (
+                  <>
+                    <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.enrollment_count > 1 ? `${s.enrolled_course} +${s.enrollment_count - 1}` : s.enrolled_course}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 1 }}>
+                      {t('od', 'since')} {formatDate(s.enrolled_since)}
+                    </div>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>—</span>
+                )}
+              </div>
               <span>
                 <PlanBadge tier={s.subscription_tier} studentId={s.id} onChanged={load} />
               </span>

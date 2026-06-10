@@ -147,7 +147,7 @@ export default function AdminStudentDetailPage() {
       {/* Course progress */}
       <Section title={t('Napredak po kolegijima', 'Course progress')}>
         {courses.length === 0 ? (
-          <p style={{ color: 'var(--ink-soft)', fontSize: 14 }}>{t('Nema aktivnih kolegija.', 'No active courses.')}</p>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 14 }}>{t('Student nije upisan ni u jedan kolegij.', 'Student is not enrolled in any course.')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {courses.map(c => {
@@ -167,6 +167,11 @@ export default function AdminStudentDetailPage() {
                       {c.completed_lessons}/{c.total_lessons} {t('lekcija', 'lessons')}
                       {c.time_spent_seconds > 0 && ` · ${hrs > 0 ? hrs + 'h ' : ''}${mins}min`}
                     </div>
+                    {c.enrolled_at && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>
+                        {t('Upisano', 'Enrolled')} {formatDate(c.enrolled_at)}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
