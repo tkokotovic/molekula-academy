@@ -453,11 +453,22 @@ export async function getMessages() {
   return data.messages;
 }
 
-export async function sendMessage(text) {
-  const data = await apiFetch('/api/student/messages', {
+export async function sendMessage(text, file = null) {
+  const token = getToken();
+  const form = new FormData();
+  if (text) form.append('text', text);
+  if (file) form.append('file', file);
+
+  const res = await fetch('/api/student/messages', {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
   });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  const data = await res.json();
   return data.message;
 }
 
@@ -470,11 +481,22 @@ export async function getMessageThread(studentId) {
   return apiFetch(`/api/teacher/messages/${studentId}`);
 }
 
-export async function replyToStudent(studentId, text) {
-  const data = await apiFetch(`/api/teacher/messages/${studentId}`, {
+export async function replyToStudent(studentId, text, file = null) {
+  const token = getToken();
+  const form = new FormData();
+  if (text) form.append('text', text);
+  if (file) form.append('file', file);
+
+  const res = await fetch(`/api/teacher/messages/${studentId}`, {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
   });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  const data = await res.json();
   return data.message;
 }
 

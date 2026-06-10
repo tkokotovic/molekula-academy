@@ -33,6 +33,10 @@ function groupByDay(messages) {
   return groups;
 }
 
+function isImage(url) {
+  return /\.(jpe?g|png|gif|webp)$/i.test(url || '');
+}
+
 // ─── Premium lock overlay ─────────────────────────────────────────────────────
 
 function PremiumGate({ lang }) {
@@ -75,7 +79,7 @@ function PremiumGate({ lang }) {
         {[
           t('Neograničena pitanja profesoru', 'Unlimited questions to teacher'),
           t('Odgovor unutar 24 sata', 'Response within 24 hours'),
-          t('Povijest razgovora trajno sačuvana', 'Conversation history permanently saved'),
+          t('Slanje fotografija i dokumenata', 'Send photos and documents'),
           t('Uključeno u Premium (€39/mj)', 'Included in Premium (€39/mo)'),
         ].map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
@@ -101,10 +105,85 @@ function PremiumGate({ lang }) {
   );
 }
 
+// ─── Attachment preview (inside bubble) ──────────────────────────────────────
+
+function AttachmentPreview({ fileUrl, fileName }) {
+  if (!fileUrl) return null;
+  if (isImage(fileUrl)) {
+    return (
+      <a href={fileUrl} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 6 }}>
+        <img
+          src={fileUrl}
+          alt={fileName || 'prilog'}
+          style={{
+            maxWidth: 240, maxHeight: 200,
+            borderRadius: 10, display: 'block',
+            border: '1px solid rgba(0,0,0,.1)',
+            objectFit: 'cover',
+          }}
+        />
+      </a>
+    );
+  }
+  // PDF or other file
+  return (
+    <a
+      href={fileUrl}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 6,
+        padding: '7px 12px', borderRadius: 8,
+        background: 'rgba(0,0,0,.07)', color: 'inherit',
+        fontSize: 13, textDecoration: 'none', fontWeight: 600,
+        border: '1px solid rgba(0,0,0,.1)',
+      }}
+    >
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      {fileName || 'prilog'}
+    </a>
+  );
+}
+
+// ─── Message type badge ───────────────────────────────────────────────────────
+
+function TypeBadge({ messageType, lang }) {
+  const t = (hr, en) => lang === 'en' ? en : hr;
+  if (messageType === 'broadcast') {
+    return (
+      <div style={{
+        fontSize: 11.5, color: 'var(--ink-soft)', fontFamily: 'var(--mono)',
+        marginBottom: 4,
+      }}>
+        📢 {t('Obavijest svim studentima', 'Broadcast to all students')}
+      </div>
+    );
+  }
+  if (messageType === 'session_summary') {
+    return (
+      <div style={{
+        fontSize: 11.5, color: 'var(--ink-soft)', fontFamily: 'var(--mono)',
+        marginBottom: 4,
+      }}>
+        📋 {t('Sažetak sesije', 'Session summary')}
+      </div>
+    );
+  }
+  return null;
+}
+
 // ─── Message bubble ───────────────────────────────────────────────────────────
 
-function Bubble({ msg }) {
+function Bubble({ msg, lang }) {
   const isStudent = msg.sender_role === 'student';
+  const isRead = isStudent && msg.read_at;
+  const t = (hr, en) => lang === 'en' ? en : hr;
+
+  const isSpecial = msg.message_type === 'broadcast' || msg.message_type === 'session_summary';
+
   return (
     <div style={{
       display: 'flex',
@@ -121,19 +200,30 @@ function Bubble({ msg }) {
         }}>T</div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: isStudent ? 'flex-end' : 'flex-start', maxWidth: 'min(520px, 75%)' }}>
+        {!isStudent && <TypeBadge messageType={msg.message_type} lang={lang} />}
         <div style={{
           padding: '10px 14px',
           borderRadius: isStudent ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-          background: isStudent ? 'var(--accent)' : 'var(--surface)',
-          border: isStudent ? 'none' : '1px solid var(--line)',
+          background: isSpecial
+            ? 'color-mix(in srgb, var(--accent) 8%, var(--surface))'
+            : isStudent ? 'var(--accent)' : 'var(--surface)',
+          border: isStudent ? 'none' : `1px solid ${isSpecial ? 'var(--accent)' : 'var(--line)'}`,
           color: isStudent ? '#fff' : 'var(--ink)',
           fontSize: 14.5, lineHeight: 1.55, wordBreak: 'break-word',
         }}>
-          <ChemText text={msg.text} />
+          {msg.text && <ChemText text={msg.text} />}
+          <AttachmentPreview fileUrl={msg.file_url} fileName={msg.file_name} />
         </div>
-        <span style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, paddingInline: 4 }}>
-          {formatTime(msg.created_at)}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, paddingInline: 4 }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+            {formatTime(msg.created_at)}
+          </span>
+          {isRead && (
+            <span style={{ fontSize: 10.5, color: 'var(--ink-soft)' }}>
+              · {t('Pročitano', 'Read')}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -157,9 +247,13 @@ function DayDivider({ label }) {
 
 function ComposeBar({ onSend, lang, disabled }) {
   const [text, setText] = useState('');
+  const [file, setFile] = useState(null);   // File object
   const [sending, setSending] = useState(false);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
   const t = (hr, en) => lang === 'en' ? en : hr;
+
+  const canSend = (text.trim() || file) && !disabled && !sending;
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -168,14 +262,25 @@ function ComposeBar({ onSend, lang, disabled }) {
     }
   }
 
+  function handleFileChange(e) {
+    const f = e.target.files[0];
+    if (f) setFile(f);
+    e.target.value = '';
+  }
+
+  function removeFile() {
+    setFile(null);
+  }
+
   async function submit() {
-    const trimmed = text.trim();
-    if (!trimmed || disabled || sending) return;
+    if (!canSend) return;
     setSending(true);
-    const optimisticText = trimmed;
+    const sentText = text.trim();
+    const sentFile = file;
     setText('');
+    setFile(null);
     try {
-      await onSend(optimisticText);
+      await onSend(sentText, sentFile);
     } finally {
       setSending(false);
       textareaRef.current?.focus();
@@ -184,44 +289,113 @@ function ComposeBar({ onSend, lang, disabled }) {
 
   return (
     <div style={{
-      padding: '12px 16px', borderTop: '1px solid var(--line)',
-      background: 'var(--bg)', display: 'flex', alignItems: 'flex-end', gap: 10,
+      borderTop: '1px solid var(--line)',
+      background: 'var(--bg)',
     }}>
-      <textarea
-        ref={textareaRef}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={handleKey}
-        disabled={disabled || sending}
-        placeholder={t('Napiši poruku… (Enter za slanje, Shift+Enter za novi red)', 'Write a message… (Enter to send, Shift+Enter for new line)')}
-        rows={1}
-        style={{
-          flex: 1, resize: 'none', border: '1px solid var(--line)',
-          borderRadius: 12, padding: '10px 14px',
-          background: 'var(--surface)', color: 'var(--ink)',
-          fontFamily: 'var(--sans)', fontSize: 14, lineHeight: 1.5,
-          outline: 'none', maxHeight: 120, overflowY: 'auto',
-          transition: 'border-color .15s',
-        }}
-        onFocus={e => { e.target.style.borderColor = 'var(--accent)'; }}
-        onBlur={e => { e.target.style.borderColor = 'var(--line)'; }}
-      />
-      <button
-        onClick={submit}
-        disabled={!text.trim() || disabled || sending}
-        style={{
-          width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-          background: text.trim() && !disabled && !sending ? 'var(--accent)' : 'var(--line)',
-          border: 'none', cursor: text.trim() && !disabled ? 'pointer' : 'default',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', transition: 'background .15s',
-        }}
-        aria-label={t('Pošalji', 'Send')}
-      >
-        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-        </svg>
-      </button>
+      {/* File preview chip */}
+      {file && (
+        <div style={{
+          padding: '8px 16px 0',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            padding: '5px 10px', borderRadius: 8,
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            fontSize: 12.5, color: 'var(--ink)', maxWidth: 280,
+          }}>
+            {isImage(file.name) ? (
+              <img
+                src={URL.createObjectURL(file)}
+                alt=""
+                style={{ width: 28, height: 28, borderRadius: 4, objectFit: 'cover' }}
+              />
+            ) : (
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            )}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+          </div>
+          <button
+            onClick={removeFile}
+            style={{
+              border: 'none', background: 'none', cursor: 'pointer',
+              color: 'var(--ink-soft)', padding: 2, lineHeight: 1,
+            }}
+            aria-label="Ukloni prilog"
+          >✕</button>
+        </div>
+      )}
+
+      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+
+        {/* Attach button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || sending}
+          style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            border: '1px solid var(--line)', background: 'var(--surface)',
+            cursor: disabled || sending ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--ink-soft)', transition: 'border-color .15s, color .15s',
+          }}
+          aria-label={t('Priloži datoteku', 'Attach file')}
+          title={t('Slika ili PDF (max 20 MB)', 'Image or PDF (max 20 MB)')}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--ink-soft)'; }}
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKey}
+          disabled={disabled || sending}
+          placeholder={t('Napiši poruku… (Enter za slanje, Shift+Enter za novi red)', 'Write a message… (Enter to send, Shift+Enter for new line)')}
+          rows={1}
+          style={{
+            flex: 1, resize: 'none', border: '1px solid var(--line)',
+            borderRadius: 12, padding: '10px 14px',
+            background: 'var(--surface)', color: 'var(--ink)',
+            fontFamily: 'var(--sans)', fontSize: 14, lineHeight: 1.5,
+            outline: 'none', maxHeight: 120, overflowY: 'auto',
+            transition: 'border-color .15s',
+          }}
+          onFocus={e => { e.target.style.borderColor = 'var(--accent)'; }}
+          onBlur={e => { e.target.style.borderColor = 'var(--line)'; }}
+        />
+        <button
+          onClick={submit}
+          disabled={!canSend}
+          style={{
+            width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+            background: canSend ? 'var(--accent)' : 'var(--line)',
+            border: 'none', cursor: canSend ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', transition: 'background .15s',
+          }}
+          aria-label={t('Pošalji', 'Send')}
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -240,57 +414,52 @@ export default function MessagesPage() {
 
   const isPremium = user?.subscription_tier === 'premium';
 
-  // Load messages from API
   const loadMessages = useCallback(async () => {
     try {
       const msgs = await getMessages();
       setMessages(msgs);
     } catch {
-      // silently ignore — user may not be premium or network blip
+      // silently ignore — network blip or not premium
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     getMe()
       .then(u => {
         setUser(u);
-        if (u.subscription_tier === 'premium') {
-          return loadMessages();
-        }
+        if (u.subscription_tier === 'premium') return loadMessages();
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [loadMessages]);
 
-  // Poll every 10s for new messages when premium
   useEffect(() => {
     if (!isPremium) return;
     pollRef.current = setInterval(loadMessages, 10_000);
     return () => clearInterval(pollRef.current);
   }, [isPremium, loadMessages]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  async function handleSend(text) {
-    // Optimistic insert
+  async function handleSend(text, file) {
     const optimistic = {
       id: `opt-${Date.now()}`,
       sender_role: 'student',
-      text,
+      text: text || null,
+      file_url: file ? URL.createObjectURL(file) : null,
+      file_name: file ? file.name : null,
+      message_type: 'message',
       created_at: new Date().toISOString(),
+      read_at: null,
     };
     setMessages(prev => [...prev, optimistic]);
 
     try {
-      const saved = await sendMessage(text);
-      // Replace optimistic with saved
+      const saved = await sendMessage(text, file);
       setMessages(prev => prev.map(m => m.id === optimistic.id ? saved : m));
     } catch (err) {
-      // Remove optimistic on failure and show inline error
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
       alert(err.message);
     }
@@ -364,7 +533,7 @@ export default function MessagesPage() {
             {items.map(item =>
               item.type === 'divider'
                 ? <DayDivider key={`divider-${item.day}`} label={item.label} />
-                : <Bubble key={`msg-${item.id}`} msg={item} />
+                : <Bubble key={`msg-${item.id}`} msg={item} lang={lang} />
             )}
             <div ref={bottomRef} />
           </div>

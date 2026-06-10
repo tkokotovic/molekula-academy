@@ -1,7 +1,12 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
+
+// Serve uploaded files (message attachments, lesson media, etc.)
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 // Auth & admin
 app.use('/api/auth', require('./routes/auth'));

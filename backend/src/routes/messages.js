@@ -1,10 +1,60 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { randomUUID } = require('crypto');
 const db = require('../db');
 const { requireAuth, requireTeacher } = require('../middleware/auth');
 const { notifyTeacherNewMessage, notifyStudentTeacherReplied } = require('../services/email');
 
 const student = express.Router();
 const teacher = express.Router();
+
+// ─── Multer for message attachments ──────────────────────────────────────────
+
+const MSG_ALLOWED = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf',
+]);
+
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+
+function msgStorage() {
+  if (process.env.NODE_ENV === 'test') return multer.memoryStorage();
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  return multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${randomUUID()}${ext}`);
+    },
+  });
+}
+
+const upload = multer({
+  storage: msgStorage(),
+  fileFilter: (req, file, cb) => {
+    cb(null, MSG_ALLOWED.has(file.mimetype));
+  },
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+});
+
+function handleUpload(req, res, next) {
+  upload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: 'File too large or unsupported type (images + PDF up to 20 MB)' });
+    next();
+  });
+}
+
+function fileInfoFromReq(req) {
+  if (!req.file) return {};
+  const filename = req.file.filename || `${randomUUID()}${path.extname(req.file.originalname).toLowerCase()}`;
+  return {
+    file_url: `/uploads/${filename}`,
+    file_name: req.file.originalname,
+    file_size: req.file.size || (req.file.buffer ? req.file.buffer.length : 0),
+  };
+}
 
 // ─── Student: GET own thread ──────────────────────────────────────────────────
 
@@ -26,23 +76,24 @@ student.get('/messages', requireAuth, (req, res) => {
 
 // ─── Student: POST message ────────────────────────────────────────────────────
 
-student.post('/messages', requireAuth, (req, res) => {
+student.post('/messages', requireAuth, handleUpload, (req, res) => {
   const studentId = req.user.id;
-  const { text } = req.body;
+  const text = (req.body.text || '').trim();
+  const { file_url, file_name, file_size } = fileInfoFromReq(req);
 
-  if (!text || !text.trim()) {
-    return res.status(400).json({ error: 'text is required' });
+  if (!text && !file_url) {
+    return res.status(400).json({ error: 'text or file is required' });
   }
 
   const result = db.prepare(`
-    INSERT INTO messages (student_id, sender_role, text) VALUES (?, 'student', ?)
-  `).run(studentId, text.trim());
+    INSERT INTO messages (student_id, sender_role, text, file_url, file_name, file_size, message_type)
+    VALUES (?, 'student', ?, ?, ?, ?, 'message')
+  `).run(studentId, text || null, file_url || null, file_name || null, file_size || null);
 
   const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid);
 
-  // Step 58: notify teacher
-  const student = db.prepare('SELECT name, email FROM users WHERE id = ?').get(studentId);
-  notifyTeacherNewMessage({ studentName: student.name, studentEmail: student.email, messageText: text.trim() });
+  const studentUser = db.prepare('SELECT name, email FROM users WHERE id = ?').get(studentId);
+  notifyTeacherNewMessage({ studentName: studentUser.name, studentEmail: studentUser.email, messageText: text || '[prilog]' });
 
   return res.status(201).json({ message });
 });
@@ -57,6 +108,7 @@ teacher.get('/messages', requireAuth, requireTeacher, (req, res) => {
       u.email,
       u.subscription_tier,
       m.text          AS last_message,
+      m.file_name     AS last_file_name,
       m.sender_role   AS last_sender_role,
       m.created_at    AS last_message_at,
       (SELECT COUNT(*) FROM messages
@@ -98,27 +150,28 @@ teacher.get('/messages/:studentId', requireAuth, requireTeacher, (req, res) => {
 
 // ─── Teacher: POST reply ──────────────────────────────────────────────────────
 
-teacher.post('/messages/:studentId', requireAuth, requireTeacher, (req, res) => {
+teacher.post('/messages/:studentId', requireAuth, requireTeacher, handleUpload, (req, res) => {
   const { studentId } = req.params;
-  const { text } = req.body;
+  const text = (req.body.text || '').trim();
+  const { file_url, file_name, file_size } = fileInfoFromReq(req);
 
   const studentUser = db.prepare(
     `SELECT id, name, email FROM users WHERE id = ? AND role = 'student'`
   ).get(studentId);
   if (!studentUser) return res.status(404).json({ error: 'Student not found' });
 
-  if (!text || !text.trim()) {
-    return res.status(400).json({ error: 'text is required' });
+  if (!text && !file_url) {
+    return res.status(400).json({ error: 'text or file is required' });
   }
 
   const result = db.prepare(`
-    INSERT INTO messages (student_id, sender_role, text) VALUES (?, 'teacher', ?)
-  `).run(studentId, text.trim());
+    INSERT INTO messages (student_id, sender_role, text, file_url, file_name, file_size, message_type)
+    VALUES (?, 'teacher', ?, ?, ?, ?, 'message')
+  `).run(studentId, text || null, file_url || null, file_name || null, file_size || null);
 
   const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid);
 
-  // Step 59c: notify student of teacher reply
-  notifyStudentTeacherReplied({ studentName: studentUser.name, studentEmail: studentUser.email, replyText: text.trim() });
+  notifyStudentTeacherReplied({ studentName: studentUser.name, studentEmail: studentUser.email, replyText: text || '[prilog]' });
 
   return res.status(201).json({ message });
 });
