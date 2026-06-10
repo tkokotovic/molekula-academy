@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getMe, getMessages, sendMessage } from '../api/client';
+import { ChemText } from '../utils/chemText';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ function Bubble({ msg }) {
           color: isStudent ? '#fff' : 'var(--ink)',
           fontSize: 14.5, lineHeight: 1.55, wordBreak: 'break-word',
         }}>
-          {msg.text}
+          <ChemText text={msg.text} />
         </div>
         <span style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, paddingInline: 4 }}>
           {formatTime(msg.created_at)}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getQuiz, getQuizAttempts, startAttempt, submitAttempt, getAttempt } from '../api/client';
+import { ChemText } from '../utils/chemText';
 
 // ─── Timer ────────────────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ function QuestionMCQ({ question, answer, onChange, disabled }) {
             }}
           >
             <span style={{ display: 'inline-block', width: 22, height: 22, borderRadius: '50%', border: selected ? '2px solid var(--accent, #0f8f86)' : '1.5px solid var(--line-strong, #cfdcda)', marginRight: 12, verticalAlign: 'middle', background: selected ? 'var(--accent, #0f8f86)' : 'transparent', flexShrink: 0 }} />
-            {opt.text}
+            <ChemText text={opt.text} />
           </button>
         );
       })}
@@ -224,7 +225,7 @@ function AnswerFeedback({ qa }) {
   return (
     <div style={{ border: `1.5px solid ${borderColor}`, borderRadius: 'var(--radius-sm, 12px)', background: bgColor, padding: '16px 18px', marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
-        <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, flex: 1 }}>{question.stem}</p>
+        <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, flex: 1 }}><ChemText text={question.stem} /></p>
         <span style={{
           flexShrink: 0, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700,
           fontFamily: 'var(--mono)', background: needsManual ? 'var(--bg)' : is_correct ? '#d4f5f0' : '#fde8e8',
@@ -396,7 +397,7 @@ function QuizInProgress({ quiz, attempt, onSubmitted }) {
           </div>
 
           <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.65, color: 'var(--ink)', fontWeight: 500 }}>
-            {q.stem}
+            <ChemText text={q.stem} />
           </p>
 
           <QuestionInput

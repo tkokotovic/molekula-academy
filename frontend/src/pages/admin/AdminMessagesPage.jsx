@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getMessageThreads, getMessageThread, replyToStudent } from '../../api/client';
+import { ChemText } from '../../utils/chemText';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ function Bubble({ msg }) {
           border: isTeacher ? 'none' : '1px solid var(--line)',
           color: isTeacher ? '#fff' : 'var(--ink)',
           fontSize: 14, lineHeight: 1.55, wordBreak: 'break-word',
-        }}>{msg.text}</div>
+        }}><ChemText text={msg.text} /></div>
         <span style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, paddingInline: 4 }}>
           {new Date(msg.created_at).toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' })}
         </span>
