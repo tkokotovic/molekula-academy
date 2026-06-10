@@ -63,6 +63,11 @@ const { studentRouter: msgStudentRouter, teacherRouter: msgTeacherRouter } = req
 app.use('/api/student', msgStudentRouter);
 app.use('/api/teacher', msgTeacherRouter);
 
+// Sessions (S10)
+const { studentRouter: sessStudentRouter, teacherRouter: sessTeacherRouter } = require('./routes/sessions');
+app.use('/api/student', sessStudentRouter);
+app.use('/api/teacher', sessTeacherRouter);
+
 // File upload
 app.use('/api/teacher/upload', require('./routes/upload'));
 

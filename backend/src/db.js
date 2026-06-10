@@ -463,6 +463,21 @@ const migrations = [
   `ALTER TABLE messages ADD COLUMN message_type TEXT NOT NULL DEFAULT 'message'`,
   // S01 — Student portal: onboarding flag
   `ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0`,
+  // S10 — Sessions table
+  `CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    scheduled_at TEXT NOT NULL,
+    duration_minutes INTEGER NOT NULL DEFAULT 60,
+    zoom_url TEXT,
+    prep_note TEXT,
+    status TEXT NOT NULL DEFAULT 'upcoming',
+    summary_message_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (summary_message_id) REFERENCES messages(id) ON DELETE SET NULL
+  )`,
 ];
 
 for (const sql of migrations) {

@@ -1,92 +1,206 @@
 import { useState, useEffect } from 'react';
-import { getMe } from '../api/client';
+import { getMe, getStudentSessions } from '../api/client';
 import { Icon } from '../components/AppShell';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso) {
+function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('hr-HR', {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   });
 }
 
-// ─── Upcoming sessions (stub — replace with real API in Phase 7) ──────────────
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
+}
 
-const STUB_SESSIONS = [
-  {
-    id: 1,
-    title: 'Termokemija — Hessov zakon',
-    date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-    time: '17:00',
-    duration: 60,
-    zoomUrl: '#',
-    status: 'confirmed',
-  },
-];
+function fmtShort(iso) {
+  return new Date(iso).toLocaleDateString('hr-HR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
-// ─── Session card ─────────────────────────────────────────────────────────────
+// ─── Next session card ────────────────────────────────────────────────────────
 
-function SessionCard({ session, lang }) {
+function NextSessionCard({ session, lang }) {
   const t = (hr, en) => lang === 'en' ? en : hr;
-  const isUpcoming = new Date(session.date) > new Date();
+  const d = new Date(session.scheduled_at);
+  const now = new Date();
+  const diffMs = d - now;
+  const diffDays = Math.ceil(diffMs / 86400000);
+  const isSoon = diffDays <= 1;
 
   return (
     <div style={{
-      background: 'var(--surface)', border: '1px solid var(--line)',
-      borderRadius: 14, padding: '18px 20px',
-      display: 'flex', alignItems: 'center', gap: 16,
+      background: 'var(--surface)',
+      border: `1.5px solid ${isSoon ? 'var(--accent)' : 'var(--line)'}`,
+      borderRadius: 16, padding: '20px 24px',
+      display: 'flex', flexDirection: 'column', gap: 14,
     }}>
-      {/* Date chip */}
-      <div style={{
-        width: 52, flexShrink: 0, textAlign: 'center',
-        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
-        borderRadius: 10, padding: '8px 4px',
-      }}>
-        <div style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 22, color: 'var(--accent)', lineHeight: 1 }}>
-          {new Date(session.date).getDate()}
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        {/* Date chip */}
+        <div style={{
+          width: 56, flexShrink: 0, textAlign: 'center',
+          background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+          borderRadius: 12, padding: '10px 4px',
+        }}>
+          <div style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 24, color: 'var(--accent)', lineHeight: 1 }}>
+            {d.getDate()}
+          </div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>
+            {d.toLocaleDateString('hr-HR', { month: 'short' })}
+          </div>
         </div>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-          {new Date(session.date).toLocaleDateString('hr-HR', { month: 'short' })}
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', marginBottom: 4 }}>
+            {session.title}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', display: 'flex', flexWrap: 'wrap', gap: '4px 14px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Icon.cal width={13} height={13} />
+              {fmtDate(session.scheduled_at)}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+              </svg>
+              {fmtTime(session.scheduled_at)} · {session.duration_minutes} {t('min', 'min')}
+            </span>
+          </div>
+          {isSoon && (
+            <div style={{
+              marginTop: 6, display: 'inline-block',
+              padding: '2px 9px', borderRadius: 20,
+              background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+              color: 'var(--accent)', fontSize: 11.5, fontWeight: 700,
+              fontFamily: 'var(--mono)',
+            }}>
+              {diffDays <= 0 ? t('Danas!', 'Today!') : t('Sutra', 'Tomorrow')}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {session.title}
+      {/* Prep note */}
+      {session.prep_note && (
+        <div style={{
+          background: 'color-mix(in srgb, var(--accent) 6%, var(--bg))',
+          border: '1px solid color-mix(in srgb, var(--accent) 18%, transparent)',
+          borderRadius: 10, padding: '12px 14px',
+          fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5,
+          display: 'flex', gap: 10,
+        }}>
+          <span style={{ flexShrink: 0, fontSize: 16 }}>📋</span>
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
+              {t('Priprema', 'Prep note')}
+            </div>
+            {session.prep_note}
+          </div>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--ink-soft)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Icon.cal width={13} height={13} />
-            {formatDate(session.date)}
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
-            </svg>
-            {session.time} · {session.duration} {t('min', 'min')}
-          </span>
-        </div>
-      </div>
+      )}
 
-      {/* Actions */}
-      {isUpcoming && (
+      {/* Zoom button */}
+      {session.zoom_url ? (
         <a
-          href={session.zoomUrl}
+          href={session.zoom_url}
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7,
-            padding: '9px 16px', borderRadius: 9,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '11px 20px', borderRadius: 10,
             background: 'var(--accent)', color: '#fff',
-            fontWeight: 700, fontSize: 13, textDecoration: 'none',
-            flexShrink: 0,
+            fontWeight: 700, fontSize: 14, textDecoration: 'none',
           }}
         >
-          <Icon.video width={14} height={14} />
-          {t('Pridruži se', 'Join')}
+          <Icon.video width={16} height={16} />
+          {t('Pridruži se Zoom sesiji', 'Join Zoom session')}
+        </a>
+      ) : (
+        <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+          {t('Zoom link bit će dodan uskoro.', 'Zoom link will be added soon.')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Session history row ──────────────────────────────────────────────────────
+
+function HistoryRow({ session, lang }) {
+  const t = (hr, en) => lang === 'en' ? en : hr;
+  const isCancelled = session.status === 'cancelled';
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '14px 18px',
+      background: 'var(--surface)', border: '1px solid var(--line)',
+      borderRadius: 12,
+      opacity: isCancelled ? 0.55 : 1,
+    }}>
+      {/* Status dot */}
+      <div style={{
+        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+        background: isCancelled ? 'var(--ink-soft)' : 'color-mix(in srgb, #22c55e 80%, transparent)',
+      }} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>
+          {session.title}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>
+          {fmtShort(session.scheduled_at)} · {session.duration_minutes} {t('min', 'min')}
+          {isCancelled && <span style={{ marginLeft: 8, color: 'var(--ink-soft)', fontStyle: 'italic' }}>({t('otkazano', 'cancelled')})</span>}
+        </div>
+      </div>
+
+      {/* Link to session summary message */}
+      {session.summary_message_id && (
+        <a
+          href="/messages"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px', borderRadius: 8,
+            background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+            color: 'var(--accent)', fontSize: 12.5, fontWeight: 600,
+            textDecoration: 'none', flexShrink: 0,
+          }}
+        >
+          📋 {t('Sažetak', 'Summary')}
         </a>
       )}
+    </div>
+  );
+}
+
+// ─── No sessions placeholder ──────────────────────────────────────────────────
+
+function NoUpcoming({ lang }) {
+  const t = (hr, en) => lang === 'en' ? en : hr;
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1.5px dashed var(--line)',
+      borderRadius: 16, padding: '28px 24px',
+      display: 'flex', alignItems: 'center', gap: 16,
+    }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--accent)',
+      }}>
+        <Icon.video width={22} height={22} />
+      </div>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--ink)', marginBottom: 4 }}>
+          {t('Nije zakazana sesija', 'No session booked')}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+          {t('Rezerviraj termin u kalendaru ispod.', 'Book a slot in the calendar below.')}
+        </div>
+      </div>
     </div>
   );
 }
@@ -161,28 +275,23 @@ function BasicUpsell({ lang }) {
 
 // ─── Calendly embed ───────────────────────────────────────────────────────────
 
-// CALENDLY_URL is a placeholder — replace with Tomislav's real Calendly link at launch.
+// CALENDLY_URL: replace with Tomislav's real link at launch.
 const CALENDLY_URL = 'https://calendly.com/tomislav-molekula';
 
 function CalendlyEmbed({ lang }) {
   const t = (hr, en) => lang === 'en' ? en : hr;
 
   useEffect(() => {
-    // Load Calendly widget script once
     if (document.getElementById('calendly-script')) return;
     const script = document.createElement('script');
     script.id = 'calendly-script';
     script.src = 'https://assets.calendly.com/assets/external/widget.js';
     script.async = true;
     document.body.appendChild(script);
-    return () => {
-      // Don't remove on unmount — keep cached for re-navigation
-    };
   }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* Info bar above embed */}
       <div style={{
         background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
         border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
@@ -199,17 +308,13 @@ function CalendlyEmbed({ lang }) {
           '60-minute 1-on-1 session · Zoom link sent by email after booking',
         )}
       </div>
-
-      {/* Calendly inline widget */}
       <div
         className="calendly-inline-widget"
         data-url={`${CALENDLY_URL}?hide_gdpr_banner=1&primary_color=0f8f86&locale=${lang === 'en' ? 'en' : 'hr'}`}
         style={{
-          minWidth: 320,
-          height: 660,
+          minWidth: 320, height: 660,
           borderRadius: '0 0 12px 12px',
-          border: '1px solid var(--line)',
-          borderTop: 'none',
+          border: '1px solid var(--line)', borderTop: 'none',
           overflow: 'hidden',
         }}
       />
@@ -223,14 +328,23 @@ export default function SchedulePage() {
   const lang = localStorage.getItem('mol_lang') || 'hr';
   const t = (hr, en) => lang === 'en' ? en : hr;
 
-  const [user, setUser]           = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [sessions]                = useState(STUB_SESSIONS);
+  const [user, setUser]       = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const isPremium = user?.subscription_tier === 'premium';
 
   useEffect(() => {
-    getMe().then(setUser).catch(() => {}).finally(() => setLoading(false));
+    getMe()
+      .then(async u => {
+        setUser(u);
+        if (u.subscription_tier === 'premium') {
+          const s = await getStudentSessions().catch(() => []);
+          setSessions(s);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -240,6 +354,17 @@ export default function SchedulePage() {
       </div>
     );
   }
+
+  const now = new Date();
+  const upcoming = sessions.filter(s => s.status === 'upcoming' && new Date(s.scheduled_at) > now);
+  const past = sessions.filter(s => s.status !== 'upcoming' || new Date(s.scheduled_at) <= now);
+  const nextSession = upcoming[0] ?? null;
+
+  // Monthly allowance: sessions booked this calendar month
+  const thisMonth = upcoming.filter(s => {
+    const d = new Date(s.scheduled_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 48px' }}>
@@ -257,17 +382,16 @@ export default function SchedulePage() {
       {isPremium ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-          {/* Upcoming sessions */}
-          {sessions.length > 0 && (
-            <section>
-              <h2 style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 12 }}>
-                {t('Nadolazeće sesije', 'Upcoming sessions')}
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sessions.map(s => <SessionCard key={s.id} session={s} lang={lang} />)}
-              </div>
-            </section>
-          )}
+          {/* Next session */}
+          <section>
+            <h2 style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 12 }}>
+              {t('Sljedeća sesija', 'Next session')}
+            </h2>
+            {nextSession
+              ? <NextSessionCard session={nextSession} lang={lang} />
+              : <NoUpcoming lang={lang} />
+            }
+          </section>
 
           {/* Monthly allowance badge */}
           <div style={{
@@ -288,27 +412,41 @@ export default function SchedulePage() {
                 {t('Tvoja mjesečna kvota', 'Your monthly allowance')}
               </div>
               <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                {sessions.length > 0
-                  ? t('1 od 1 sesije iskorištena ovaj mjesec', '1 of 1 sessions used this month')
+                {thisMonth.length > 0
+                  ? t(`${thisMonth.length} od 1 sesije rezervirana ovaj mjesec`, `${thisMonth.length} of 1 sessions booked this month`)
                   : t('1 besplatna sesija dostupna ovaj mjesec', '1 free session available this month')
                 }
               </div>
             </div>
             <div style={{
               fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 20,
-              color: sessions.length > 0 ? 'var(--ink-soft)' : 'var(--accent)',
+              color: thisMonth.length > 0 ? 'var(--ink-soft)' : 'var(--accent)',
             }}>
-              {sessions.length > 0 ? '0/1' : '1/1'}
+              {thisMonth.length > 0 ? '0/1' : '1/1'}
             </div>
           </div>
 
-          {/* Book new section */}
+          {/* Book new session */}
           <section>
             <h2 style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 16 }}>
               {t('Rezerviraj sesiju', 'Book a session')}
             </h2>
             <CalendlyEmbed lang={lang} />
           </section>
+
+          {/* Session history */}
+          {past.length > 0 && (
+            <section>
+              <h2 style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 12 }}>
+                {t('Prethodne sesije', 'Past sessions')}
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[...past].reverse().map(s => (
+                  <HistoryRow key={s.id} session={s} lang={lang} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Help note */}
           <div style={{
@@ -319,7 +457,7 @@ export default function SchedulePage() {
             <strong style={{ color: 'var(--ink)' }}>{t('Napomena:', 'Note:')}</strong>{' '}
             {t(
               'Nakon rezervacije dobivaš Zoom link emailom. Ako moraš otkazati, molim te to učini najmanje 24 sata unaprijed.',
-              'After booking you\'ll receive the Zoom link by email. If you need to cancel, please do so at least 24 hours in advance.',
+              "After booking you'll receive the Zoom link by email. If you need to cancel, please do so at least 24 hours in advance.",
             )}
           </div>
         </div>

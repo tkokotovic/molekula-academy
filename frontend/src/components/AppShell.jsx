@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logout, getMe } from '../api/client';
+import { logout, getMe, getStudentSessions } from '../api/client';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ const NAV_ITEMS = [
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ lang, onNav }) {
+function Sidebar({ lang, onNav, nextSession }) {
   return (
     <nav className="side">
       {/* Logo */}
@@ -90,22 +90,52 @@ function Sidebar({ lang, onNav }) {
       <div className="side-foot">
         <div className="side-zoom-card">
           <h5>{lang === 'en' ? 'Next session' : 'Sljedeća sesija'}</h5>
-          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.7)', margin: '4px 0 12px' }}>
-            {lang === 'en' ? 'Not scheduled yet' : 'Nije zakazana'}
-          </p>
-          <NavLink
-            to="/schedule"
-            className="btn"
-            style={{
-              width: '100%', padding: '9px 14px', fontSize: 13, justifyContent: 'center',
-              background: 'var(--accent-bright)', color: 'var(--deep)', border: 'none',
-              fontWeight: 700,
-            }}
-            onClick={onNav}
-          >
-            <Icon.video width={15} height={15} />
-            {lang === 'en' ? 'Book a session' : 'Zakaži sesiju'}
-          </NavLink>
+          {nextSession ? (
+            <>
+              <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.9)', margin: '4px 0 2px', fontWeight: 600, lineHeight: 1.3 }}>
+                {nextSession.title}
+              </p>
+              <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,.6)', margin: '0 0 12px' }}>
+                {new Date(nextSession.scheduled_at).toLocaleDateString('hr-HR', { day: '2-digit', month: 'short' })}
+                {' · '}
+                {new Date(nextSession.scheduled_at).toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </>
+          ) : (
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.7)', margin: '4px 0 12px' }}>
+              {lang === 'en' ? 'Not scheduled yet' : 'Nije zakazana'}
+            </p>
+          )}
+          {nextSession?.zoom_url ? (
+            <a
+              href={nextSession.zoom_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn"
+              style={{
+                width: '100%', padding: '9px 14px', fontSize: 13, justifyContent: 'center',
+                background: 'var(--accent-bright)', color: 'var(--deep)', border: 'none',
+                fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Icon.video width={15} height={15} />
+              {lang === 'en' ? 'Join' : 'Pridruži se'}
+            </a>
+          ) : (
+            <NavLink
+              to="/schedule"
+              className="btn"
+              style={{
+                width: '100%', padding: '9px 14px', fontSize: 13, justifyContent: 'center',
+                background: 'var(--accent-bright)', color: 'var(--deep)', border: 'none',
+                fontWeight: 700,
+              }}
+              onClick={onNav}
+            >
+              <Icon.video width={15} height={15} />
+              {nextSession ? (lang === 'en' ? 'Schedule' : 'Raspored') : (lang === 'en' ? 'Book a session' : 'Zakaži sesiju')}
+            </NavLink>
+          )}
         </div>
       </div>
     </nav>
@@ -185,7 +215,8 @@ export default function AppShell({ children }) {
   const [navOpen, setNavOpen] = useState(false);
   const [lang,    setLang]    = useState(() => localStorage.getItem('mol_lang') || 'hr');
   const [theme,   setTheme]   = useState(() => localStorage.getItem('mol_theme') || 'light');
-  const [user,    setUser]    = useState(null);
+  const [user,        setUser]        = useState(null);
+  const [nextSession, setNextSession] = useState(null);
 
   // Persist lang
   useEffect(() => {
@@ -200,16 +231,25 @@ export default function AppShell({ children }) {
     document.body.dataset.theme = theme;
   }, [theme]);
 
-  // Load current user
+  // Load current user + next session
   useEffect(() => {
-    getMe().then(setUser).catch(() => {});
+    getMe().then(u => {
+      setUser(u);
+      if (u.subscription_tier === 'premium') {
+        getStudentSessions().then(sessions => {
+          const now = new Date();
+          const upcoming = sessions.filter(s => s.status === 'upcoming' && new Date(s.scheduled_at) > now);
+          setNextSession(upcoming[0] ?? null);
+        }).catch(() => {});
+      }
+    }).catch(() => {});
   }, []);
 
   function closeNav() { setNavOpen(false); }
 
   return (
     <div className={'app' + (navOpen ? ' nav-open' : '')}>
-      <Sidebar lang={lang} onNav={closeNav} />
+      <Sidebar lang={lang} onNav={closeNav} nextSession={nextSession} />
 
       {/* Mobile scrim */}
       <div className="nav-scrim" onClick={closeNav} />

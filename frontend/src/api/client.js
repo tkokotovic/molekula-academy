@@ -534,3 +534,35 @@ export async function updateStudentProfile(id, fields) {
   });
   return data.user;
 }
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
+
+export async function getStudentSessions() {
+  const data = await apiFetch('/api/student/sessions');
+  return data.sessions;
+}
+
+export async function getTeacherSessions() {
+  const data = await apiFetch('/api/teacher/sessions');
+  return data.sessions;
+}
+
+export async function createSession(fields) {
+  const data = await apiFetch('/api/teacher/sessions', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.session;
+}
+
+export async function updateSession(id, fields) {
+  const data = await apiFetch(`/api/teacher/sessions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
+  return data.session;
+}
+
+export async function deleteSession(id) {
+  return apiFetch(`/api/teacher/sessions/${id}`, { method: 'DELETE' });
+}

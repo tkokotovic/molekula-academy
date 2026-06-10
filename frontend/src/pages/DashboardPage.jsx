@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getMe, getStudentStats, getCourseProgress, getEnrollment, getStudentHomework } from '../api/client';
+import { getMe, getStudentStats, getCourseProgress, getEnrollment, getStudentHomework, getStudentSessions } from '../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -474,7 +474,13 @@ function QuickLinks() {
 
 // ─── Zoom card ────────────────────────────────────────────────────────────────
 
-function UpcomingSession() {
+function fmtSessionDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('hr-HR', { day: '2-digit', month: 'short' }) +
+    ' · ' + d.toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function UpcomingSession({ session }) {
   return (
     <div style={{
       background: 'var(--surface)', border: '1.5px solid var(--line)',
@@ -499,26 +505,53 @@ function UpcomingSession() {
         }}>
           <VideoIcon width={18} height={18} style={{ color: '#fff' }} />
         </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-            Nije zakazana
+        {session ? (
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {session.title}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 }}>
+              {fmtSessionDate(session.scheduled_at)}
+            </div>
           </div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', marginTop: 2 }}>
-            Premium: 1 besplatna/mj.
+        ) : (
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+              Nije zakazana
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', marginTop: 2 }}>
+              Premium: 1 besplatna/mj.
+            </div>
           </div>
-        </div>
+        )}
       </div>
-      <Link
-        to="/schedule"
-        className="btn btn-primary btn-sm"
-        style={{
-          textDecoration: 'none', display: 'flex',
-          justifyContent: 'center', gap: 7, alignItems: 'center', width: '100%',
-        }}
-      >
-        <CalIcon width={15} height={15} />
-        Zakaži sesiju
-      </Link>
+      {session?.zoom_url ? (
+        <a
+          href={session.zoom_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary btn-sm"
+          style={{
+            textDecoration: 'none', display: 'flex',
+            justifyContent: 'center', gap: 7, alignItems: 'center', width: '100%',
+          }}
+        >
+          <VideoIcon width={15} height={15} />
+          Pridruži se
+        </a>
+      ) : (
+        <Link
+          to="/schedule"
+          className="btn btn-primary btn-sm"
+          style={{
+            textDecoration: 'none', display: 'flex',
+            justifyContent: 'center', gap: 7, alignItems: 'center', width: '100%',
+          }}
+        >
+          <CalIcon width={15} height={15} />
+          {session ? 'Raspored sesija' : 'Zakaži sesiju'}
+        </Link>
+      )}
     </div>
   );
 }
@@ -586,6 +619,7 @@ export default function DashboardPage() {
   const [enrollment, setEnrollment] = useState(null);
   const [previous, setPrevious]     = useState([]);
   const [homework, setHomework]     = useState([]);
+  const [nextSession, setNextSession] = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
 
@@ -593,12 +627,13 @@ export default function DashboardPage() {
     let mounted = true;
     async function load() {
       try {
-        const [me, st, co, enr, hw] = await Promise.all([
+        const [me, st, co, enr, hw, sessions] = await Promise.all([
           getMe(),
           getStudentStats(),
           getCourseProgress(),
           getEnrollment(),
           getStudentHomework().catch(() => []),
+          getStudentSessions().catch(() => []),
         ]);
         if (!mounted) return;
         setUser(me);
@@ -607,6 +642,9 @@ export default function DashboardPage() {
         setEnrollment(enr.enrollment ?? null);
         setPrevious(enr.previous ?? []);
         setHomework(Array.isArray(hw) ? hw : []);
+        const now = new Date();
+        const upcoming = sessions.filter(s => s.status === 'upcoming' && new Date(s.scheduled_at) > now);
+        setNextSession(upcoming[0] ?? null);
       } catch (err) {
         if (mounted) setError(err.message);
       } finally {
@@ -752,7 +790,7 @@ export default function DashboardPage() {
           {!loading && <HomeworkCard homework={homework} />}
 
           <QuickLinks />
-          <UpcomingSession />
+          <UpcomingSession session={nextSession} />
         </div>
       </div>
 
