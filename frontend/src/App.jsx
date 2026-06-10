@@ -6,6 +6,7 @@ import CoursesPage from './pages/CoursesPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import LessonPage from './pages/LessonPage';
 import QuizPage from './pages/QuizPage';
+import QuizzesPage from './pages/QuizzesPage';
 import DashboardPage from './pages/DashboardPage';
 import ProgressPage from './pages/ProgressPage';
 import MessagesPage from './pages/MessagesPage';
@@ -88,7 +89,7 @@ export default function App() {
         <Route path="/quizzes/:quizId"   element={<RequireAuth><QuizPage /></RequireAuth>} />
         <Route path="/dashboard"         element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/progress"          element={<RequireAuth><ProgressPage /></RequireAuth>} />
-        <Route path="/quizzes"           element={<RequireAuth><Stub title="Kvizovi" /></RequireAuth>} />
+        <Route path="/quizzes"           element={<RequireAuth><QuizzesPage /></RequireAuth>} />
         <Route path="/schedule"          element={<RequireAuth><SchedulePage /></RequireAuth>} />
         <Route path="/messages"          element={<RequireAuth><MessagesPage /></RequireAuth>} />
         <Route path="/settings"          element={<RequireAuth><SettingsPage /></RequireAuth>} />

@@ -381,6 +381,14 @@ export async function markLessonProgress(lessonId, status = 'completed', timeSpe
 
 // ─── Quizzes ──────────────────────────────────────────────────────────────────
 
+export async function getStudentQuizzesByCourse(courseId) {
+  return apiFetch(`/api/student/quizzes?type=topic_quiz&course_id=${courseId}`);
+}
+
+export async function getStudentMockExams() {
+  return apiFetch('/api/student/quizzes?type=mock_exam');
+}
+
 export async function getQuiz(quizId) {
   return apiFetch(`/api/student/quizzes/${quizId}`);
 }

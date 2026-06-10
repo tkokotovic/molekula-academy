@@ -414,17 +414,57 @@ studentRouter.post('/self-generated', requireAuth, (req, res) => {
 });
 
 // GET /api/student/quizzes — published only
+// Supports ?type=topic_quiz|mock_exam (default: topic_quiz)
+// Supports ?course_id=X (filter topic_quiz by course)
+// Supports ?topic_id=X (filter topic_quiz by topic)
+// Returns attempt stats: my_attempts, my_best_score, my_best_max
 studentRouter.get('/', requireAuth, (req, res) => {
-  const { topic_id } = req.query;
+  const { topic_id, course_id, type = 'topic_quiz' } = req.query;
+  const sid = req.user.id;
 
-  let sql = "SELECT * FROM quizzes WHERE status = 'published' AND type = 'topic_quiz'";
-  const params = [];
+  const statsSql = `
+    SELECT q.*,
+           t.title AS topic_title,
+           (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id = q.id) AS questions_count,
+           (SELECT COUNT(*) FROM quiz_attempts qa
+             WHERE qa.quiz_id = q.id AND qa.student_id = ?) AS my_attempts,
+           (SELECT MAX(qa.score) FROM quiz_attempts qa
+             WHERE qa.quiz_id = q.id AND qa.student_id = ? AND qa.status = 'completed') AS my_best_score,
+           (SELECT qa.max_score FROM quiz_attempts qa
+             WHERE qa.quiz_id = q.id AND qa.student_id = ? AND qa.status = 'completed'
+             ORDER BY qa.score DESC LIMIT 1) AS my_best_max
+      FROM quizzes q
+      LEFT JOIN topics t ON t.id = q.topic_id
+     WHERE q.status = 'published'
+  `;
+  const params = [sid, sid, sid];
 
-  if (topic_id) { sql += ' AND topic_id = ?'; params.push(Number(topic_id)); }
+  if (type === 'mock_exam') {
+    const isFreeUser = req.user.subscription_tier === 'free' && req.user.role === 'student';
+    if (isFreeUser) return res.json([]);
 
-  sql += ' ORDER BY created_at DESC';
+    params.push(sid);
+    const quizzes = db.prepare(statsSql + `
+      AND q.type = 'mock_exam'
+      AND (
+        NOT EXISTS (SELECT 1 FROM mock_exam_students mes WHERE mes.quiz_id = q.id)
+        OR EXISTS (SELECT 1 FROM mock_exam_students mes WHERE mes.quiz_id = q.id AND mes.student_id = ?)
+      )
+      ORDER BY q.created_at DESC
+    `).all(...params);
+    return res.json(quizzes);
+  }
 
-  const quizzes = db.prepare(sql).all(...params);
+  // topic_quiz (default)
+  let extraSql = " AND q.type = 'topic_quiz'";
+  if (topic_id) { extraSql += ' AND q.topic_id = ?'; params.push(Number(topic_id)); }
+  if (course_id) {
+    extraSql += ' AND q.topic_id IN (SELECT id FROM topics WHERE course_id = ?)';
+    params.push(Number(course_id));
+  }
+  extraSql += ' ORDER BY t.position, q.created_at';
+
+  const quizzes = db.prepare(statsSql + extraSql).all(...params);
   return res.json(quizzes);
 });
 
