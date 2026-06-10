@@ -1,12 +1,12 @@
 # Memory
 
 ## Me
-Tomislav (TK), developer/builder for Molekula Academy. Building the site and platform for Boris.
+Tomislav (TK), developer/builder for Molekula Academy. Also the teacher and owner — building both the platform and the teaching content.
 
 ## People
 | Who | Role |
 |-----|------|
-| **Boris** | Teacher and owner of Molekula Academy (chemistry tutor). Solo for now, team later. |
+| **Tomislav (TK)** | Teacher, owner, and developer of Molekula Academy. Chemistry tutor with 15+ years experience. Solo for now, team later. |
 
 ## Terms
 | Term | Meaning |
