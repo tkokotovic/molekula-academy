@@ -45,6 +45,91 @@ function parseStudentCourse(row) {
   return { ...row, target_audience: JSON.parse(row.target_audience || '[]') };
 }
 
+// ─── GET /api/student/courses ─────────────────────────────────────────────────
+// All published courses — for catalogue browsing and onboarding course picker.
+router.get('/courses', requireAuth, (req, res) => {
+  const rows = db.prepare(`
+    SELECT id, title, description, slug, cover_image_url, target_audience,
+           status, position, created_at, updated_at
+    FROM courses
+    WHERE status = 'published' AND is_library = 0
+    ORDER BY position, created_at
+  `).all();
+  return res.json({ courses: rows.map(parseStudentCourse) });
+});
+
+// ─── GET /api/student/enrollment ──────────────────────────────────────────────
+// Returns the student's active enrollment (with course data) + previous ones.
+router.get('/enrollment', requireAuth, (req, res) => {
+  const active = db.prepare(`
+    SELECT e.*, c.title as course_title, c.description as course_description,
+           c.slug as course_slug, c.target_audience
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    WHERE e.student_id = ? AND e.status = 'active'
+    LIMIT 1
+  `).get(req.user.id);
+
+  const previous = db.prepare(`
+    SELECT e.*, c.title as course_title, c.description as course_description,
+           c.slug as course_slug
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    WHERE e.student_id = ? AND e.status != 'active'
+    ORDER BY e.unenrolled_at DESC
+  `).all(req.user.id);
+
+  return res.json({
+    enrollment: active ? { ...active, target_audience: JSON.parse(active.target_audience || '[]') } : null,
+    previous: previous.map(e => ({ ...e })),
+  });
+});
+
+// ─── POST /api/student/enrollment ─────────────────────────────────────────────
+// Onboarding: student picks their first (or new) course.
+// Creates an enrollment row; marks any existing active enrollment as 'completed'.
+router.post('/enrollment', requireAuth, (req, res) => {
+  const { course_id } = req.body;
+  if (!course_id) return res.status(400).json({ error: 'course_id required' });
+
+  const course = db.prepare(
+    `SELECT id FROM courses WHERE id = ? AND status = 'published' AND is_library = 0`
+  ).get(course_id);
+  if (!course) return res.status(404).json({ error: 'Course not found' });
+
+  // Deactivate any existing active enrollment
+  db.prepare(`
+    UPDATE enrollments SET status = 'completed', unenrolled_at = datetime('now')
+    WHERE student_id = ? AND status = 'active'
+  `).run(req.user.id);
+
+  // Upsert new active enrollment
+  db.prepare(`
+    INSERT INTO enrollments (student_id, course_id, status)
+    VALUES (?, ?, 'active')
+    ON CONFLICT(student_id, course_id) DO UPDATE SET status = 'active', unenrolled_at = NULL
+  `).run(req.user.id, course_id);
+
+  // Mark onboarding complete
+  db.prepare(`UPDATE users SET onboarding_completed = 1 WHERE id = ?`).run(req.user.id);
+
+  const enrollment = db.prepare(
+    `SELECT * FROM enrollments WHERE student_id = ? AND course_id = ?`
+  ).get(req.user.id, course_id);
+
+  return res.status(201).json({ enrollment });
+});
+
+// ─── GET /api/student/topics/:topicId ────────────────────────────────────────
+// Single published topic — used for breadcrumb title in LessonPage.
+router.get('/topics/:topicId', requireAuth, (req, res) => {
+  const row = db.prepare(
+    `SELECT * FROM topics WHERE id = ? AND status = 'published'`
+  ).get(req.params.topicId);
+  if (!row) return res.status(404).json({ error: 'Topic not found' });
+  return res.json({ topic: parseStudentTopic(row) });
+});
+
 // ─── GET /api/student/courses/:id ─────────────────────────────────────────────
 // Single published course (drafts/archived/library courses are hidden).
 router.get('/courses/:id', requireAuth, (req, res) => {

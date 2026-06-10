@@ -423,6 +423,21 @@ db.exec(`
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
   );
+
+  -- ─── Notifications (S12) ────────────────────────────────────────────────────
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    title_hr TEXT NOT NULL,
+    title_en TEXT NOT NULL,
+    body_hr TEXT,
+    body_en TEXT,
+    action_url TEXT,
+    read_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 // ─── Migrations ───────────────────────────────────────────────────────────────
@@ -437,6 +452,17 @@ const migrations = [
   `ALTER TABLE courses ADD COLUMN is_library INTEGER NOT NULL DEFAULT 0`,
   // Block-level visibility: public (everyone) | basic (basic+premium) | premium (premium only)
   `ALTER TABLE lesson_blocks ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'`,
+  // S01 — Student portal: enrollment lifecycle
+  `ALTER TABLE enrollments ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`,
+  `ALTER TABLE enrollments ADD COLUMN unenrolled_at TEXT`,
+  `ALTER TABLE enrollments ADD COLUMN access_until TEXT`,
+  // S01 — Student portal: message file attachments + type
+  `ALTER TABLE messages ADD COLUMN file_url TEXT`,
+  `ALTER TABLE messages ADD COLUMN file_name TEXT`,
+  `ALTER TABLE messages ADD COLUMN file_size INTEGER`,
+  `ALTER TABLE messages ADD COLUMN message_type TEXT NOT NULL DEFAULT 'message'`,
+  // S01 — Student portal: onboarding flag
+  `ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0`,
 ];
 
 for (const sql of migrations) {

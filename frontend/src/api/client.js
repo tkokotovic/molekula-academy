@@ -213,11 +213,30 @@ export async function getStudentLessonBlocks(lessonId) {
   return data.blocks;
 }
 
+// ─── Enrollment ───────────────────────────────────────────────────────────────
+
+export async function getEnrollment() {
+  return apiFetch('/api/student/enrollment');
+}
+
+export async function enroll(courseId) {
+  const data = await apiFetch('/api/student/enrollment', {
+    method: 'POST',
+    body: JSON.stringify({ course_id: courseId }),
+  });
+  return data.enrollment;
+}
+
 // ─── Student content reads (published-only, no teacher_notes) ──────────────────
 
 export async function getStudentCourses() {
-  const data = await apiFetch('/api/courses');
+  const data = await apiFetch('/api/student/courses');
   return data.courses;
+}
+
+export async function getStudentTopic(topicId) {
+  const data = await apiFetch(`/api/student/topics/${topicId}`);
+  return data.topic;
 }
 
 export async function getStudentCourse(courseId) {

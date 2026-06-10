@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getStudentLesson, getStudentLessonsByTopic, getStudentLessonBlocks,
+  getStudentCourse, getStudentTopic,
   getLessonProgress, markLessonProgress,
 } from '../api/client';
+
+const MOBILE_NUDGE_KEY = 'molekula_mobile_nudge_dismissed';
 
 // ─── Difficulty badge ─────────────────────────────────────────────────────────
 
@@ -411,14 +414,21 @@ export default function LessonPage() {
   const { courseId, topicId, lessonId } = useParams();
   const navigate = useNavigate();
 
-  const [lesson,    setLesson]   = useState(null);
-  const [blocks,    setBlocks]   = useState([]);
-  const [siblings,  setSiblings] = useState([]);  // all lessons in this topic
-  const [progress,  setProgress] = useState(null);
-  const [loading,   setLoading]  = useState(true);
-  const [error,     setError]    = useState('');
-  const [marking,   setMarking]  = useState(false);
+  const [lesson,      setLesson]    = useState(null);
+  const [blocks,      setBlocks]    = useState([]);
+  const [siblings,    setSiblings]  = useState([]);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [topicTitle,  setTopicTitle]  = useState('');
+  const [progress,    setProgress]  = useState(null);
+  const [loading,     setLoading]   = useState(true);
+  const [error,       setError]     = useState('');
+  const [marking,     setMarking]   = useState(false);
   const [completedIds, setCompletedIds] = useState(new Set());
+  const [showQuizPrompt, setShowQuizPrompt] = useState(false);
+  const [mobileNudgeDismissed, setMobileNudgeDismissed] = useState(
+    () => Boolean(localStorage.getItem(MOBILE_NUDGE_KEY))
+  );
+  const isMobile = window.innerWidth < 768;
 
   const startTime = useRef(Date.now());
 
@@ -426,11 +436,15 @@ export default function LessonPage() {
     setLoading(true);
     setError('');
     try {
-      const [lessonData, blocksData, siblingData] = await Promise.all([
+      const [lessonData, blocksData, siblingData, courseData, topicData] = await Promise.all([
         getStudentLesson(lessonId),
         getStudentLessonBlocks(lessonId),
         getStudentLessonsByTopic(topicId),
+        getStudentCourse(courseId).catch(() => null),
+        getStudentTopic(topicId).catch(() => null),
       ]);
+      setCourseTitle(courseData?.title || '');
+      setTopicTitle(topicData?.title || '');
       setLesson(lessonData);
       setBlocks(blocksData);
       setSiblings(siblingData);
@@ -468,6 +482,8 @@ export default function LessonPage() {
       const updated = await markLessonProgress(lessonId, 'completed', elapsed);
       setProgress(updated);
       setCompletedIds(prev => new Set([...prev, Number(lessonId)]));
+      // Show quiz suggestion if lesson has linked quizzes
+      if (lesson?.linked_quiz_ids?.length > 0) setShowQuizPrompt(true);
     } catch (e) {
       alert('Greška: ' + e.message);
     } finally {
@@ -504,13 +520,32 @@ export default function LessonPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
 
+      {/* Mobile desktop nudge */}
+      {isMobile && !mobileNudgeDismissed && (
+        <div style={{ background: 'var(--surface)', border: '1.5px solid var(--line)',
+          borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}>
+          <span>💻</span>
+          <span style={{ flex: 1, color: 'var(--ink-soft)' }}>
+            Za bolji doživljaj učenja, preporučamo desktop · <em>For the best study experience, we recommend desktop.</em>
+          </span>
+          <button
+            onClick={() => { localStorage.setItem(MOBILE_NUDGE_KEY, '1'); setMobileNudgeDismissed(true); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 18, padding: '0 4px', lineHeight: 1 }}
+            aria-label="Zatvori"
+          >×</button>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <nav style={{ fontSize: 13, color: 'var(--ink-faint)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <Link to="/courses" style={{ color: 'var(--accent-ink)', textDecoration: 'none', fontWeight: 600 }}>Kolegiji</Link>
         <span>›</span>
-        <Link to={`/courses/${courseId}`} style={{ color: 'var(--accent-ink)', textDecoration: 'none', fontWeight: 600 }}>Kurs #{courseId}</Link>
+        <Link to={`/courses/${courseId}`} style={{ color: 'var(--accent-ink)', textDecoration: 'none', fontWeight: 600 }}>
+          {courseTitle || `Kolegij #${courseId}`}
+        </Link>
         <span>›</span>
-        <span style={{ color: 'var(--ink-soft)' }}>Tema #{topicId}</span>
+        <span style={{ color: 'var(--ink-soft)' }}>{topicTitle || `Tema #${topicId}`}</span>
         <span>›</span>
         <span style={{ color: 'var(--ink)' }}>{lesson?.title}</span>
       </nav>
@@ -595,6 +630,37 @@ export default function LessonPage() {
                     Nastavi na sljedeću lekciju ↓
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Post-lesson quiz suggestion */}
+            {showQuizPrompt && lesson?.linked_quiz_ids?.length > 0 && (
+              <div style={{ marginBottom: 28, padding: '18px 22px',
+                background: 'var(--surface)', border: '1.5px solid var(--accent)',
+                borderRadius: 'var(--radius-sm)', display: 'flex',
+                alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--ink)', fontSize: 15 }}>
+                    Provjeri znanje
+                  </p>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-soft)' }}>
+                    Uzmi kviz za ovu lekciju i provjeri što si naučio/la.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Link
+                    to={`/quizzes/${lesson.linked_quiz_ids[0]}`}
+                    style={{ ...btnPrimary, textDecoration: 'none', display: 'inline-block' }}
+                  >
+                    Uzmi kviz →
+                  </Link>
+                  <button
+                    onClick={() => setShowQuizPrompt(false)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'var(--ink-faint)', fontSize: 20, padding: '0 4px', lineHeight: 1 }}
+                    aria-label="Zatvori"
+                  >×</button>
+                </div>
               </div>
             )}
 

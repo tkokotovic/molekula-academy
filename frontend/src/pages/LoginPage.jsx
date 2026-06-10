@@ -23,9 +23,15 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { token } = await login(email, password);
+      const { user, token } = await login(email, password);
       const role = getRoleFromToken(token);
-      navigate(role === 'teacher' || role === 'owner' ? '/admin' : '/courses');
+      if (role === 'teacher' || role === 'owner') {
+        navigate('/admin');
+      } else if (!user.onboarding_completed) {
+        navigate('/onboarding');
+      } else {
+        navigate('/courses');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

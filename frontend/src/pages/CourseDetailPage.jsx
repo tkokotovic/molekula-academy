@@ -1,114 +1,39 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  getStudentCourse, getStudentCourseTopics, createTopic, deleteTopicById,
-  getStudentLessonsByTopic,
+  getStudentCourse, getStudentCourseTopics, getStudentLessonsByTopic,
 } from '../api/client';
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-const STATUS_LABELS = { draft: 'Nacrt', published: 'Objavljeno', archived: 'Arhivirano' };
-const STATUS_COLORS = {
-  draft:     { background: '#f0f4f3', color: '#5a7a74' },
-  published: { background: '#d4f5f0', color: '#0b343c' },
-  archived:  { background: '#e8e8e8', color: '#888'    },
+const DIFFICULTY_LABELS = { easy: 'Lagano', medium: 'Srednje', hard: 'Teško' };
+const DIFFICULTY_COLORS = {
+  easy:   { background: '#d4f5f0', color: '#0b6b63' },
+  medium: { background: '#fff3cd', color: '#7d5a00' },
+  hard:   { background: '#fde8e8', color: '#b02020' },
 };
 
-function StatusBadge({ status }) {
-  const style = STATUS_COLORS[status] || STATUS_COLORS.draft;
+function DifficultyBadge({ difficulty }) {
+  const style = DIFFICULTY_COLORS[difficulty] || DIFFICULTY_COLORS.medium;
   return (
-    <span style={{ ...style, padding: '2px 10px', borderRadius: 20, fontSize: 13, fontWeight: 600 }}>
-      {STATUS_LABELS[status] || status}
+    <span style={{ ...style, padding: '2px 9px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+      {DIFFICULTY_LABELS[difficulty] || difficulty}
     </span>
   );
 }
 
-// ─── Topic dialog ─────────────────────────────────────────────────────────────
-
-function TopicDialog({ onSave, onClose }) {
-  const [title, setTitle]      = useState('');
-  const [description, setDesc] = useState('');
-  const [error, setError]      = useState('');
-  const [saving, setSaving]    = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!title.trim()) { setError('Naziv je obavezan (title required)'); return; }
-    setSaving(true);
-    try {
-      await onSave({ title: title.trim(), description });
-      onClose();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 100,
-      }}
-    >
-      <div style={{
-        background: '#fff', borderRadius: 12, padding: 32, width: 460, maxWidth: '90vw',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
-      }}>
-        <h2 style={{ margin: '0 0 20px', fontSize: 20, color: '#0b343c' }}>Nova tema (New topic)</h2>
-        <form onSubmit={handleSubmit}>
-          <label htmlFor="topic-title" style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-            Naziv (title)
-          </label>
-          <input
-            id="topic-title"
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="npr. Atomska struktura"
-            style={inputStyle}
-          />
-
-          <label htmlFor="topic-desc" style={{ display: 'block', margin: '16px 0 6px', fontWeight: 600, fontSize: 14 }}>
-            Opis
-          </label>
-          <textarea
-            id="topic-desc"
-            value={description}
-            onChange={e => setDesc(e.target.value)}
-            rows={3}
-            placeholder="Kratki opis teme..."
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
-
-          {error && <p style={{ color: '#c0392b', marginTop: 8, fontSize: 14 }}>{error}</p>}
-
-          <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={btnSecondary}>Odustani</button>
-            <button type="submit" disabled={saving} style={btnPrimary}>
-              {saving ? 'Spremat...' : 'Spremi (save)'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+function isNew(lesson) {
+  if (!lesson.created_at && !lesson.updated_at) return false;
+  const date = new Date(lesson.updated_at || lesson.created_at);
+  return (Date.now() - date.getTime()) < 7 * 24 * 60 * 60 * 1000;
 }
 
-// ─── Topic card with lesson list ──────────────────────────────────────────────
+// ─── Topic accordion ──────────────────────────────────────────────────────────
 
-function TopicCard({ topic, courseId, onDelete }) {
-  const [lessons, setLessons] = useState([]);
-  const [expanded, setExpanded] = useState(true);
-  const [loadingLessons, setLoadingLessons] = useState(false);
+function TopicSection({ topic, courseId, lessonOffset }) {
+  const [lessons, setLessons]           = useState([]);
+  const [expanded, setExpanded]         = useState(true);
+  const [loadingLessons, setLoadingLessons] = useState(true);
 
   useEffect(() => {
-    setLoadingLessons(true);
     getStudentLessonsByTopic(topic.id)
       .then(setLessons)
       .catch(() => setLessons([]))
@@ -116,77 +41,81 @@ function TopicCard({ topic, courseId, onDelete }) {
   }, [topic.id]);
 
   return (
-    <div style={cardStyle}>
-      {/* Topic header row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-        <button
-          onClick={() => setExpanded(e => !e)}
-          aria-label={expanded ? 'Sažmi' : 'Proširi'}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', color: 'var(--ink-faint)', fontSize: 16, lineHeight: 1, flexShrink: 0 }}
-        >
-          {expanded ? '▾' : '▸'}
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)' }}>{topic.title}</span>
-            <StatusBadge status={topic.status} />
-            <span style={{ fontSize: 12, color: 'var(--ink-faint)', fontFamily: 'var(--mono)' }}>
-              {lessons.length} lekcija
-            </span>
-          </div>
-          {topic.description && (
-            <p style={{ margin: '2px 0 0', color: 'var(--ink-soft)', fontSize: 14 }}>{topic.description}</p>
-          )}
-        </div>
-        <button
-          onClick={() => onDelete(topic.id)}
-          style={{ ...btnDanger, fontSize: 13, flexShrink: 0 }}
-          aria-label="Obriši temu"
-        >
-          Obriši
-        </button>
-      </div>
+    <div style={{ border: '1.5px solid var(--line)', borderRadius: 12,
+      background: 'var(--surface)', overflow: 'hidden' }}>
 
-      {/* Lesson list */}
+      {/* Topic header */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left' }}
+      >
+        <span style={{ fontSize: 15, color: 'var(--ink-faint)', flexShrink: 0, width: 14, textAlign: 'center' }}>
+          {expanded ? '▾' : '▸'}
+        </span>
+        <span style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 17,
+          color: 'var(--ink)', flex: 1 }}>
+          {topic.title}
+        </span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-faint)', flexShrink: 0 }}>
+          {loadingLessons ? '…' : `${lessons.length} lekcija`}
+        </span>
+      </button>
+
+      {/* Description */}
+      {expanded && topic.description && (
+        <p style={{ margin: '0 20px 12px 48px', fontSize: 14, color: 'var(--ink-soft)',
+          lineHeight: 1.55 }}>
+          {topic.description}
+        </p>
+      )}
+
+      {/* Lesson rows */}
       {expanded && (
-        <div style={{ width: '100%', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+        <div style={{ borderTop: '1px solid var(--line)', paddingBottom: 4 }}>
           {loadingLessons && (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-faint)', paddingLeft: 32 }}>Učitavam lekcije…</p>
+            <p style={{ padding: '12px 20px 12px 48px', margin: 0, fontSize: 14,
+              color: 'var(--ink-faint)' }}>Učitavam lekcije…</p>
           )}
           {!loadingLessons && lessons.length === 0 && (
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-faint)', paddingLeft: 32 }}>
-              Nema lekcija u ovoj temi.
-            </p>
+            <p style={{ padding: '12px 20px 12px 48px', margin: 0, fontSize: 14,
+              color: 'var(--ink-faint)' }}>Nema lekcija u ovoj temi.</p>
           )}
           {!loadingLessons && lessons.map((lesson, idx) => (
             <Link
               key={lesson.id}
               to={`/courses/${courseId}/topics/${topic.id}/lessons/${lesson.id}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 8px 8px 32px',
-                textDecoration: 'none',
-                color: 'var(--ink-soft)',
-                fontSize: 14,
-                borderRadius: 8,
-                transition: 'background .13s, color .13s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-wash)'; e.currentTarget.style.color = 'var(--accent-ink)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-soft)'; }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 20px 10px 20px',
+                textDecoration: 'none', color: 'inherit',
+                borderTop: idx === 0 ? 'none' : '1px solid var(--line)',
+                transition: 'background .12s' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-wash)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-faint)', minWidth: 18, textAlign: 'right' }}>
-                {idx + 1}.
+              {/* Number */}
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-faint)',
+                minWidth: 28, textAlign: 'right', flexShrink: 0 }}>
+                {lessonOffset + idx + 1}.
               </span>
-              <span style={{ flex: 1 }}>{lesson.title}</span>
-              {lesson.duration_minutes && (
-                <span style={{ fontSize: 12, color: 'var(--ink-faint)', fontFamily: 'var(--mono)' }}>
-                  {lesson.duration_minutes} min
-                </span>
-              )}
-              <StatusBadge status={lesson.status} />
-              <span style={{ color: 'var(--accent)', fontSize: 16, marginLeft: 2 }}>›</span>
+
+              {/* Title */}
+              <span style={{ flex: 1, fontSize: 15, color: 'var(--ink)', fontWeight: 500 }}>
+                {lesson.title}
+              </span>
+
+              {/* Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                {isNew(lesson) && (
+                  <span style={{ background: 'var(--accent)', color: '#fff',
+                    padding: '1px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                    Novo
+                  </span>
+                )}
+                {lesson.difficulty && <DifficultyBadge difficulty={lesson.difficulty} />}
+                <span style={{ color: 'var(--accent)', fontSize: 16 }}>›</span>
+              </div>
             </Link>
           ))}
         </div>
@@ -201,8 +130,8 @@ export default function CourseDetailPage() {
   const { courseId } = useParams();
   const [course, setCourse]   = useState(null);
   const [topics, setTopics]   = useState([]);
+  const [topicLessonCounts, setTopicLessonCounts] = useState({});
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -220,89 +149,55 @@ export default function CourseDetailPage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  async function handleCreate(fields) {
-    await createTopic(Number(courseId), fields);
-    await refresh();
-  }
-
-  async function handleDelete(id) {
-    await deleteTopicById(id);
-    await refresh();
+  // Compute lesson offsets for global lesson numbering
+  // We track this as topics reveal their lesson counts
+  function getLessonOffset(topicIndex) {
+    return topics.slice(0, topicIndex).reduce((sum, t) => sum + (topicLessonCounts[t.id] || 0), 0);
   }
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 24px' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
       {/* Breadcrumb */}
       <div style={{ marginBottom: 20, fontSize: 14, color: 'var(--ink-faint)' }}>
         <Link to="/courses" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
-          ← Kolegiji (Courses)
+          ← Kolegiji
         </Link>
       </div>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
-        <h1 style={{ margin: 0, fontSize: 28, color: 'var(--ink)', fontFamily: 'var(--display)' }}>
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ margin: '0 0 8px', fontSize: 30, color: 'var(--ink)',
+          fontFamily: 'var(--display)', fontWeight: 800 }}>
           {loading ? '…' : (course?.title || 'Kolegij')}
         </h1>
-        <button onClick={() => setShowForm(true)} style={btnPrimary}>
-          + Nova tema
-        </button>
+        {course?.description && (
+          <p style={{ margin: 0, fontSize: 16, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+            {course.description}
+          </p>
+        )}
       </div>
 
       {/* Topic list */}
-      {loading && <p style={{ color: 'var(--ink-faint)' }}>Učitavam...</p>}
+      {loading && <p style={{ color: 'var(--ink-faint)' }}>Učitavam…</p>}
 
       {!loading && topics.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-faint)' }}>
-          <p style={{ fontSize: 18 }}>Nema tema — dodajte prvu!</p>
+          <p style={{ fontSize: 18 }}>Sadržaj kolegija je u pripremi.</p>
         </div>
       )}
 
       {!loading && topics.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {topics.map(topic => (
-            <TopicCard
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {topics.map((topic, idx) => (
+            <TopicSection
               key={topic.id}
               topic={topic}
               courseId={courseId}
-              onDelete={handleDelete}
+              lessonOffset={getLessonOffset(idx)}
             />
           ))}
         </div>
       )}
-
-      {/* Dialog */}
-      {showForm && (
-        <TopicDialog onSave={handleCreate} onClose={() => setShowForm(false)} />
-      )}
     </div>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const inputStyle = {
-  width: '100%', padding: '10px 14px', borderRadius: 8,
-  border: '1.5px solid #ccd9d7', fontSize: 15, boxSizing: 'border-box',
-};
-
-const btnPrimary = {
-  background: '#0f8f86', color: '#fff', border: 'none',
-  padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14,
-};
-
-const btnSecondary = {
-  background: '#f0f4f3', color: '#0b343c', border: '1.5px solid #ccd9d7',
-  padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14,
-};
-
-const btnDanger = {
-  background: '#fff0f0', color: '#c0392b', border: '1.5px solid #f5c6c6',
-  padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
-};
-
-const cardStyle = {
-  background: 'var(--surface)', border: '1.5px solid var(--line)', borderRadius: 12,
-  padding: '16px 18px', display: 'flex', flexDirection: 'column',
-  gap: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-};

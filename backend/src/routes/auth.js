@@ -9,7 +9,7 @@ const router = express.Router();
 
 function makeToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, subscription_tier: user.subscription_tier },
+    { id: user.id, name: user.name, email: user.email, role: user.role, subscription_tier: user.subscription_tier },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -88,7 +88,7 @@ router.get('/me', requireAuth, (req, res) => {
 // ─── UPDATE PROFILE ───────────────────────────────────────────────────────────
 
 router.patch('/profile', requireAuth, async (req, res) => {
-  const { name, email, current_password, new_password } = req.body;
+  const { name, email, current_password, new_password, exam_date } = req.body;
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(401).json({ error: 'Korisnik nije pronađen.' });
@@ -115,12 +115,13 @@ router.patch('/profile', requireAuth, async (req, res) => {
   }
 
   // Apply updates
-  const updatedName  = name  !== undefined ? name.trim()                      : user.name;
-  const updatedEmail = email !== undefined ? email.toLowerCase().trim()        : user.email;
-  const updatedPass  = hashedNew           ? hashedNew                         : user.password;
+  const updatedName  = name  !== undefined ? name.trim()                : user.name;
+  const updatedEmail = email !== undefined ? email.toLowerCase().trim() : user.email;
+  const updatedPass  = hashedNew           ? hashedNew                  : user.password;
+  const updatedExam  = exam_date !== undefined ? (exam_date || null)    : user.exam_date;
 
-  db.prepare('UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?')
-    .run(updatedName, updatedEmail, updatedPass, user.id);
+  db.prepare('UPDATE users SET name = ?, email = ?, password = ?, exam_date = ? WHERE id = ?')
+    .run(updatedName, updatedEmail, updatedPass, updatedExam, user.id);
 
   const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   const token = makeToken(updated);
