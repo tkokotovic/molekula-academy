@@ -154,7 +154,7 @@
 | R04 | Lesson fork model — DB + API | ✅ | `lessons.master_lesson_id` column (no separate table needed). `POST /api/teacher/lessons/:id/fork` deep-copies lesson + all blocks into target topic as `draft`. `GET` endpoints join `master_title`. `getLibraryTopicId()` bootstrap in `db.js`. |
 | R05 | Lesson fork model — UI | ✅ | Fork = full independent copy. Course rows show "⑂ iz biblioteke" badge. Two entry points: course→topic "⑂ Iz biblioteke" picker, and library→"+ Dodaj u kolegij" course/topic picker. Editing fork does NOT change master (separate rows + blocks). Full block add/edit/**delete**/reorder via existing `LessonEditorPage`. |
 | R06 | Push-changes-to-forks flow | ✅ | Library row shows "⟳ Ažuriraj kopije" when forks exist → modal lists each fork (course · topic · lesson · block count) with per-fork sync chip ("Usklađeno" / "Razlikuje se", by comparing block content arrays). Differing forks pre-selected; "Ažuriraj odabrane (N)" replaces selected forks' blocks with master's. `GET /api/teacher/lessons/:id/forks` + `POST /api/teacher/lessons/:id/push`. |
-| R07 | Block-level visibility toggle | ✅ | Each block shows an always-visible pill (🌐 Svi / ● Basic / ★ Premium) that cycles on click. Stored in `lesson_blocks.visibility` (`ALTER TABLE` migration, default `public`). POST/PATCH `/blocks` accept + validate visibility; fork + push carry it; fork sync-detection includes it. "👁 Pregled kao student" modal renders blocks read-only in two columns (Basic vs Premium), hidden blocks shown as "🔒 … skriveno". **Student-side enforcement done:** `GET /api/student/lessons/:id/blocks` (`backend/src/routes/student_lessons.js`, `requireAuth`) drops blocks the user's `subscription_tier` can't see (tier read fresh from DB; teacher/owner = all); `LessonPage` uses `getStudentLessonBlocks`. ⚠️ But `LessonPage` still also calls `getLesson` + `getLessonsByTopic` on **teacher** routes (403 for students) — page won't render end-to-end for a student yet. Tracked in Phase 8B-8. |
+| R07 | Block-level visibility toggle | ✅ | Each block shows an always-visible pill (🌐 Svi / ● Basic / ★ Premium) that cycles on click. Stored in `lesson_blocks.visibility` (`ALTER TABLE` migration, default `public`). POST/PATCH `/blocks` accept + validate visibility; fork + push carry it; fork sync-detection includes it. "👁 Pregled kao student" modal renders blocks read-only in two columns (Basic vs Premium), hidden blocks shown as "🔒 … skriveno". **Student-side enforcement done:** `GET /api/student/lessons/:id/blocks` (`backend/src/routes/student_lessons.js`, `requireAuth`) drops blocks the user's `subscription_tier` can't see (tier read fresh from DB; teacher/owner = all); `LessonPage` uses `getStudentLessonBlocks`. Student-side enforcement verified. `LessonPage` / `CourseDetailPage` / `CoursesPage` repointed to student routes in R37 — 403 bug resolved. |
 | R08 | Syllabus tags per lesson | ⬜ | Searchable dropdown in lesson editor header. One tag set per course type: IB SL / IB HL / Državna matura / Prijemni / MedChem I / MedChem II. `syllabus_codes` table seeded per course. |
 | R09 | Lesson PDF / DOCX export | ⬜ | Admin-only button in lesson editor: renders blocks to PDF/DOCX. KaTeX server-side for equations, smiles-drawer SVG for molecules. |
 | R10 | Lesson status — Scheduled publish | ⬜ | Status selector: Draft / Published / Scheduled (date-time picker). Backend cron or check-on-fetch publishes at scheduled time. |
@@ -217,12 +217,30 @@
 
 ### 8B-8 — Student-Facing Redesign
 
-The student-facing app (Phase 6) was built against teacher-namespaced APIs and predates the admin redesign. It needs its own pass — both to unblock content viewing and to refresh the layout. Do this alongside / after the admin work.
+The student-facing app (Phase 6) was built against teacher-namespaced APIs and predates the admin redesign. This is the most critical section for launch — students cannot use the platform without it.
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R37 | Student content read routes | ⬜ | **Bug:** `LessonPage` calls `getLesson` + `getLessonsByTopic`, which hit `requireTeacher` routes → **403 for real students**, so the lesson page can't render for a student at all. Add student-accessible (`requireAuth`) read endpoints for a single lesson + a topic's lesson list (published-only, no `teacher_notes`), and repoint `LessonPage`. Audit `CoursesPage` / `CourseDetailPage` for the same teacher-route reliance. (Block visibility already enforced via R07's `/api/student/lessons/:id/blocks`.) |
-| R38 | Student layout redesign | ⬜ | Refresh student shell + lesson/course/dashboard layouts to match the new brand + admin redesign. Keep colour/font identity (see admin-panel-plan visual identity note). Scope to define when reached. |
+| R37 | Student content read routes | ✅ | Student-accessible `requireAuth` read routes added to `backend/src/routes/student_lessons.js`: `GET /api/student/courses/:id`, `GET /api/student/courses/:id/topics`, `GET /api/student/topics/:topicId/lessons`, `GET /api/student/lessons/:id`. `CoursesPage`, `CourseDetailPage`, `LessonPage` all repointed. 403 bug fully resolved. |
+| R38 | Student layout redesign | 🔄 | Full student portal redesign. **S01–S10 done, S11–S13 remaining.** |
+
+#### R38 step log
+
+| S# | What | Status | Notes |
+|----|------|--------|-------|
+| S01 | DB migrations | ✅ | `enrollments` + status/unenrolled_at/access_until, `messages` + file fields + message_type, `users.onboarding_completed`, `notifications` table |
+| S02 | Enrollment API | ✅ | `GET /api/student/courses`, `GET /api/student/enrollment`, `POST /api/student/enrollment` |
+| S03 | OnboardingPage | ✅ | 3-step flow (course picker → exam date → welcome), triggered on first login |
+| S04 | CourseDetailPage | ✅ | Clean student view — topic accordions, numbered lessons, difficulty + "Novo" badges, no teacher controls |
+| S05 | LessonPage | ✅ | Breadcrumb with real course/topic titles, post-lesson quiz suggestion banner, mobile nudge |
+| S06 | CoursesPage | ✅ | 3-zone layout: active hero card, locked catalogue, previous courses strip |
+| S07 | DashboardPage | ✅ | Enrollment-aware ContinueCard, ExamCountdown widget, HomeworkCard, PreviousCoursesStrip, real sessions in sidebar card |
+| S08 | QuizzesPage | ✅ | 2-tab index: topic quizzes grouped by topic accordion with best-score badges; mock exams tab |
+| S09 | MessagesPage | ✅ | File attachments, message type badges, read receipts |
+| S10 | SchedulePage | ✅ | Real sessions API (NextSessionCard w/ date chip + prep note + Zoom button, HistoryRow, monthly allowance badge, Calendly embed, BasicUpsell for non-premium) |
+| S11 | ProgressPage | ⬜ | Audit existing page against enrollment model; ensure rings/stats use enrolled-course data |
+| S12 | SettingsPage | ⬜ | Audit; add exam date field + plan display (prep for Stripe); ensure onboarding_completed visible |
+| S13 | Notifications | ⬜ | Notification bell in AppShell nav — unread badge, dropdown list, mark-as-read. Feeds `notifications` table (already created in S01) |
 
 ---
 
@@ -258,25 +276,41 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | Phase 8B-5 — Communication Redesign | R28–R30 | 0/3 | ⬜ |
 | Phase 8B-6 — Sessions & Tutoring | R31–R33 | 0/3 | ⬜ |
 | Phase 8B-7 — Revenue & Reports | R34–R36 | 0/3 | ⬜ |
-| Phase 8B-8 — Student-Facing Redesign | R37–R38 | 0/2 | ⬜ (R37 = student lesson page 403 bug) |
+| Phase 8B-8 — Student-Facing Redesign | R37–R38 | R37 ✅ + R38 10/13 | 🔄 (S11–S13 remaining) |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
-| **Total** | **~107 steps** | **~57** | |
+| **Total** | **~120 steps** | **~68** | |
 
 ---
 
 ## Recommended next build order
 
-1. **R01–R10** — Courses & Lessons (fork model is the architectural foundation)
-2. **R11–R16** — Question Bank redesign (needed before homeworks)
-3. **R17–R22** — Homeworks full flow (depends on question bank)
-4. **R23–R27** — Students redesign + Groups
-5. **R28–R30** — Communication redesign + broadcasts + notifications
-6. **26–29** — Stripe billing (needed for tutoring packages + subscriptions)
-7. **R31–R33** — Sessions & tutoring packages (needs Stripe)
-8. **R34–R36** — Revenue (Stripe) + Reports PDF
-9. **60** — Session scheduling (Calendly webhook)
-10. **R37–R38** — Student-facing redesign (R37 first if students start viewing lessons before launch — fixes the 403 bug)
-11. **L02–L05** — Beta + public launch
+> **Revised June 2026.** R37+R38 are the highest-priority items because they directly control whether students can use the platform. All admin-heavy sections (R08–R36) are deferred to post-beta — the current admin tools are sufficient for a first cohort of students.
+
+### Pre-beta (must-have for first paying students)
+
+1. **R38 S11–S13** — Finish student portal: ProgressPage audit, SettingsPage (exam date + plan display), Notifications bell
+2. **Step 24** — Register domain (molekula-academy.hr or .com)
+3. **Step 25** — Hetzner VPS: provision, deploy backend + frontend, configure SSL
+4. **Step 12** — Real photos (portrait + hero image — Tomislav to supply)
+5. **Steps 26–29** — Stripe billing (requires Croatian business registration first)
+6. **L02** — Full end-to-end test (land → register → pay → lesson → quiz → message → cancel)
+7. **L03** — Beta: invite 5–10 known students, collect feedback
+
+### Post-beta (do after first revenue)
+
+8. **R08–R10** — Syllabus tags, PDF export, scheduled publish
+9. **R11–R16** — Question bank redesign
+10. **R17–R22** — Homeworks full flow
+11. **R23–R27** — Students redesign + Groups
+12. **R29–R30** — Broadcasts + notification bell (backend already done in S01; frontend bell = S13 above)
+13. **R31–R33** — Tutoring packages (needs Stripe)
+14. **R34–R36** — Revenue (Stripe data) + reports PDF
+15. **Step 60** — Calendly webhook → auto Zoom link (Calendly embed already works; this adds automation)
+16. **L04–L05** — Replace sample testimonials → public launch
+
+### Deferred / reconsidered
+
+- **R28** (Messages redesign to quiz-context-only threads) — **REMOVED.** Current general messaging works well. Quiz-specific threads would be a regression. If quiz discussion is wanted later, add it as an _addition_ to existing threads, not a replacement.
 
 ---
 
