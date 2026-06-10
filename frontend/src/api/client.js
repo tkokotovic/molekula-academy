@@ -421,6 +421,13 @@ export async function getRecentQuizHistory() {
   return data.attempts;
 }
 
+// ─── Homework ─────────────────────────────────────────────────────────────────
+
+export async function getStudentHomework() {
+  const data = await apiFetch('/api/student/homework');
+  return data.homework;
+}
+
 // ─── Certificates ─────────────────────────────────────────────────────────────
 
 export async function getCertificates() {

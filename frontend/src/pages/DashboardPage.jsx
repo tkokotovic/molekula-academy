@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getMe } from '../api/client';
-import { getStudentStats, getCourseProgress } from '../api/client';
+import { getMe, getStudentStats, getCourseProgress, getEnrollment, getStudentHomework } from '../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -18,6 +17,21 @@ function formatTime(seconds) {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h ${m}min`;
   return `${m} min`;
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.round((target - now) / (1000 * 60 * 60 * 24));
+}
+
+function fmtDate(str) {
+  if (!str) return '';
+  const d = new Date(str.includes('T') ? str : str.replace(' ', 'T') + 'Z');
+  return d.toLocaleDateString('hr-HR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -76,6 +90,13 @@ const TrophyIcon = (p) => (
   </svg>
 );
 
+const ClipboardIcon = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <rect x="8" y="2" width="8" height="4" rx="1"/>
+    <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
+  </svg>
+);
+
 // ─── Streak badge ─────────────────────────────────────────────────────────────
 
 function StreakBadge({ days }) {
@@ -92,16 +113,191 @@ function StreakBadge({ days }) {
         {days}
       </span>
       <span style={{ fontSize: 13, color: 'var(--ink-soft)', marginLeft: 2 }}>
-        {days === 1 ? 'dan zaredom' : days < 5 ? 'dana zaredom' : 'dana zaredom'}
+        {days === 1 ? 'dan zaredom' : 'dana zaredom'}
       </span>
+    </div>
+  );
+}
+
+// ─── Exam countdown ───────────────────────────────────────────────────────────
+
+function ExamCountdown({ examDate }) {
+  const days = daysUntil(examDate);
+
+  if (!examDate) {
+    return (
+      <div style={{
+        background: 'var(--surface)', border: '1.5px dashed var(--line)',
+        borderRadius: 'var(--radius)', padding: '20px',
+      }}>
+        <div style={{
+          fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.1em',
+          textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 10,
+        }}>
+          Datum ispita
+        </div>
+        <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginBottom: 12, margin: '0 0 12px' }}>
+          Postavi datum svog ispita za osobni odbrojnik.
+        </p>
+        <Link to="/settings" style={{
+          fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--accent-ink)',
+          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4,
+        }}>
+          Postavi datum <ArrowRight width={12} height={12} />
+        </Link>
+      </div>
+    );
+  }
+
+  if (days < 0) return null;
+
+  const urgency = days <= 7 ? '#d6492f' : days <= 30 ? '#f59e0b' : 'var(--accent)';
+  const dayWord = days === 1 ? 'dan' : 'dana';
+  const msg = days === 0
+    ? 'Ispit je danas — sretno!'
+    : days === 1
+    ? 'Ispit je sutra — sretno!'
+    : null;
+
+  return (
+    <div style={{
+      background: `color-mix(in srgb, ${urgency} 8%, var(--surface))`,
+      border: `1.5px solid color-mix(in srgb, ${urgency} 30%, transparent)`,
+      borderRadius: 'var(--radius)', padding: '20px',
+    }}>
+      <div style={{
+        fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.1em',
+        textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 12,
+      }}>
+        Do ispita
+      </div>
+      {days > 1 ? (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+          <span style={{
+            fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 44, lineHeight: 1,
+            color: urgency,
+          }}>
+            {days}
+          </span>
+          <span style={{ fontSize: 15, color: 'var(--ink-soft)' }}>{dayWord}</span>
+        </div>
+      ) : (
+        <p style={{ fontSize: 16, fontWeight: 700, color: urgency, marginBottom: 4 }}>
+          {msg}
+        </p>
+      )}
+      <p style={{ fontSize: 13, color: 'var(--ink-faint)', margin: 0 }}>
+        {days > 1 ? `Ispit ${fmtDate(examDate)}` : msg}
+      </p>
+    </div>
+  );
+}
+
+// ─── Homework card (conditional) ──────────────────────────────────────────────
+
+function HomeworkCard({ homework }) {
+  const pending = (homework || []).filter(h => !h.is_overdue);
+  if (pending.length === 0) return null;
+
+  function fmtDue(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('hr-HR', { day: 'numeric', month: 'short' });
+  }
+
+  const urgentCount = pending.filter(h => {
+    const d = daysUntil(h.due_date);
+    return d !== null && d <= 3;
+  }).length;
+
+  const accentColor = urgentCount > 0 ? '#f59e0b' : 'var(--accent)';
+
+  return (
+    <div style={{
+      background: urgentCount > 0
+        ? 'color-mix(in srgb, #f59e0b 8%, var(--surface))'
+        : 'var(--surface)',
+      border: urgentCount > 0
+        ? '1.5px solid color-mix(in srgb, #f59e0b 30%, transparent)'
+        : '1.5px solid var(--line)',
+      borderRadius: 'var(--radius)', padding: '20px',
+    }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
+      }}>
+        <span style={{
+          fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.1em',
+          textTransform: 'uppercase', color: 'var(--ink-faint)',
+        }}>
+          Domaće zadaće
+        </span>
+        <span style={{
+          fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700,
+          background: accentColor, color: '#fff', borderRadius: 999, padding: '2px 8px',
+        }}>
+          {pending.length}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {pending.slice(0, 3).map(h => {
+          const d = daysUntil(h.due_date);
+          const urgent = d !== null && d <= 3;
+          return (
+            <Link
+              key={h.id}
+              to="/quizzes"
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 12px', borderRadius: 10,
+                background: 'var(--bg)',
+                border: `1.5px solid ${urgent ? 'color-mix(in srgb, #f59e0b 35%, transparent)' : 'var(--line)'}`,
+                textDecoration: 'none',
+              }}
+            >
+              <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
+                {h.title}
+              </span>
+              {h.due_date && (
+                <span style={{
+                  fontFamily: 'var(--mono)', fontSize: 11.5, flexShrink: 0, marginLeft: 8,
+                  color: urgent ? '#f59e0b' : 'var(--ink-faint)',
+                }}>
+                  {fmtDue(h.due_date)}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+      {pending.length > 3 && (
+        <Link to="/quizzes" style={{
+          fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--accent-ink)',
+          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 10,
+        }}>
+          +{pending.length - 3} još <ArrowRight width={11} height={11} />
+        </Link>
+      )}
     </div>
   );
 }
 
 // ─── Continue learning card ───────────────────────────────────────────────────
 
-function ContinueCard({ courses }) {
-  // Find the course with the most in-progress lessons first, then least progress
+function ContinueCard({ courses, enrollment }) {
+  if (enrollment) {
+    const active = courses.find(c => c.course_id === enrollment.course_id);
+    const course = active ?? {
+      course_id: enrollment.course_id,
+      course_title: enrollment.course_title,
+      completed_lessons: 0,
+      total_lessons: 0,
+      in_progress_lessons: 0,
+      completion_pct: 0,
+    };
+    const cta = course.completed_lessons > 0 ? 'Nastavi učiti' : 'Počni učiti';
+    return <ContinueCardUI course={course} cta={cta} />;
+  }
+
   const inProgress = courses
     .filter(c => c.in_progress_lessons > 0 || (c.completed_lessons > 0 && c.completion_pct < 100))
     .sort((a, b) => {
@@ -111,9 +307,7 @@ function ContinueCard({ courses }) {
 
   if (inProgress.length === 0) {
     const notStarted = courses.filter(c => c.completion_pct === 0);
-    if (notStarted.length > 0) {
-      return <ContinueCardUI course={notStarted[0]} cta="Počni učiti" />;
-    }
+    if (notStarted.length > 0) return <ContinueCardUI course={notStarted[0]} cta="Počni učiti" />;
     return (
       <div className="continue" style={{ textAlign: 'center', padding: '32px 28px' }}>
         <TrophyIcon width={36} height={36} style={{ color: 'rgba(255,255,255,.8)', margin: '0 auto 12px' }} />
@@ -132,7 +326,6 @@ function ContinueCardUI({ course, cta }) {
   const barColour = course.completion_pct >= 70 ? '#1ec8b6' : course.completion_pct >= 40 ? '#f59e0b' : '#1ec8b6';
   return (
     <div className="continue">
-      {/* Background decoration */}
       <div style={{
         position: 'absolute', right: -40, top: -40,
         width: 200, height: 200, borderRadius: '50%',
@@ -152,18 +345,22 @@ function ContinueCardUI({ course, cta }) {
       </span>
       <h2>{course.course_title}</h2>
       <p className="meta">
-        {course.completed_lessons} / {course.total_lessons} lekcija &middot; {course.completion_pct}% završeno
+        {course.total_lessons > 0
+          ? `${course.completed_lessons} / ${course.total_lessons} lekcija · ${course.completion_pct}% završeno`
+          : 'Lekcije se učitavaju…'}
       </p>
 
-      {/* Progress bar */}
-      <div style={{
-        height: 6, borderRadius: 999, background: 'rgba(255,255,255,.15)', margin: '16px 0 20px', overflow: 'hidden',
-      }}>
+      {course.total_lessons > 0 && (
         <div style={{
-          width: `${course.completion_pct}%`, height: '100%', borderRadius: 999,
-          background: barColour, transition: 'width .6s var(--ease)',
-        }} />
-      </div>
+          height: 6, borderRadius: 999, background: 'rgba(255,255,255,.15)', margin: '16px 0 20px', overflow: 'hidden',
+        }}>
+          <div style={{
+            width: `${course.completion_pct}%`, height: '100%', borderRadius: 999,
+            background: barColour, transition: 'width .6s var(--ease)',
+          }} />
+        </div>
+      )}
+      {course.total_lessons === 0 && <div style={{ marginBottom: 20 }} />}
 
       <Link
         to={`/courses/${course.course_id}`}
@@ -171,7 +368,7 @@ function ContinueCardUI({ course, cta }) {
         style={{ textDecoration: 'none', display: 'inline-flex', gap: 8, alignItems: 'center' }}
       >
         <BookIcon width={15} height={15} />
-        Otvori kurs
+        Otvori kolegij
         <ArrowRight width={14} height={14} />
       </Link>
     </div>
@@ -184,7 +381,7 @@ function CourseProgressList({ courses }) {
   if (courses.length === 0) {
     return (
       <p style={{ color: 'var(--ink-faint)', fontSize: 14, padding: '12px 0' }}>
-        Nema dostupnih kurseva.
+        Nema dostupnih kolegija.
       </p>
     );
   }
@@ -200,7 +397,6 @@ function CourseProgressList({ courses }) {
           className="course-row"
           style={{ textDecoration: 'none', display: 'flex' }}
         >
-          {/* Colour dot */}
           <div style={{
             width: 10, height: 10, borderRadius: '50%',
             background: colours[i % colours.length], flexShrink: 0, marginTop: 6,
@@ -212,10 +408,7 @@ function CourseProgressList({ courses }) {
               {c.in_progress_lessons > 0 && ` · ${c.in_progress_lessons} u tijeku`}
             </div>
             <div className="bar">
-              <i style={{
-                width: `${c.completion_pct}%`,
-                background: colours[i % colours.length],
-              }} />
+              <i style={{ width: `${c.completion_pct}%`, background: colours[i % colours.length] }} />
             </div>
           </div>
           <div className="pct" style={{ alignSelf: 'center', marginLeft: 12 }}>
@@ -230,10 +423,10 @@ function CourseProgressList({ courses }) {
 // ─── Quick links ──────────────────────────────────────────────────────────────
 
 const QUICK_LINKS = [
-  { to: '/courses',  label: 'Svi kursevi', Icon: BookIcon,  colour: '#0f8f86' },
-  { to: '/progress', label: 'Napredak',    Icon: ChartIcon, colour: '#6366f1' },
-  { to: '/quizzes',  label: 'Kvizovi',     Icon: QuizIcon,  colour: '#f59e0b' },
-  { to: '/schedule', label: 'Zakaži Zoom', Icon: VideoIcon, colour: '#ec4899' },
+  { to: '/courses',  label: 'Svi kolegiji', Icon: BookIcon,  colour: '#0f8f86' },
+  { to: '/progress', label: 'Napredak',     Icon: ChartIcon, colour: '#6366f1' },
+  { to: '/quizzes',  label: 'Kvizovi',      Icon: QuizIcon,  colour: '#f59e0b' },
+  { to: '/schedule', label: 'Zakaži Zoom',  Icon: VideoIcon, colour: '#ec4899' },
 ];
 
 function QuickLinks() {
@@ -330,6 +523,49 @@ function UpcomingSession() {
   );
 }
 
+// ─── Previous courses strip ───────────────────────────────────────────────────
+
+function PreviousCoursesStrip({ previous }) {
+  if (!previous || previous.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <div style={{
+        fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.1em',
+        textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 12,
+      }}>
+        Prethodni kolegiji
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {previous.map(e => (
+          <Link
+            key={e.id}
+            to={`/courses/${e.course_id}`}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '12px 16px', borderRadius: 12,
+              background: 'var(--surface)', border: '1.5px solid var(--line)',
+              textDecoration: 'none', opacity: 0.65,
+              transition: 'opacity .15s',
+            }}
+            onMouseEnter={ev => { ev.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={ev => { ev.currentTarget.style.opacity = '0.65'; }}
+          >
+            <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>
+              {e.course_title}
+            </span>
+            {e.unenrolled_at && (
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--ink-faint)', flexShrink: 0, marginLeft: 12 }}>
+                do {fmtDate(e.unenrolled_at)}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ w = '100%', h = 18, radius = 8 }) {
@@ -344,25 +580,33 @@ function Skeleton({ w = '100%', h = 18, radius = 8 }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [user, setUser]       = useState(null);
-  const [stats, setStats]     = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [user, setUser]             = useState(null);
+  const [stats, setStats]           = useState(null);
+  const [courses, setCourses]       = useState([]);
+  const [enrollment, setEnrollment] = useState(null);
+  const [previous, setPrevious]     = useState([]);
+  const [homework, setHomework]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
 
   useEffect(() => {
     let mounted = true;
     async function load() {
       try {
-        const [me, st, co] = await Promise.all([
+        const [me, st, co, enr, hw] = await Promise.all([
           getMe(),
           getStudentStats(),
           getCourseProgress(),
+          getEnrollment(),
+          getStudentHomework().catch(() => []),
         ]);
         if (!mounted) return;
         setUser(me);
         setStats(st);
         setCourses(co);
+        setEnrollment(enr.enrollment ?? null);
+        setPrevious(enr.previous ?? []);
+        setHomework(Array.isArray(hw) ? hw : []);
       } catch (err) {
         if (mounted) setError(err.message);
       } finally {
@@ -375,24 +619,11 @@ export default function DashboardPage() {
 
   const firstName = user?.name?.split(' ')[0] ?? '';
 
-  // ── Stats row values ────────────────────────────────────────────────────────
   const statItems = [
-    {
-      v: loading ? null : (stats?.total_lessons_completed ?? 0),
-      l: 'Lekcija završeno',
-    },
-    {
-      v: loading ? null : formatTime(stats?.total_time_spent_seconds),
-      l: 'Ukupno učenja',
-    },
-    {
-      v: loading ? null : (stats?.avg_score_pct != null ? `${stats.avg_score_pct}%` : '—'),
-      l: 'Prosj. rezultat',
-    },
-    {
-      v: loading ? null : (stats?.total_quizzes_taken ?? 0),
-      l: 'Kvizova rješeno',
-    },
+    { v: loading ? null : (stats?.total_lessons_completed ?? 0), l: 'Lekcija završeno' },
+    { v: loading ? null : formatTime(stats?.total_time_spent_seconds),  l: 'Ukupno učenja' },
+    { v: loading ? null : (stats?.avg_score_pct != null ? `${stats.avg_score_pct}%` : '—'), l: 'Prosj. rezultat' },
+    { v: loading ? null : (stats?.total_quizzes_taken ?? 0), l: 'Kvizova rješeno' },
   ];
 
   if (error) {
@@ -428,7 +659,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Streak badge */}
         {!loading && stats && (
           <div style={{ paddingTop: 4 }}>
             <StreakBadge days={stats.current_streak_days ?? 0} />
@@ -436,7 +666,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Strongest / weakest topic hint */}
       {!loading && stats?.strongest_topic && (
         <p style={{ color: 'var(--ink-soft)', fontSize: 15, marginTop: 8 }}>
           Najjača tema:{' '}
@@ -475,14 +704,12 @@ export default function DashboardPage() {
       <div className="dash-grid">
         {/* Left column */}
         <div className="col">
-          {/* Continue learning */}
           {loading ? (
             <Skeleton w="100%" h={200} radius={16} />
           ) : (
-            <ContinueCard courses={courses} />
+            <ContinueCard courses={courses} enrollment={enrollment} />
           )}
 
-          {/* All courses progress */}
           <div style={{
             background: 'var(--surface)', border: '1.5px solid var(--line)',
             borderRadius: 'var(--radius)', padding: '20px 24px',
@@ -494,15 +721,12 @@ export default function DashboardPage() {
                 fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.1em',
                 textTransform: 'uppercase', color: 'var(--ink-faint)',
               }}>
-                Svi kursevi
+                Svi kolegiji
               </span>
-              <Link
-                to="/courses"
-                style={{
-                  fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--accent-ink)',
-                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
-                }}
-              >
+              <Link to="/courses" style={{
+                fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--accent-ink)',
+                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
+              }}>
                 Svi <ArrowRight width={13} height={13} />
               </Link>
             </div>
@@ -519,12 +743,22 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="col">
+          {loading ? (
+            <Skeleton w="100%" h={120} radius={16} />
+          ) : (
+            <ExamCountdown examDate={user?.exam_date ?? null} />
+          )}
+
+          {!loading && <HomeworkCard homework={homework} />}
+
           <QuickLinks />
           <UpcomingSession />
         </div>
       </div>
 
-      {/* Pulse animation */}
+      {/* ── Previous courses ───────────────────────────────────────────────── */}
+      {!loading && <PreviousCoursesStrip previous={previous} />}
+
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
