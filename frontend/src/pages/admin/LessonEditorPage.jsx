@@ -11,6 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility,
+  getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import SmilesDrawer from 'smiles-drawer';
@@ -1076,6 +1077,167 @@ function StudentPreviewModal({ blocks, onClose }) {
   );
 }
 
+// ─── Syllabus tag picker ───────────────────────────────────────────────────────
+
+const COURSE_TYPE_LABELS = {
+  ib_sl:          'IB SL',
+  ib_hl:          'IB HL',
+  drzavna_matura: 'Državna matura',
+  prijemni:       'Prijemni',
+  medchem_1:      'MedChem I',
+  medchem_2:      'MedChem II',
+};
+
+function SyllabusTagPicker({ lessonId }) {
+  const [tags,       setTags]       = useState([]);   // currently saved tags
+  const [allCodes,   setAllCodes]   = useState([]);   // all syllabus_codes rows
+  const [open,       setOpen]       = useState(false);
+  const [tab,        setTab]        = useState('ib_sl');
+  const [saving,     setSaving]     = useState(false);
+  const [pendingIds, setPendingIds] = useState(null); // null = not editing
+
+  useEffect(() => {
+    Promise.all([getSyllabusCodes(), getLessonSyllabusTags(lessonId)])
+      .then(([codes, saved]) => { setAllCodes(codes); setTags(saved); });
+  }, [lessonId]);
+
+  function openPicker() {
+    setPendingIds(new Set(tags.map(t => t.id)));
+    setOpen(true);
+  }
+
+  function toggleCode(id) {
+    setPendingIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const updated = await setLessonSyllabusTags(lessonId, [...pendingIds]);
+      setTags(updated);
+      setOpen(false);
+      setPendingIds(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancel() {
+    setOpen(false);
+    setPendingIds(null);
+  }
+
+  const codesForTab = allCodes.filter(c => c.course_type === tab);
+  const courseTypes = [...new Set(allCodes.map(c => c.course_type))];
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      {/* Tag chips row */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', minHeight: 28 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.06em', marginRight: 2 }}>
+          Syllabus
+        </span>
+        {tags.length === 0 && (
+          <span style={{ fontSize: 12, color: 'var(--ink-faint)', fontStyle: 'italic' }}>nema oznaka</span>
+        )}
+        {tags.map(t => (
+          <span key={t.id} style={{
+            fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600,
+            padding: '2px 8px', borderRadius: 20,
+            background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+            color: 'var(--accent-ink)',
+            border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+          }}>
+            {COURSE_TYPE_LABELS[t.course_type] || t.course_type} {t.code}
+          </span>
+        ))}
+        <button
+          onClick={openPicker}
+          style={{ fontSize: 11, fontFamily: 'var(--mono)', padding: '2px 9px', borderRadius: 20, border: '1px dashed var(--line)', background: 'none', color: 'var(--ink-soft)', cursor: 'pointer' }}
+        >
+          {tags.length === 0 ? '+ Dodaj oznake' : 'Uredi'}
+        </button>
+      </div>
+
+      {/* Picker modal */}
+      {open && (
+        <div onClick={cancel} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--line)', padding: 24, width: 560, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: 'var(--display)', color: 'var(--ink)' }}>Syllabus oznake</h3>
+              <button onClick={cancel} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--ink-soft)', lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Course type tabs */}
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {courseTypes.map(ct => (
+                <button
+                  key={ct}
+                  onClick={() => setTab(ct)}
+                  style={{
+                    fontSize: 12, fontWeight: 700, fontFamily: 'var(--mono)',
+                    padding: '4px 12px', borderRadius: 20, border: '1px solid var(--line)',
+                    cursor: 'pointer',
+                    background: tab === ct ? 'var(--accent)' : 'var(--bg)',
+                    color: tab === ct ? '#fff' : 'var(--ink-soft)',
+                  }}
+                >
+                  {COURSE_TYPE_LABELS[ct] || ct}
+                  {(() => { const n = allCodes.filter(c => c.course_type === ct && pendingIds.has(c.id)).length; return n > 0 ? ` (${n})` : ''; })()}
+                </button>
+              ))}
+            </div>
+
+            {/* Code grid */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6 }}>
+                {codesForTab.map(c => {
+                  const selected = pendingIds.has(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleCode(c.id)}
+                      style={{
+                        textAlign: 'left', padding: '8px 12px', borderRadius: 9,
+                        border: `1.5px solid ${selected ? 'var(--accent)' : 'var(--line)'}`,
+                        background: selected ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--bg)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--mono)', color: selected ? 'var(--accent-ink)' : 'var(--ink)' }}>{c.code}</div>
+                      {c.title && <div style={{ fontSize: 11, color: 'var(--ink-faint)', marginTop: 2, lineHeight: 1.3 }}>{c.title}</div>}
+                    </button>
+                  );
+                })}
+                {codesForTab.length === 0 && (
+                  <div style={{ gridColumn: '1/-1', color: 'var(--ink-faint)', fontSize: 13, padding: '20px 0' }}>Nema kodova za ovaj tip.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid var(--line)' }}>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
+                {pendingIds.size} {pendingIds.size === 1 ? 'oznaka' : 'oznaka'} odabrano
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={cancel} style={{ padding: '7px 16px', border: '1px solid var(--line)', borderRadius: 8, background: 'none', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Odustani</button>
+                <button onClick={save} disabled={saving} style={{ padding: '7px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+                  {saving ? 'Sprema…' : 'Spremi'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── LessonEditorPage ──────────────────────────────────────────────────────────
 
 export default function LessonEditorPage() {
@@ -1194,13 +1356,15 @@ export default function LessonEditorPage() {
           <p style={{ fontSize: 16, color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: 8, marginTop: 0 }}>{lesson.summary}</p>
         )}
         {(lesson?.difficulty || lesson?.duration_minutes) && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
             {lesson.difficulty && <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'var(--accent-wash)', color: 'var(--accent-ink)' }}>
               {lesson.difficulty === 'easy' ? 'Lagano' : lesson.difficulty === 'medium' ? 'Srednje' : 'Teško'}
             </span>}
             {lesson.duration_minutes && <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)', padding: '3px 10px', border: '1px solid var(--line)', borderRadius: 20 }}>⏱ {lesson.duration_minutes} min</span>}
           </div>
         )}
+
+        <SyllabusTagPicker lessonId={lessonId} />
 
         {/* Empty state */}
         {blocks.length === 0 ? (

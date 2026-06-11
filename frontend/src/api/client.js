@@ -580,3 +580,20 @@ export async function markNotificationRead(id) {
 export async function markAllNotificationsRead() {
   return apiFetch('/api/student/notifications/read-all', { method: 'PATCH' });
 }
+
+export async function getSyllabusCodes(courseType) {
+  const qs = courseType ? `?course_type=${courseType}` : '';
+  return apiFetch(`/api/teacher/syllabus-codes${qs}`);
+}
+
+export async function getLessonSyllabusTags(lessonId) {
+  return apiFetch(`/api/teacher/lessons/${lessonId}/syllabus-tags`);
+}
+
+export async function setLessonSyllabusTags(lessonId, ids) {
+  return apiFetch(`/api/teacher/lessons/${lessonId}/syllabus-tags`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ syllabus_code_ids: ids }),
+  });
+}
