@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { requireAuth, requireTeacher } = require('../middleware/auth');
+const {
+  Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
+  WidthType, BorderStyle, AlignmentType,
+} = require('docx');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -282,6 +286,167 @@ router.patch('/lessons/:id/status', requireAuth, requireTeacher, (req, res) => {
   db.prepare(`UPDATE lessons SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
   const lesson = parseLesson(db.prepare('SELECT * FROM lessons WHERE id = ?').get(id));
   return res.json({ lesson });
+});
+
+// ─── GET /api/teacher/lessons/:id/export?format=docx ─────────────────────────
+
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+}
+
+function blockToParagraphs(block) {
+  const c = typeof block.content === 'string' ? JSON.parse(block.content) : (block.content || {});
+  const paras = [];
+
+  const body = (text, opts = {}) =>
+    new Paragraph({ children: [new TextRun({ text: String(text || ''), ...opts })] });
+
+  const code = (text) =>
+    new Paragraph({
+      children: [new TextRun({ text: String(text || ''), font: 'Courier New', size: 18 })],
+      border: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 6 }, right: { style: BorderStyle.SINGLE, size: 1 } },
+      shading: { fill: 'F3F4F6' },
+      indent: { left: 360 },
+    });
+
+  switch (block.type) {
+    case 'heading': {
+      const lvlMap = { 1: HeadingLevel.HEADING_1, 2: HeadingLevel.HEADING_2, 3: HeadingLevel.HEADING_3, 4: HeadingLevel.HEADING_4 };
+      paras.push(new Paragraph({ text: c.text || '', heading: lvlMap[c.level || 2] || HeadingLevel.HEADING_2 }));
+      break;
+    }
+    case 'text':
+      paras.push(body(stripHtml(c.html)));
+      break;
+    case 'quote':
+      paras.push(new Paragraph({
+        children: [new TextRun({ text: c.text || '', italics: true })],
+        indent: { left: 720 },
+        border: { left: { style: BorderStyle.THICK, size: 6, color: '6366F1' } },
+      }));
+      if (c.attribution) paras.push(body(`— ${c.attribution}`, { italics: true, color: '6B7280' }));
+      break;
+    case 'callout':
+      paras.push(body(`💡 ${c.text || ''}`, { bold: true }));
+      break;
+    case 'warning':
+      paras.push(body(`⚠️ ${c.text || ''}`, { bold: true, color: '92400E' }));
+      break;
+    case 'summary': {
+      paras.push(body('Sažetak:', { bold: true }));
+      (c.items || []).filter(Boolean).forEach(item =>
+        paras.push(new Paragraph({ text: item, bullet: { level: 0 } }))
+      );
+      break;
+    }
+    case 'divider':
+      paras.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'D1D5DB' } } }));
+      break;
+    case 'equation': {
+      paras.push(body('Jednadžba (LaTeX):', { bold: true, size: 18 }));
+      paras.push(code(c.latex || ''));
+      if (c.caption) paras.push(body(c.caption, { italics: true, color: '6B7280', size: 18 }));
+      break;
+    }
+    case 'molecule3d': {
+      paras.push(body(`Molekula: ${c.name || ''}`, { bold: true }));
+      paras.push(code(`SMILES: ${c.smiles || ''}`));
+      break;
+    }
+    case 'image': case 'gif':
+      paras.push(body(`[${block.type === 'gif' ? 'GIF' : 'Slika'}${c.caption ? ': ' + c.caption : ''}]`, { color: '6B7280', italics: true }));
+      if (c.url) paras.push(body(c.url, { color: '6366F1', size: 18 }));
+      break;
+    case 'video':
+      paras.push(body(`[Video${c.title ? ': ' + c.title : ''}]`, { color: '6B7280', italics: true }));
+      if (c.url) paras.push(body(c.url, { color: '6366F1', size: 18 }));
+      break;
+    case 'table': {
+      const headers = c.headers || [];
+      const rows    = c.rows    || [];
+      if (headers.length > 0) {
+        const tableRows = [];
+        tableRows.push(new TableRow({
+          children: headers.map(h => new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })],
+            shading: { fill: 'F3F4F6' },
+          })),
+        }));
+        rows.forEach(row => tableRows.push(new TableRow({
+          children: (row || []).map((cell, ci) => new TableCell({
+            children: [new Paragraph({ text: String(cell ?? '') })],
+            width: { size: Math.floor(9000 / Math.max(headers.length, 1)), type: WidthType.DXA },
+          })),
+        })));
+        paras.push(new Table({
+          rows: tableRows,
+          width: { size: 9000, type: WidthType.DXA },
+        }));
+        if (c.caption) paras.push(body(c.caption, { italics: true, color: '6B7280', size: 18 }));
+      }
+      break;
+    }
+    case 'link':
+      paras.push(body(`🔗 ${c.title || c.url || 'Link'}`, { bold: true }));
+      if (c.url && c.url !== c.title) paras.push(body(c.url, { color: '6366F1', size: 18 }));
+      if (c.description) paras.push(body(c.description, { color: '6B7280', size: 18 }));
+      break;
+    case 'quiz_link':
+      paras.push(body(`🧪 Kviz: ${c.label || ''}`, { bold: true }));
+      if (c.description) paras.push(body(c.description, { color: '6B7280', size: 18 }));
+      break;
+    case 'pdf':
+      paras.push(body(`📄 ${c.label || 'PDF dokument'}`, { bold: true }));
+      if (c.url) paras.push(body(c.url, { color: '6366F1', size: 18 }));
+      break;
+    case 'python': {
+      paras.push(body('Python kod:', { bold: true, size: 18 }));
+      paras.push(code(c.code || ''));
+      if (c.caption) paras.push(body(c.caption, { italics: true, color: '6B7280', size: 18 }));
+      break;
+    }
+    default:
+      paras.push(body(`[${block.type}]`, { color: '9CA3AF' }));
+  }
+
+  return paras;
+}
+
+router.get('/lessons/:id/export', requireAuth, requireTeacher, async (req, res) => {
+  const { id } = req.params;
+  const { format = 'docx' } = req.query;
+
+  const lesson = parseLesson(db.prepare('SELECT * FROM lessons WHERE id = ?').get(id));
+  if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+  const blocks = db.prepare('SELECT * FROM lesson_blocks WHERE lesson_id = ? ORDER BY position, id').all(id);
+
+  if (format === 'docx') {
+    const children = [];
+
+    children.push(new Paragraph({ text: lesson.title, heading: HeadingLevel.TITLE }));
+    if (lesson.summary) children.push(new Paragraph({ children: [new TextRun({ text: lesson.summary, italics: true, color: '4B5563' })] }));
+    children.push(new Paragraph({}));
+
+    for (const block of blocks) {
+      blockToParagraphs(block).forEach(p => children.push(p));
+      children.push(new Paragraph({}));
+    }
+
+    const doc = new Document({
+      creator: 'Molekula Academy',
+      title: lesson.title,
+      sections: [{ properties: {}, children }],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    const safeName = lesson.title.replace(/[^a-z0-9čćšđž_\- ]/gi, '_').slice(0, 60);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.docx"`);
+    return res.send(buffer);
+  }
+
+  return res.status(400).json({ error: 'Unsupported format. Use format=docx' });
 });
 
 // ─── DELETE /api/teacher/lessons/:id ─────────────────────────────────────────

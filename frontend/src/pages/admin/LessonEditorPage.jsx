@@ -12,6 +12,7 @@ import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
+  getToken,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import SmilesDrawer from 'smiles-drawer';
@@ -1244,12 +1245,13 @@ export default function LessonEditorPage() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
 
-  const [lesson,     setLesson]     = useState(null);
-  const [blocks,     setBlocks]     = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [showPicker, setShowPicker] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [lesson,       setLesson]       = useState(null);
+  const [blocks,       setBlocks]       = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState('');
+  const [showPicker,   setShowPicker]   = useState(false);
+  const [showPreview,  setShowPreview]  = useState(false);
+  const [exportingDocx, setExportingDocx] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1306,6 +1308,27 @@ export default function LessonEditorPage() {
     catch { setBlocks(blocks); }
   }
 
+  async function handleDownloadDocx() {
+    setExportingDocx(true);
+    try {
+      const res = await fetch(`/api/teacher/lessons/${lessonId}/export?format=docx`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${lesson?.title || 'lekcija'}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Greška pri izvozu: ' + e.message);
+    } finally {
+      setExportingDocx(false);
+    }
+  }
+
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--ink-faint)', fontFamily: 'var(--mono)', fontSize: 13 }}>
       Učitavam uređivač…
@@ -1335,6 +1358,21 @@ export default function LessonEditorPage() {
         <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
           {blocks.length} {blocks.length === 1 ? 'blok' : 'blokova'}
         </span>
+        <button
+          onClick={() => window.open(`/admin/lessons/${lessonId}/print`, '_blank')}
+          title="Otvara stranicu za ispis u novoj kartici — ispiši ili spremi kao PDF"
+          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+        >
+          📄 PDF
+        </button>
+        <button
+          onClick={handleDownloadDocx}
+          disabled={exportingDocx}
+          title="Preuzmi Word dokument (.docx)"
+          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: exportingDocx ? 'default' : 'pointer', opacity: exportingDocx ? 0.6 : 1 }}
+        >
+          {exportingDocx ? '⏳' : '📝'} DOCX
+        </button>
         <button onClick={() => setShowPreview(true)} disabled={blocks.length === 0}
           style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 16px', fontWeight: 600, fontSize: 14, cursor: blocks.length === 0 ? 'default' : 'pointer', opacity: blocks.length === 0 ? 0.5 : 1 }}>
           👁 Pregled kao student

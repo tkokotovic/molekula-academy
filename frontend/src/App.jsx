@@ -26,6 +26,7 @@ import AdminRevenuePage from './pages/admin/AdminRevenuePage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage';
 import LessonEditorPage from './pages/admin/LessonEditorPage';
+import LessonPrintPage from './pages/admin/LessonPrintPage';
 import LoginPage from './pages/LoginPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
@@ -110,6 +111,7 @@ export default function App() {
         <Route path="/admin/reports"                element={<RequireTeacher><AdminReportsPage /></RequireTeacher>} />
         <Route path="/admin/questions"              element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
+        <Route path="/admin/lessons/:lessonId/print" element={<RequireTeacher><LessonPrintPage /></RequireTeacher>} />
       </Routes>
     </BrowserRouter>
   );
