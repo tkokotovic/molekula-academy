@@ -12,7 +12,7 @@ import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
-  getToken,
+  setLessonStatus, getToken,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import SmilesDrawer from 'smiles-drawer';
@@ -1239,6 +1239,97 @@ function SyllabusTagPicker({ lessonId }) {
   );
 }
 
+// ─── Status control ───────────────────────────────────────────────────────────
+
+const STATUS_CFG = {
+  draft:     { label: 'Skica',      color: '#f59e0b' },
+  published: { label: 'Objavljeno', color: '#10b981' },
+  scheduled: { label: 'Zakazano',   color: '#6366f1' },
+  archived:  { label: 'Arhivirano', color: '#94a3b8' },
+};
+
+function StatusControl({ status, publishAt, open, saving, scheduleDate, onToggle, onClose, onPick, onScheduleDateChange }) {
+  const cfg = STATUS_CFG[status] ?? STATUS_CFG.draft;
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={onToggle}
+        disabled={saving}
+        style={{
+          padding: '5px 12px', borderRadius: 99, border: `1px solid ${cfg.color}44`,
+          background: cfg.color + '18', color: cfg.color,
+          fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 700, cursor: 'pointer',
+          opacity: saving ? 0.6 : 1,
+        }}
+      >
+        {cfg.label} ▾
+      </button>
+      {open && (
+        <>
+          <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
+          <div style={{
+            position: 'absolute', top: '100%', right: 0, marginTop: 6,
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            borderRadius: 10, boxShadow: '0 8px 30px rgba(0,0,0,.18)',
+            padding: '8px', minWidth: 220, zIndex: 200,
+          }}>
+            {['draft', 'published', 'archived'].map(s => (
+              <button
+                key={s}
+                onClick={() => onPick(s)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '7px 12px', borderRadius: 7, border: 'none',
+                  background: status === s ? STATUS_CFG[s].color + '18' : 'transparent',
+                  color: STATUS_CFG[s].color, fontSize: 13, fontFamily: 'var(--mono)',
+                  fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                {STATUS_CFG[s].label}
+              </button>
+            ))}
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 8, paddingLeft: 4, paddingRight: 4 }}>
+              <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)', marginBottom: 6, paddingLeft: 8 }}>
+                Zakaži objavu:
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  type="datetime-local"
+                  value={scheduleDate}
+                  onChange={e => onScheduleDateChange(e.target.value)}
+                  style={{
+                    flex: 1, padding: '6px 8px', borderRadius: 7,
+                    border: '1px solid var(--line)', background: 'var(--bg)',
+                    color: 'var(--ink)', fontSize: 12, fontFamily: 'var(--mono)',
+                  }}
+                />
+                <button
+                  onClick={() => onPick('scheduled')}
+                  disabled={!scheduleDate}
+                  style={{
+                    padding: '6px 10px', borderRadius: 7, border: 'none',
+                    background: scheduleDate ? '#6366f1' : 'var(--line)',
+                    color: scheduleDate ? '#fff' : 'var(--ink-faint)',
+                    fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 700,
+                    cursor: scheduleDate ? 'pointer' : 'default',
+                  }}
+                >
+                  OK
+                </button>
+              </div>
+              {status === 'scheduled' && publishAt && (
+                <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: '#6366f1', marginTop: 6, paddingLeft: 4 }}>
+                  Objava: {new Date(publishAt).toLocaleString('hr')}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── LessonEditorPage ──────────────────────────────────────────────────────────
 
 export default function LessonEditorPage() {
@@ -1252,6 +1343,9 @@ export default function LessonEditorPage() {
   const [showPicker,   setShowPicker]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
   const [exportingDocx, setExportingDocx] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [scheduleDate,   setScheduleDate]   = useState('');
+  const [statusSaving,   setStatusSaving]   = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1272,6 +1366,22 @@ export default function LessonEditorPage() {
   }, [lessonId]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function handleStatusChange(newStatus) {
+    if (newStatus === 'scheduled' && !scheduleDate) return;
+    setStatusSaving(true);
+    try {
+      const publishAt = newStatus === 'scheduled' ? new Date(scheduleDate).toISOString() : undefined;
+      const updated = await setLessonStatus(lessonId, newStatus, publishAt);
+      setLesson(updated);
+      setShowStatusMenu(false);
+      setScheduleDate('');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setStatusSaving(false);
+    }
+  }
 
   async function handleAddBlock(type) {
     const content = JSON.parse(JSON.stringify(DEFAULT_CONTENT[type] || {}));
@@ -1358,6 +1468,20 @@ export default function LessonEditorPage() {
         <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
           {blocks.length} {blocks.length === 1 ? 'blok' : 'blokova'}
         </span>
+
+        {/* ── Status control ── */}
+        <StatusControl
+          status={lesson?.status ?? 'draft'}
+          publishAt={lesson?.publish_at}
+          open={showStatusMenu}
+          saving={statusSaving}
+          scheduleDate={scheduleDate}
+          onToggle={() => setShowStatusMenu(s => !s)}
+          onClose={() => setShowStatusMenu(false)}
+          onPick={handleStatusChange}
+          onScheduleDateChange={setScheduleDate}
+        />
+
         <button
           onClick={() => window.open(`/admin/lessons/${lessonId}/print`, '_blank')}
           title="Otvara stranicu za ispis u novoj kartici — ispiši ili spremi kao PDF"

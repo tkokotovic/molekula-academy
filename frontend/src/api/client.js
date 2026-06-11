@@ -153,10 +153,11 @@ export async function updateLesson(id, fields) {
   return data.lesson;
 }
 
-export async function setLessonStatus(id, status) {
+export async function setLessonStatus(id, status, publish_at) {
+  const body = publish_at ? { status, publish_at } : { status };
   const data = await apiFetch(`/api/teacher/lessons/${id}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(body),
   });
   return data.lesson;
 }

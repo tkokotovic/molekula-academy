@@ -159,7 +159,7 @@
 | R08a | Syllabus tags — DB + API | ✅ | DB: `lesson_syllabus_tags(lesson_id, course_type, code)` table. Seed data: IB SL / IB HL / Državna matura / Prijemni / MedChem I / MedChem II code sets. API: `GET /api/teacher/syllabus-codes?course_type=X` (returns ordered list), `PUT /api/teacher/lessons/:id/syllabus-tags` (saves tags). New route file `backend/src/routes/syllabus.js`. |
 | R08b | Syllabus tags — UI | ⬜ | Searchable tag-picker in lesson editor header. Shows only codes for the course type the lesson belongs to. Badge shown on lesson row in course view. |
 | R09 | Lesson PDF / DOCX export | ⬜ | Admin-only button in lesson editor: renders blocks to PDF/DOCX. KaTeX server-side for equations, smiles-drawer SVG for molecules. |
-| R10 | Lesson status — Scheduled publish | ⬜ | Status selector: Draft / Published / Scheduled (date-time picker). Backend cron or check-on-fetch publishes at scheduled time. |
+| R10 | Lesson status — Scheduled publish | ✅ | Status selector: Draft / Published / Scheduled / Archived in lesson editor top bar. Date-time picker for scheduled. Backend auto-publishes on fetch (`maybeAutoPublish`). `PATCH /api/teacher/lessons/:id/status` accepts `publish_at`. |
 
 ### 8B-2 — Question Bank Redesign
 

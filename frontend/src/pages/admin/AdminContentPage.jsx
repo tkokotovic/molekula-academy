@@ -205,11 +205,12 @@ function BlocksColumn({ lesson, onClose }) {
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-const STATUS_CYCLE = { draft: 'published', published: 'archived', archived: 'draft' };
-const STATUS_LABEL = { draft: 'Skica', published: 'Objavljeno', archived: 'Arhivirano' };
+const STATUS_CYCLE = { draft: 'published', published: 'archived', archived: 'draft', scheduled: 'draft' };
+const STATUS_LABEL = { draft: 'Skica', published: 'Objavljeno', scheduled: 'Zakazano', archived: 'Arhivirano' };
 const STATUS_COLOR = {
   draft:     { bg: 'var(--bg)',                                               color: 'var(--ink-soft)', border: 'var(--line)' },
   published: { bg: 'color-mix(in srgb, #22c55e 12%, transparent)',            color: '#16a34a',         border: 'color-mix(in srgb, #22c55e 30%, transparent)' },
+  scheduled: { bg: 'color-mix(in srgb, #6366f1 12%, transparent)',            color: '#4f46e5',         border: 'color-mix(in srgb, #6366f1 30%, transparent)' },
   archived:  { bg: 'color-mix(in srgb, var(--ink-soft) 10%, transparent)',    color: 'var(--ink-soft)', border: 'color-mix(in srgb, var(--ink-soft) 20%, transparent)' },
 };
 

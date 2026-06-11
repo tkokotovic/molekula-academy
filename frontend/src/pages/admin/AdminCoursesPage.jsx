@@ -10,9 +10,10 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_LABEL = { draft: 'Skica', published: 'Objavljeno', archived: 'Arhivirano' };
-const STATUS_COLOR = { draft: '#f59e0b', published: '#10b981', archived: '#94a3b8' };
-const STATUS_NEXT  = { draft: 'published', published: 'archived', archived: 'draft' };
+const STATUS_LABEL = { draft: 'Skica', published: 'Objavljeno', scheduled: 'Zakazano', archived: 'Arhivirano' };
+const STATUS_COLOR = { draft: '#f59e0b', published: '#10b981', scheduled: '#6366f1', archived: '#94a3b8' };
+// Clicking a scheduled badge cancels back to draft
+const STATUS_NEXT  = { draft: 'published', published: 'archived', archived: 'draft', scheduled: 'draft' };
 
 function StatusBadge({ status, onClick, loading }) {
   return (

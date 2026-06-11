@@ -9,8 +9,18 @@ const {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const VALID_STATUSES   = ['draft', 'published', 'archived'];
+const VALID_STATUSES   = ['draft', 'published', 'scheduled', 'archived'];
 const VALID_DIFFICULTY = ['easy', 'medium', 'hard'];
+
+// Auto-publish a scheduled lesson if its publish_at has passed; returns up-to-date row.
+function maybeAutoPublish(id) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE lessons
+    SET status = 'published', updated_at = datetime('now')
+    WHERE id = ? AND status = 'scheduled' AND publish_at IS NOT NULL AND publish_at <= ?
+  `).run(id, now);
+}
 
 function parseLesson(row) {
   if (!row) return null;
@@ -73,6 +83,11 @@ router.post('/topics/:topicId/lessons', requireAuth, requireTeacher, (req, res) 
 
 router.get('/topics/:topicId/lessons', requireAuth, requireTeacher, (req, res) => {
   const { topicId } = req.params;
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE lessons SET status = 'published', updated_at = datetime('now')
+    WHERE topic_id = ? AND status = 'scheduled' AND publish_at IS NOT NULL AND publish_at <= ?
+  `).run(topicId, now);
   const rows = db.prepare(`
     SELECT l.*, m.title AS master_title
     FROM lessons l
@@ -214,6 +229,7 @@ router.post('/lessons/:id/push', requireAuth, requireTeacher, (req, res) => {
 
 router.get('/lessons/:id', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
+  maybeAutoPublish(id);
   const row = db.prepare(`
     SELECT l.*, m.title AS master_title
     FROM lessons l
@@ -274,16 +290,21 @@ router.put('/lessons/:id', requireAuth, requireTeacher, (req, res) => {
 
 router.patch('/lessons/:id/status', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, publish_at } = req.body;
 
   if (!VALID_STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` });
+  }
+  if (status === 'scheduled' && !publish_at) {
+    return res.status(400).json({ error: 'publish_at is required when status is scheduled' });
   }
 
   const existing = db.prepare('SELECT id FROM lessons WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Lesson not found' });
 
-  db.prepare(`UPDATE lessons SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+  // Clear publish_at when leaving scheduled; set it when entering scheduled
+  const newPublishAt = status === 'scheduled' ? publish_at : null;
+  db.prepare(`UPDATE lessons SET status = ?, publish_at = ?, updated_at = datetime('now') WHERE id = ?`).run(status, newPublishAt, id);
   const lesson = parseLesson(db.prepare('SELECT * FROM lessons WHERE id = ?').get(id));
   return res.json({ lesson });
 });
