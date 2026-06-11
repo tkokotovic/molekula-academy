@@ -64,10 +64,11 @@
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| 26 | Stripe integration | ⬜ | Credit card payments, recurring billing, webhook for payment events |
-| 27 | Subscription management | ⬜ | Student can upgrade, downgrade, cancel, or pause from account page |
-| 28 | Progress preservation after cancellation | ⬜ | Lock new content; permanently preserve all scores, completions, certificates |
-| 29 | Invoice and receipt generation | ⬜ | Required by Croatian/EU law. Auto-generate PDF on each payment, send by email |
+| 26a | Stripe backend — webhook + subscription sync | ⬜ | New route `backend/src/routes/stripe.js`. Webhook endpoint `/api/stripe/webhook`. DB tables: `stripe_subscriptions(id, user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)`, `stripe_payments(id, user_id, amount_eur, stripe_payment_intent_id, description, created_at)`. Sync subscription state to `users.subscription_tier` on every webhook event. |
+| 26b | Stripe frontend — checkout flow | ⬜ | Checkout button on SettingsPage/PricingPage → redirect to Stripe Checkout. Success/cancel return URLs. Show current plan + next billing date. Requires Croatian business registration + Stripe account. |
+| 27 | Subscription management API | ⬜ | `PATCH /api/stripe/subscription` — upgrade, downgrade, cancel, reactivate via Stripe API. Student sees plan status + renewal date in SettingsPage. |
+| 28 | Progress preservation after cancellation | ⬜ | On cancellation webhook: set `subscription_tier = 'basic'`. All scores, completions, certificates permanently preserved. Lock premium content but do not delete any data. |
+| 29 | Invoice and receipt generation | ⬜ | Required by Croatian/EU law. On `invoice.payment_succeeded` webhook: generate PDF receipt (Puppeteer or pdf-lib), store in uploads, email to student. `stripe_invoices(id, user_id, stripe_invoice_id, pdf_url, amount_eur, paid_at)`. |
 
 ---
 
@@ -155,7 +156,8 @@
 | R05 | Lesson fork model — UI | ✅ | Fork = full independent copy. Course rows show "⑂ iz biblioteke" badge. Two entry points: course→topic "⑂ Iz biblioteke" picker, and library→"+ Dodaj u kolegij" course/topic picker. Editing fork does NOT change master (separate rows + blocks). Full block add/edit/**delete**/reorder via existing `LessonEditorPage`. |
 | R06 | Push-changes-to-forks flow | ✅ | Library row shows "⟳ Ažuriraj kopije" when forks exist → modal lists each fork (course · topic · lesson · block count) with per-fork sync chip ("Usklađeno" / "Razlikuje se", by comparing block content arrays). Differing forks pre-selected; "Ažuriraj odabrane (N)" replaces selected forks' blocks with master's. `GET /api/teacher/lessons/:id/forks` + `POST /api/teacher/lessons/:id/push`. |
 | R07 | Block-level visibility toggle | ✅ | Each block shows an always-visible pill (🌐 Svi / ● Basic / ★ Premium) that cycles on click. Stored in `lesson_blocks.visibility` (`ALTER TABLE` migration, default `public`). POST/PATCH `/blocks` accept + validate visibility; fork + push carry it; fork sync-detection includes it. "👁 Pregled kao student" modal renders blocks read-only in two columns (Basic vs Premium), hidden blocks shown as "🔒 … skriveno". **Student-side enforcement done:** `GET /api/student/lessons/:id/blocks` (`backend/src/routes/student_lessons.js`, `requireAuth`) drops blocks the user's `subscription_tier` can't see (tier read fresh from DB; teacher/owner = all); `LessonPage` uses `getStudentLessonBlocks`. Student-side enforcement verified. `LessonPage` / `CourseDetailPage` / `CoursesPage` repointed to student routes in R37 — 403 bug resolved. |
-| R08 | Syllabus tags per lesson | ⬜ | Searchable dropdown in lesson editor header. One tag set per course type: IB SL / IB HL / Državna matura / Prijemni / MedChem I / MedChem II. `syllabus_codes` table seeded per course. |
+| R08a | Syllabus tags — DB + API | ✅ | DB: `lesson_syllabus_tags(lesson_id, course_type, code)` table. Seed data: IB SL / IB HL / Državna matura / Prijemni / MedChem I / MedChem II code sets. API: `GET /api/teacher/syllabus-codes?course_type=X` (returns ordered list), `PUT /api/teacher/lessons/:id/syllabus-tags` (saves tags). New route file `backend/src/routes/syllabus.js`. |
+| R08b | Syllabus tags — UI | ⬜ | Searchable tag-picker in lesson editor header. Shows only codes for the course type the lesson belongs to. Badge shown on lesson row in course view. |
 | R09 | Lesson PDF / DOCX export | ⬜ | Admin-only button in lesson editor: renders blocks to PDF/DOCX. KaTeX server-side for equations, smiles-drawer SVG for molecules. |
 | R10 | Lesson status — Scheduled publish | ⬜ | Status selector: Draft / Published / Scheduled (date-time picker). Backend cron or check-on-fetch publishes at scheduled time. |
 
@@ -163,18 +165,19 @@
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R11 | Multi-category tagging | ⬜ | Questions can belong to multiple categories: IB SL, IB HL, Državna matura, Prijemni, MedChem I, MedChem II. DB: `question_categories` join table. |
-| R12 | Per-category syllabus codes | ⬜ | For each assigned category, a separate syllabus code. UI: per-category row with code dropdown. DB: `question_syllabus_codes(question_id, category, code)`. |
+| R11a | Question bank DB migration + API | ✅ | DB: `question_categories(question_id, category TEXT)` join table; `question_syllabus_codes(question_id, category, code)`. Migrate existing `ib_level` + `syllabus_item_ids` data into new tables. Update `questions.js` routes: `GET /api/teacher/questions` returns categories/syllabus codes; `POST/PATCH` accept `categories[]` + `syllabus_codes[]`. Add performance stat columns (`correct_count`, `attempt_count`, `avg_time_seconds`) to `questions` — updated by quiz grading logic. |
+| R11b | Multi-category tagging — UI | ⬜ | Multi-select category picker in question editor. Replaces old `ib_level` field. |
+| R12 | Per-category syllabus codes — UI | ⬜ | For each selected category, show a code dropdown row. Reads from syllabus seed data added in R08a. |
 | R13 | Rich stems & options | ⬜ | Stem and each option use TiptapEditor — supports LaTeX, mhchem, images inline in questions. |
 | R14 | Bulk paste import | ⬜ | Textarea: paste raw text → parse question/answer boundaries → teacher reviews each, confirms category + correct answer. |
-| R15 | Performance stats on questions | ⬜ | Auto-computed: correct %, avg time, attempt count. Shown on question card. Populated from `quiz_attempts` data. |
+| R15 | Performance stats on questions | ⬜ | Display correct %, avg time, attempt count on question card. Columns added in R11a; populated by quiz grading. |
 | R16 | Question bank filter overhaul | ⬜ | Filter by: category (multi-select), syllabus code, difficulty, type, source (past paper / original / entrance exam), performance range. |
 
 ### 8B-3 — Homeworks
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R17 | Homeworks DB + API | ⬜ | Tables: `homeworks`, `homework_questions`, `homework_assignments`, `homework_submissions`, `homework_answers`. |
+| R17 | Homeworks DB + API | ✅ | New route `backend/src/routes/homeworks.js`. Tables: `homeworks(id, title, instruction_html, created_by, created_at)`, `homework_questions(homework_id, question_id, position)`, `homework_assignments(id, homework_id, student_id, group_id, deadline, assigned_at)`, `homework_submissions(id, assignment_id, submitted_at, corrected_at, overall_score, teacher_comment)`, `homework_answers(id, submission_id, question_id, answer_text, file_url, score, teacher_note, is_correct)`. Full CRUD + assignment + submission + correction endpoints. |
 | R18 | Homework creation UI | ⬜ | Pick questions from filtered bank, drag to reorder. Instruction text (rich text). Assign to: individual student OR group. Set deadline. |
 | R19 | Student homework view | ⬜ | Student sees assigned homeworks with deadline. MCQ/T/F auto-graded. Short answer: text OR image upload. |
 | R20 | Teacher correction UI | ⬜ | Inbox sorted by deadline / submission / course. Per short-answer: score + inline note. Overall comment. Mark corrected → student notified. |
@@ -189,21 +192,23 @@
 | R24 | Student detail — Homeworks tab | ⬜ | All assigned/submitted/corrected/pending. Click to open correction view. |
 | R25 | Student detail — Sessions tab | ⬜ | Scheduled + past sessions. Meeting code visible. Hours balance shown. |
 | R26 | Student detail — Reports tab | ⬜ | Generate parent PDF report button (triggers R35). |
-| R27 | Groups / Cohorts | ⬜ | Named groups (e.g. "IB HL 2026"). Assign students. Assign homeworks to entire group. Group-level progress view. DB: `groups`, `group_members`. |
+| R27a | Groups DB + API | ✅ | New route `backend/src/routes/groups.js`. Tables: `groups(id, name, created_by, created_at)`, `group_members(group_id, student_id)`. Endpoints: CRUD for groups, add/remove members, `GET /api/teacher/groups/:id/progress` (aggregate stats). Homework assignment endpoints updated to accept `group_id`. |
+| R27b | Groups UI | ⬜ | Groups list + create modal. Add/remove students. Assign homework to group. Group-level progress view. Visible in `AdminStudentsPage` sidebar. |
 
 ### 8B-5 — Communication Redesign
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | R28 | Messages redesign — quiz-context threads | ⬜ | Messages attached to quiz results only. 24h student reply window after corrections. Thread locks for student after 24h. Quiz questions shown inline. |
-| R29 | Broadcasts | ⬜ | `AdminBroadcastsPage`. Filter audience: all / by course / by plan / by group / individuals. In-platform delivery. Log with date, audience size, content. DB: `broadcasts`, `broadcast_recipients`. |
-| R30 | In-platform notification bell | ⬜ | Bell icon in student nav. Unread badge count. Dropdown list. Mark as read. DB: `notifications(id, student_id, text, link, read_at, created_at)`. |
+| R29a | Broadcasts DB + API | ✅ | New route `backend/src/routes/broadcasts.js`. Tables: `broadcasts(id, title, body_hr, body_en, audience_filter JSON, created_by, sent_at)`, `broadcast_recipients(broadcast_id, user_id, delivered_at)`. `POST /api/teacher/broadcasts` resolves audience filter → inserts rows into `notifications` table for each recipient. `GET /api/teacher/broadcasts` returns log with audience_count, sent_at. |
+| R29b | Broadcasts UI | ⬜ | `AdminBroadcastsPage`. Audience filter UI: all / by course / by plan / by group / individuals. Preview recipient count before sending. Broadcast log table. |
+| R30 | In-platform notification bell (student) | ✅ | Done in R38 S13. `notifications` table created in S01. `GET/PATCH /api/student/notifications*` routes. NotifDropdown in AppShell — unread badge, colour-coded dots, mark-one/all-read, navigate on click. |
 
 ### 8B-6 — Sessions & Tutoring Packages
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R31 | Tutoring packages — DB + API | ⬜ | Tables: `tutoring_packages(id, name, hours, price_eur)`, `student_hours(student_id, hours_remaining, hours_total)`, `sessions`. Admin sets package prices. |
+| R31 | Tutoring packages — DB + API | ✅ | New route `backend/src/routes/tutoring.js`. Tables: `tutoring_packages(id, name, hours, price_eur, is_active)`, `student_hours(student_id, hours_remaining, hours_total, updated_at)`. `sessions` table already exists (S10). Extend sessions with `hours_deducted INTEGER DEFAULT 0`. Endpoints: admin CRUD for packages, `GET/PATCH /api/teacher/students/:id/hours`, `POST /api/teacher/sessions` deducts 1h on creation. |
 | R32 | Sessions admin UI | ⬜ | `AdminSessionsPage`. Schedule session → deducts 1h. Online: paste meeting link → student notified. In-person: mark as in-person. Session history. |
 | R33 | Student — purchase tutoring package | ⬜ | Student sees remaining hours. Buy package → Stripe checkout → hours credited. Meeting code sent by email. |
 
@@ -211,7 +216,8 @@
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R34 | Revenue redesign (Stripe data) | ⬜ | Rebuilt with real Stripe data: MRR + tutoring revenue separate, active premium count, new vs churn, payment history, refund button (Admin Teacher only). |
+| R34a | Revenue API | ⬜ | `GET /api/teacher/revenue/summary` — queries `stripe_subscriptions` + `stripe_payments` tables (populated by webhooks in Step 26a): MRR, tutoring revenue, active premium count, new this month, churned this month, payment history list. `POST /api/teacher/revenue/refund/:payment_id` (Admin Teacher only) — calls Stripe API to issue refund. |
+| R34b | Revenue UI | ⬜ | Rebuilt `AdminRevenuePage` using real API data from R34a. MRR + tutoring panels, 6-month chart, payment history table, refund button. |
 | R35 | Parent PDF report | ⬜ | `AdminReportsPage`. Fields: effort, goal note, current progress (auto-filled), probability of reaching goal, additional effort required, mock exam results, personal note. Export PDF. |
 | R36 | Student progress report (internal) | ⬜ | Full quiz history, topic completion, homework grades. For teacher reference. Printable. |
 
@@ -222,7 +228,7 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | R37 | Student content read routes | ✅ | Student-accessible `requireAuth` read routes added to `backend/src/routes/student_lessons.js`: `GET /api/student/courses/:id`, `GET /api/student/courses/:id/topics`, `GET /api/student/topics/:topicId/lessons`, `GET /api/student/lessons/:id`. `CoursesPage`, `CourseDetailPage`, `LessonPage` all repointed. 403 bug fully resolved. |
-| R38 | Student layout redesign | 🔄 | Full student portal redesign. **S01–S10 done, S11–S13 remaining.** |
+| R38 | Student layout redesign | ✅ | Full student portal redesign. All 13 steps done. |
 
 #### R38 step log
 
@@ -238,9 +244,9 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | S08 | QuizzesPage | ✅ | 2-tab index: topic quizzes grouped by topic accordion with best-score badges; mock exams tab |
 | S09 | MessagesPage | ✅ | File attachments, message type badges, read receipts |
 | S10 | SchedulePage | ✅ | Real sessions API (NextSessionCard w/ date chip + prep note + Zoom button, HistoryRow, monthly allowance badge, Calendly embed, BasicUpsell for non-premium) |
-| S11 | ProgressPage | ⬜ | Audit existing page against enrollment model; ensure rings/stats use enrolled-course data |
-| S12 | SettingsPage | ⬜ | Audit; add exam date field + plan display (prep for Stripe); ensure onboarding_completed visible |
-| S13 | Notifications | ⬜ | Notification bell in AppShell nav — unread badge, dropdown list, mark-as-read. Feeds `notifications` table (already created in S01) |
+| S11 | ProgressPage | ✅ | buildCourseStats JOINs enrollments — rings show only enrolled courses |
+| S12 | SettingsPage | ✅ | Exam date picker reads/writes `users.exam_date` via existing PATCH /profile |
+| S13 | Notifications | ✅ | `GET/PATCH /api/student/notifications*` routes; NotifDropdown in AppShell — unread badge, colour-coded dots, mark-one/all-read, navigate on click |
 
 ---
 
@@ -261,52 +267,77 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 
 | Phase | Steps | Done | Status |
 |-------|-------|------|--------|
-| Phase 1 — Design Prototype | 01–20 | 19/20 | ✅ (Step 12 blocked on photos) |
+| Phase 1 — Design Prototype | 01–20 | 19/20 | 🔄 (Step 12 blocked on photos) |
 | Phase 2 — Infrastructure | 21–25 | 3/5 | 🔄 (hosting + domain outstanding) |
-| Phase 3 — Billing | 26–29 | 0/4 | ⬜ |
+| Phase 3 — Billing | 26a–29 | 0/5 | ⬜ (blocked on business reg + Stripe account) |
 | Phase 4 — Content Management Backend | 30–39 | 10/10 | ✅ |
 | Phase 5 — Progress Tracking Backend | 41–44 | 4/4 | ✅ |
 | Phase 6 — Student Frontend | 47–56 | 10/10 | ✅ |
-| Phase 7 — Communication | 57–60 | 3/4 | 🔄 (session scheduling outstanding) |
+| Phase 7 — Communication | 57–60 | 3/4 | 🔄 (Step 60 outstanding) |
 | Phase 8 — Admin Panel v1 | 61–67 | 7/7 | ✅ |
-| Phase 8B-1 — Courses & Lessons | R01–R10 | 7/10 | 🔄 |
-| Phase 8B-2 — Question Bank Redesign | R11–R16 | 0/6 | ⬜ |
+| Phase 8B-1 — Courses & Lessons | R01–R10 | 7/11 | 🔄 |
+| Phase 8B-2 — Question Bank Redesign | R11a–R16 | 0/7 | ⬜ |
 | Phase 8B-3 — Homeworks | R17–R22 | 0/6 | ⬜ |
-| Phase 8B-4 — Students Redesign | R23–R27 | 0/5 | ⬜ |
-| Phase 8B-5 — Communication Redesign | R28–R30 | 0/3 | ⬜ |
+| Phase 8B-4 — Students Redesign | R23–R27b | 0/6 | ⬜ |
+| Phase 8B-5 — Communication Redesign | R28–R30 | 1/4 | 🔄 (R30 ✅ via R38 S13) |
 | Phase 8B-6 — Sessions & Tutoring | R31–R33 | 0/3 | ⬜ |
-| Phase 8B-7 — Revenue & Reports | R34–R36 | 0/3 | ⬜ |
-| Phase 8B-8 — Student-Facing Redesign | R37–R38 | R37 ✅ + R38 10/13 | 🔄 (S11–S13 remaining) |
+| Phase 8B-7 — Revenue & Reports | R34a–R36 | 0/4 | ⬜ |
+| Phase 8B-8 — Student-Facing Redesign | R37–R38 | 14/14 | ✅ |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
-| **Total** | **~120 steps** | **~68** | |
+| **Total** | **~128 steps** | **~72** | |
 
 ---
 
 ## Recommended next build order
 
-> **Revised June 2026.** R37+R38 are the highest-priority items because they directly control whether students can use the platform. All admin-heavy sections (R08–R36) are deferred to post-beta — the current admin tools are sufficient for a first cohort of students.
+> **Revised June 2026.** R37+R38 complete. Database is now up — backend work (DB migrations + API routes) can proceed independently of hosting/Stripe decisions. External blockers (domain, Stripe account) only block deployment and billing; they do not block backend or admin panel development.
 
-### Pre-beta (must-have for first paying students)
+### Now unblocked — backend work (no external dependencies)
 
-1. **R38 S11–S13** — Finish student portal: ProgressPage audit, SettingsPage (exam date + plan display), Notifications bell
-2. **Step 24** — Register domain (molekula-academy.hr or .com)
-3. **Step 25** — Hetzner VPS: provision, deploy backend + frontend, configure SSL
-4. **Step 12** — Real photos (portrait + hero image — Tomislav to supply)
-5. **Steps 26–29** — Stripe billing (requires Croatian business registration first)
-6. **L02** — Full end-to-end test (land → register → pay → lesson → quiz → message → cancel)
-7. **L03** — Beta: invite 5–10 known students, collect feedback
+These can be built immediately. All are pure DB + API work, no Stripe needed.
 
-### Post-beta (do after first revenue)
+1. **R08a** — Syllabus tags DB + API (`lesson_syllabus_tags` table, seed data, `syllabus.js` route)
+2. **R11a** — Question bank DB migration (`question_categories`, `question_syllabus_codes` tables + updated API)
+3. **R17** — Homeworks DB + API (5 new tables, full CRUD + submission + correction endpoints, `homeworks.js` route)
+4. **R27a** — Groups DB + API (`groups`, `group_members` tables, CRUD endpoints, `groups.js` route)
+5. **R29a** — Broadcasts DB + API (`broadcasts`, `broadcast_recipients` tables, delivery into `notifications`, `broadcasts.js` route)
+6. **R31** — Tutoring packages DB + API (`tutoring_packages`, `student_hours` tables, extend `sessions`, `tutoring.js` route)
 
-8. **R08–R10** — Syllabus tags, PDF export, scheduled publish
-9. **R11–R16** — Question bank redesign
-10. **R17–R22** — Homeworks full flow
-11. **R23–R27** — Students redesign + Groups
-12. **R29–R30** — Broadcasts + notification bell (backend already done in S01; frontend bell = S13 above)
-13. **R31–R33** — Tutoring packages (needs Stripe)
-14. **R34–R36** — Revenue (Stripe data) + reports PDF
-15. **Step 60** — Calendly webhook → auto Zoom link (Calendly embed already works; this adds automation)
-16. **L04–L05** — Replace sample testimonials → public launch
+### Blocked on external steps (domain, hosting, Stripe)
+
+7. **Step 24** — Register domain (Tomislav)
+8. **Step 25** — Hetzner VPS: provision, deploy, SSL
+9. **Step 12** — Real photos (Tomislav)
+10. **Step 26a** — Stripe backend webhook + subscription sync (needs Stripe account + business reg)
+11. **Step 26b** — Stripe checkout frontend
+12. **Steps 27–29** — Subscription management, content locking, invoice PDF
+
+### Frontend (after backend steps above)
+
+13. **R08b** — Syllabus tags UI (after R08a)
+14. **R09** — Lesson PDF/DOCX export
+15. **R10** — Scheduled publish UI
+16. **R11b–R16** — Question bank UI redesign (after R11a)
+17. **R18–R22** — Homeworks UI (after R17)
+18. **R23–R26** — Students redesign (list filters, detail tabs)
+19. **R27b** — Groups UI (after R27a)
+20. **R29b** — Broadcasts UI (after R29a)
+21. **R32** — Sessions admin UI (after R31)
+22. **R33** — Student purchase tutoring (needs Stripe)
+
+### Revenue + reports (after Stripe)
+
+23. **R34a** — Revenue API (after Step 26a)
+24. **R34b** — Revenue UI
+25. **R35** — Parent PDF report
+26. **R36** — Student progress report
+
+### Final
+
+27. **L02** — Full end-to-end test (after hosting + Stripe)
+28. **L03** — Beta: 5–10 known students
+29. **Step 60** — Calendly webhook automation
+30. **L04–L05** — Replace testimonials → public launch
 
 ### Deferred / reconsidered
 

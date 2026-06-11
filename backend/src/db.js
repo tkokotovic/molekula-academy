@@ -478,11 +478,285 @@ const migrations = [
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (summary_message_id) REFERENCES messages(id) ON DELETE SET NULL
   )`,
+  // R31 — Tutoring packages
+  `CREATE TABLE IF NOT EXISTS tutoring_packages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    hours INTEGER NOT NULL,
+    price_eur REAL NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE TABLE IF NOT EXISTS student_hours (
+    student_id INTEGER NOT NULL PRIMARY KEY,
+    hours_remaining REAL NOT NULL DEFAULT 0,
+    hours_total REAL NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  `ALTER TABLE sessions ADD COLUMN hours_deducted INTEGER NOT NULL DEFAULT 0`,
+  // R29a — Broadcasts
+  `CREATE TABLE IF NOT EXISTS broadcasts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body_hr TEXT,
+    body_en TEXT,
+    audience_filter TEXT NOT NULL DEFAULT '{}',
+    created_by INTEGER NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS broadcast_recipients (
+    broadcast_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    delivered_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (broadcast_id, user_id),
+    FOREIGN KEY (broadcast_id) REFERENCES broadcasts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  // R27a — Groups / Cohorts
+  `CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    created_by INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS group_members (
+    group_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    PRIMARY KEY (group_id, student_id),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  // R17 — Homeworks
+  `CREATE TABLE IF NOT EXISTS homeworks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    instruction_html TEXT,
+    created_by INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS homework_questions (
+    homework_id INTEGER NOT NULL,
+    question_id INTEGER NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (homework_id, question_id),
+    FOREIGN KEY (homework_id) REFERENCES homeworks(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS homework_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    homework_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    group_id INTEGER,
+    deadline TEXT,
+    status TEXT NOT NULL DEFAULT 'assigned',
+    assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+    submitted_at TEXT,
+    corrected_at TEXT,
+    FOREIGN KEY (homework_id) REFERENCES homeworks(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS homework_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    assignment_id INTEGER NOT NULL UNIQUE,
+    submitted_at TEXT NOT NULL,
+    corrected_at TEXT,
+    overall_score REAL,
+    teacher_comment TEXT,
+    FOREIGN KEY (assignment_id) REFERENCES homework_assignments(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS homework_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    submission_id INTEGER NOT NULL,
+    question_id INTEGER NOT NULL,
+    answer_text TEXT,
+    file_url TEXT,
+    score REAL,
+    teacher_note TEXT,
+    is_correct INTEGER,
+    FOREIGN KEY (submission_id) REFERENCES homework_submissions(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE SET NULL
+  )`,
+  // R11a — Question multi-category tagging
+  `CREATE TABLE IF NOT EXISTS question_categories (
+    question_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    PRIMARY KEY (question_id, category),
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+  )`,
+  // R11a — Per-category syllabus codes for questions
+  `CREATE TABLE IF NOT EXISTS question_syllabus_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    code TEXT NOT NULL,
+    UNIQUE (question_id, category, code),
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+  )`,
+  // R11a — Performance stats on questions (updated by quiz grading)
+  `ALTER TABLE questions ADD COLUMN correct_count INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE questions ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE questions ADD COLUMN avg_time_seconds REAL NOT NULL DEFAULT 0`,
+  // R08a — Syllabus codes reference table (seeded per course type)
+  `CREATE TABLE IF NOT EXISTS syllabus_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_type TEXT NOT NULL,
+    code TEXT NOT NULL,
+    title TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(course_type, code)
+  )`,
+  // R08a — Lesson syllabus tag assignments
+  `CREATE TABLE IF NOT EXISTS lesson_syllabus_tags (
+    lesson_id INTEGER NOT NULL,
+    syllabus_code_id INTEGER NOT NULL,
+    PRIMARY KEY (lesson_id, syllabus_code_id),
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    FOREIGN KEY (syllabus_code_id) REFERENCES syllabus_codes(id) ON DELETE CASCADE
+  )`,
 ];
 
 for (const sql of migrations) {
   try { db.exec(sql); } catch (_) { /* column already exists */ }
 }
+
+// ─── Syllabus codes seed data (R08a) ──────────────────────────────────────────
+
+const SYLLABUS_SEED = {
+  ib_sl: [
+    ['1.1', 'Introduction to the particulate nature of matter'],
+    ['1.2', 'The mole concept'],
+    ['1.3', 'Reacting masses and volumes'],
+    ['2.1', 'The nuclear atom'],
+    ['2.2', 'Electron configuration'],
+    ['3.1', 'The periodic table'],
+    ['3.2', 'Periodic trends'],
+    ['4.1', 'Ionic bonding and structure'],
+    ['4.2', 'Covalent bonding'],
+    ['4.3', 'Covalent structures'],
+    ['4.4', 'Intermolecular forces'],
+    ['4.5', 'Metallic bonding'],
+    ['5.1', 'Measuring energy changes'],
+    ['5.2', "Hess's law"],
+    ['5.3', 'Bond enthalpies'],
+    ['6.1', 'Collision theory and rates of reaction'],
+    ['7.1', 'Equilibrium'],
+    ['8.1', 'Theories of acids and bases'],
+    ['8.2', 'Properties of acids and bases'],
+    ['8.3', 'The pH scale'],
+    ['8.4', 'Strong and weak acids and bases'],
+    ['8.5', 'Acid deposition'],
+    ['9.1', 'Oxidation and reduction'],
+    ['9.2', 'Electrochemical cells'],
+    ['10.1', 'Fundamentals of organic chemistry'],
+    ['10.2', 'Functional group chemistry'],
+    ['11.1', 'Uncertainties and errors in measurement'],
+    ['11.2', 'Graphical techniques'],
+    ['11.3', 'Spectroscopic identification of organic compounds'],
+  ],
+  ib_hl: [
+    ['12.1', 'Electrons in atoms'],
+    ['13.1', 'First-row d-block elements'],
+    ['13.2', 'Coloured complexes'],
+    ['14.1', 'Further aspects of covalent bonding and structure'],
+    ['14.2', 'Hybridization'],
+    ['15.1', 'Energy cycles'],
+    ['15.2', 'Entropy and spontaneity'],
+    ['16.1', 'Rate expression and reaction mechanism'],
+    ['16.2', 'Activation energy'],
+    ['17.1', 'The equilibrium law'],
+    ['18.1', 'Lewis acids and bases'],
+    ['18.2', 'Calculations involving acids and bases'],
+    ['18.3', 'pH curves'],
+    ['18.4', 'Salt hydrolysis'],
+    ['18.5', 'Buffer solutions'],
+    ['18.6', 'Acid-base indicators'],
+    ['19.1', 'Electrochemical cells (HL)'],
+    ['20.1', 'Types of organic reactions'],
+    ['20.2', 'Nucleophilic substitution reactions'],
+    ['20.3', 'Elimination reactions'],
+    ['20.4', 'Condensation reactions'],
+    ['21.1', 'Spectroscopic identification of organic compounds (HL)'],
+  ],
+  drzavna_matura: [
+    ['M1', 'Uvod, mjerenja i sigurnost u laboratoriju'],
+    ['M2', 'Građa atoma i periodni sustav'],
+    ['M3', 'Kemijska veza'],
+    ['M4', 'Stehiometrija i kemijsko računanje'],
+    ['M5', 'Otopine i koloidni sustavi'],
+    ['M6', 'Kemijska ravnoteža'],
+    ['M7', 'Kiseline i baze'],
+    ['M8', 'Oksidacijsko-redukcijske reakcije'],
+    ['M9', 'Elektrokemija'],
+    ['M10', 'Kinetika kemijskih reakcija'],
+    ['M11', 'Termokemija'],
+    ['M12', 'Organska kemija — alkani i halogeni derivati'],
+    ['M13', 'Alkeni, alkini i aromatski spojevi'],
+    ['M14', 'Alkoholi, eteri, aldehidi i ketoni'],
+    ['M15', 'Karboksilne kiseline i esteri'],
+    ['M16', 'Amini i amidi'],
+    ['M17', 'Ugljikohidrati, lipidi i proteini'],
+  ],
+  prijemni: [
+    ['P1', 'Struktura atoma i periodni sustav'],
+    ['P2', 'Kemijska veza i struktura molekula'],
+    ['P3', 'Stehiometrija i kemijsko računanje'],
+    ['P4', 'Otopine i koligativna svojstva'],
+    ['P5', 'Acidobazna ravnoteža'],
+    ['P6', 'Oksido-redukcijski procesi'],
+    ['P7', 'Elektrokemija'],
+    ['P8', 'Kinetika i kataliza'],
+    ['P9', 'Termokemija i termodinamika'],
+    ['P10', 'Organska kemija — ugljikovodici'],
+    ['P11', 'Organska kemija — funkcionalne skupine'],
+    ['P12', 'Biokemija — ugljikohidrati'],
+    ['P13', 'Biokemija — lipidi'],
+    ['P14', 'Biokemija — proteini i enzimi'],
+    ['P15', 'Biokemija — nukleinske kiseline'],
+  ],
+  medchem_1: [
+    ['MC1-1', 'Struktura i reaktivnost organskih molekula'],
+    ['MC1-2', 'Stereokemija'],
+    ['MC1-3', 'Ugljikovodici i halogeni derivati'],
+    ['MC1-4', 'Alkoholi, fenoli i eteri'],
+    ['MC1-5', 'Karbonilna kemija — aldehidi i ketoni'],
+    ['MC1-6', 'Karboksilne kiseline i derivati'],
+    ['MC1-7', 'Amini i dušični spojevi'],
+    ['MC1-8', 'Aromatski spojevi i heterocikli'],
+    ['MC1-9', 'Ugljikohidrati — struktura i kemija'],
+    ['MC1-10', 'Lipidi — struktura i kemija'],
+  ],
+  medchem_2: [
+    ['MC2-1', 'Proteini i aminokiseline'],
+    ['MC2-2', 'Enzimi — kinetika i mehanizmi'],
+    ['MC2-3', 'Nukleotidi i nukleinske kiseline'],
+    ['MC2-4', 'Metabolizam ugljikohidrata'],
+    ['MC2-5', 'Metabolizam lipida'],
+    ['MC2-6', 'Metabolizam dušičnih spojeva'],
+    ['MC2-7', 'Energetski metabolizam i oksidativna fosforilacija'],
+    ['MC2-8', 'Regulacija metabolizma i stanična signalizacija'],
+    ['MC2-9', 'Vitamini i koenzimi'],
+    ['MC2-10', 'Bioanorganska kemija'],
+  ],
+};
+
+(function seedSyllabusCodes() {
+  const existing = db.prepare('SELECT COUNT(*) as n FROM syllabus_codes').get();
+  if (existing.n > 0) return;
+  const insert = db.prepare(
+    'INSERT OR IGNORE INTO syllabus_codes (course_type, code, title, position) VALUES (?, ?, ?, ?)'
+  );
+  const insertAll = db.transaction(() => {
+    for (const [courseType, codes] of Object.entries(SYLLABUS_SEED)) {
+      codes.forEach(([code, title], i) => insert.run(courseType, code, title, i));
+    }
+  });
+  insertAll();
+})();
 
 // ─── Master lesson library bootstrap ──────────────────────────────────────────
 // The library is a hidden system course + topic. Master lessons live there as

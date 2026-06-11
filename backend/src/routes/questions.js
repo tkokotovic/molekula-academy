@@ -13,6 +13,7 @@ const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 const VALID_STATUSES = ['pending_approval', 'approved', 'rejected', 'archived', 'ai_generated_pending_approval'];
 const VALID_SOURCE_TYPES = ['teacher', 'past_exam', 'entrance_exam', 'uni_exam'];
 const VALID_IB_LEVELS = ['HL', 'SL', 'both'];
+const VALID_CATEGORIES = ['ib_sl', 'ib_hl', 'drzavna_matura', 'prijemni', 'medchem_1', 'medchem_2'];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,38 @@ function getOptions(questionId) {
     is_ai_suggested: o.is_ai_suggested === 1,
     keywords: JSON.parse(o.keywords || '[]'),
   }));
+}
+
+function getCategories(questionId) {
+  return db.prepare('SELECT category FROM question_categories WHERE question_id = ? ORDER BY category')
+    .all(questionId).map(r => r.category);
+}
+
+function getSyllabusCodes(questionId) {
+  return db.prepare('SELECT category, code FROM question_syllabus_codes WHERE question_id = ? ORDER BY category, code')
+    .all(questionId);
+}
+
+function setCategories(questionId, categories = []) {
+  db.prepare('DELETE FROM question_categories WHERE question_id = ?').run(questionId);
+  const ins = db.prepare('INSERT OR IGNORE INTO question_categories (question_id, category) VALUES (?, ?)');
+  for (const cat of categories) {
+    if (VALID_CATEGORIES.includes(cat)) ins.run(questionId, cat);
+  }
+}
+
+function setSyllabusCodes(questionId, codes = []) {
+  db.prepare('DELETE FROM question_syllabus_codes WHERE question_id = ?').run(questionId);
+  const ins = db.prepare('INSERT OR IGNORE INTO question_syllabus_codes (question_id, category, code) VALUES (?, ?, ?)');
+  for (const { category, code } of codes) {
+    if (category && code && VALID_CATEGORIES.includes(category)) ins.run(questionId, category, code);
+  }
+}
+
+function attachMeta(question) {
+  question.categories = getCategories(question.id);
+  question.syllabus_codes = getSyllabusCodes(question.id);
+  return question;
 }
 
 function insertOptions(questionId, options = [], aiSuggestedIndex = null) {
@@ -111,7 +144,7 @@ router.post('/import', (req, res) => {
 
   const ids = insertBatch();
   const importedQuestions = ids.map(id => {
-    const q = parseQuestion(db.prepare('SELECT * FROM questions WHERE id = ?').get(id));
+    const q = attachMeta(parseQuestion(db.prepare('SELECT * FROM questions WHERE id = ?').get(id)));
     q.options = getOptions(id);
     return q;
   });
@@ -149,6 +182,8 @@ router.post('/', (req, res) => {
     topic_id, syllabus_item_ids = [],
     options = [],
     model_answer = null,
+    categories = [],
+    syllabus_codes = [],
   } = req.body;
 
   if (!stem) return res.status(400).json({ error: 'stem is required' });
@@ -161,15 +196,9 @@ router.post('/', (req, res) => {
   if (source_type && !VALID_SOURCE_TYPES.includes(source_type))
     return res.status(400).json({ error: `source_type must be one of: ${VALID_SOURCE_TYPES.join(', ')}` });
 
-  // Check if AI generation is needed
   const requiresAI = needsGeneration(type, options, model_answer);
   const status = requiresAI ? 'ai_generated_pending_approval' : 'approved';
-
-  // If AI needed for text types, generate model answer now
-  const aiResult = requiresAI
-    ? generateForQuestion({ type, stem, max_points }, options)
-    : null;
-
+  const aiResult = requiresAI ? generateForQuestion({ type, stem, max_points }, options) : null;
   const finalModelAnswer = aiResult?.modelAnswer ?? model_answer ?? null;
 
   const { lastInsertRowid } = db.prepare(`
@@ -186,13 +215,14 @@ router.post('/', (req, res) => {
     status, req.user.id
   );
 
-  // For MCQ/T-F where AI suggested an option index, pass that through
   const aiSuggestedIndex = aiResult?.suggestedOptionIndex ?? null;
   insertOptions(lastInsertRowid, options, aiSuggestedIndex);
+  setCategories(lastInsertRowid, categories);
+  setSyllabusCodes(lastInsertRowid, syllabus_codes);
 
-  const question = parseQuestion(
+  const question = attachMeta(parseQuestion(
     db.prepare('SELECT * FROM questions WHERE id = ?').get(lastInsertRowid)
-  );
+  ));
   question.options = getOptions(lastInsertRowid);
 
   return res.status(201).json({ question });
@@ -201,26 +231,33 @@ router.post('/', (req, res) => {
 // ─── GET /api/teacher/questions ──────────────────────────────────────────────
 
 router.get('/', (req, res) => {
-  const { type, difficulty, ib_level, ib_paper, source_type, topic_id, status } = req.query;
+  const { type, difficulty, ib_level, ib_paper, source_type, topic_id, status, category } = req.query;
 
   const conditions = [];
   const params = [];
 
-  if (type) { conditions.push('type = ?'); params.push(type); }
-  if (difficulty) { conditions.push('difficulty = ?'); params.push(difficulty); }
-  if (ib_level) { conditions.push('ib_level = ?'); params.push(ib_level); }
-  if (ib_paper) { conditions.push('ib_paper = ?'); params.push(Number(ib_paper)); }
-  if (source_type) { conditions.push('source_type = ?'); params.push(source_type); }
-  if (topic_id) { conditions.push('topic_id = ?'); params.push(Number(topic_id)); }
-  if (status) { conditions.push('status = ?'); params.push(status); }
-  // Default: show approved only when no status filter applied
-  if (!status) { conditions.push("status = 'approved'"); }
+  if (type) { conditions.push('q.type = ?'); params.push(type); }
+  if (difficulty) { conditions.push('q.difficulty = ?'); params.push(difficulty); }
+  if (ib_level) { conditions.push('q.ib_level = ?'); params.push(ib_level); }
+  if (ib_paper) { conditions.push('q.ib_paper = ?'); params.push(Number(ib_paper)); }
+  if (source_type) { conditions.push('q.source_type = ?'); params.push(source_type); }
+  if (topic_id) { conditions.push('q.topic_id = ?'); params.push(Number(topic_id)); }
+  if (status) { conditions.push('q.status = ?'); params.push(status); }
+  if (!status) { conditions.push("q.status = 'approved'"); }
+
+  // Filter by category via join
+  const categoryJoin = category
+    ? `JOIN question_categories qc ON qc.question_id = q.id AND qc.category = ?`
+    : '';
+  if (category) params.unshift(category);
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  const rows = db.prepare(`SELECT * FROM questions ${where} ORDER BY id DESC`).all(...params);
+  const rows = db.prepare(
+    `SELECT q.* FROM questions q ${categoryJoin} ${where} ORDER BY q.id DESC`
+  ).all(...params);
 
   const questions = rows.map(r => {
-    const q = parseQuestion(r);
+    const q = attachMeta(parseQuestion(r));
     q.options = getOptions(r.id);
     return q;
   });
@@ -234,7 +271,7 @@ router.get('/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM questions WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Question not found' });
 
-  const question = parseQuestion(row);
+  const question = attachMeta(parseQuestion(row));
   question.options = getOptions(row.id);
 
   return res.json({ question });
@@ -250,6 +287,7 @@ router.put('/:id', (req, res) => {
     stem, explanation, model_answer, difficulty, max_points,
     ib_level, ib_paper, source_type, source_year, source_month, source_label,
     topic_id, syllabus_item_ids, options,
+    categories, syllabus_codes,
   } = req.body;
 
   if (difficulty && !VALID_DIFFICULTIES.includes(difficulty))
@@ -281,15 +319,16 @@ router.put('/:id', (req, res) => {
     req.params.id
   );
 
-  // Replace options if provided
   if (Array.isArray(options)) {
     db.prepare('DELETE FROM question_options WHERE question_id = ?').run(req.params.id);
     insertOptions(req.params.id, options);
   }
+  if (Array.isArray(categories)) setCategories(req.params.id, categories);
+  if (Array.isArray(syllabus_codes)) setSyllabusCodes(req.params.id, syllabus_codes);
 
-  const question = parseQuestion(
+  const question = attachMeta(parseQuestion(
     db.prepare('SELECT * FROM questions WHERE id = ?').get(req.params.id)
-  );
+  ));
   question.options = getOptions(req.params.id);
 
   return res.json({ question });
@@ -322,9 +361,9 @@ router.patch('/:id/status', (req, res) => {
     }
   }
 
-  const question = parseQuestion(
+  const question = attachMeta(parseQuestion(
     db.prepare('SELECT * FROM questions WHERE id = ?').get(req.params.id)
-  );
+  ));
   question.options = getOptions(req.params.id);
 
   return res.json({ question });

@@ -71,6 +71,25 @@ app.use('/api/teacher', sessTeacherRouter);
 // Notifications
 app.use('/api/student', require('./routes/notifications'));
 
+// Tutoring packages + hours (R31)
+const { teacherRouter: tutoringTeacherRouter, studentRouter: tutoringStudentRouter } = require('./routes/tutoring');
+app.use('/api/teacher', tutoringTeacherRouter);
+app.use('/api/student', tutoringStudentRouter);
+
+// Broadcasts (R29a)
+app.use('/api/teacher', require('./routes/broadcasts'));
+
+// Groups / Cohorts (R27a)
+app.use('/api/teacher', require('./routes/groups'));
+
+// Syllabus codes + lesson tags (R08a)
+app.use('/api/teacher', require('./routes/syllabus'));
+
+// Homeworks (R17)
+const { teacherRouter: hwTeacherRouter, studentRouter: hwStudentRouter } = require('./routes/homeworks');
+app.use('/api/teacher', hwTeacherRouter);
+app.use('/api/student', hwStudentRouter);
+
 // File upload
 app.use('/api/teacher/upload', require('./routes/upload'));
 
