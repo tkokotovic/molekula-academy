@@ -430,11 +430,58 @@ export async function getRecentQuizHistory() {
   return data.attempts;
 }
 
-// ─── Homework ─────────────────────────────────────────────────────────────────
+// ─── Homework (teacher) ───────────────────────────────────────────────────────
+
+export async function getTeacherHomeworks() {
+  const data = await apiFetch('/api/teacher/homeworks');
+  return data.homeworks;
+}
+
+export async function createHomework(fields) {
+  return apiFetch('/api/teacher/homeworks', { method: 'POST', body: JSON.stringify(fields) });
+}
+
+export async function updateHomework(id, fields) {
+  return apiFetch(`/api/teacher/homeworks/${id}`, { method: 'PUT', body: JSON.stringify(fields) });
+}
+
+export async function deleteHomework(id) {
+  return apiFetch(`/api/teacher/homeworks/${id}`, { method: 'DELETE' });
+}
+
+export async function assignHomework(id, fields) {
+  return apiFetch(`/api/teacher/homeworks/${id}/assign`, { method: 'POST', body: JSON.stringify(fields) });
+}
+
+export async function getHomeworkInbox(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const data = await apiFetch(`/api/teacher/homeworks/assignments/inbox${qs ? '?' + qs : ''}`);
+  return data.assignments;
+}
+
+export async function getHomeworkAssignment(id) {
+  const data = await apiFetch(`/api/teacher/homeworks/assignments/${id}`);
+  return data.assignment;
+}
+
+export async function correctAssignment(id, fields) {
+  return apiFetch(`/api/teacher/homeworks/assignments/${id}/correct`, { method: 'POST', body: JSON.stringify(fields) });
+}
+
+export async function getAdminGroups() {
+  const data = await apiFetch('/api/teacher/groups');
+  return data.groups;
+}
+
+// ─── Homework (student) ───────────────────────────────────────────────────────
 
 export async function getStudentHomework() {
-  const data = await apiFetch('/api/student/homework');
-  return data.homework;
+  const data = await apiFetch('/api/student/homeworks');
+  return data.assignments;
+}
+
+export async function submitHomework(assignmentId, answers) {
+  return apiFetch(`/api/student/homeworks/${assignmentId}/submit`, { method: 'POST', body: JSON.stringify({ answers }) });
 }
 
 // ─── Certificates ─────────────────────────────────────────────────────────────
