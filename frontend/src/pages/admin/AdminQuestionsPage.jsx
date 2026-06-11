@@ -3,30 +3,37 @@ import {
   getQuestions, createQuestion, updateQuestion,
   deleteQuestion, setQuestionStatus, getCourses,
   getTeacherQuizzes, createTeacherQuiz, updateTeacherQuiz, deleteTeacherQuiz,
+  getSyllabusCodes,
 } from '../../api/client';
 
 // ─── Category system ───────────────────────────────────────────────────────────
+// IDs must match backend VALID_CATEGORIES and syllabus_codes.course_type
 
 const CATEGORY_GROUPS = [
   {
     group: 'IB',
     items: [
-      { id: 'ib_sl',    label: 'IB SL',        color: '#0284c7' },
-      { id: 'ib_hl',    label: 'IB HL',        color: '#7c3aed' },
-      { id: 'ib_sl_hl', label: 'IB SL + HL',   color: '#0f766e' },
+      { id: 'ib_sl', label: 'IB SL', color: '#0284c7' },
+      { id: 'ib_hl', label: 'IB HL', color: '#7c3aed' },
+    ],
+  },
+  {
+    group: 'Državna matura',
+    items: [
+      { id: 'drzavna_matura', label: 'Državna matura', color: '#0f766e' },
     ],
   },
   {
     group: 'Prijemni',
     items: [
-      { id: 'entrance_exam', label: 'Prijemni ispit', color: '#b45309' },
+      { id: 'prijemni', label: 'Prijemni ispit', color: '#b45309' },
     ],
   },
   {
     group: 'MCBC',
     items: [
-      { id: 'mcbc1', label: 'MCBC 1',               color: '#be185d' },
-      { id: 'mcbc2', label: 'MCBC 2 — Biokemija',   color: '#065f46' },
+      { id: 'medchem_1', label: 'MCBC 1', color: '#be185d' },
+      { id: 'medchem_2', label: 'MCBC 2 — Biokemija', color: '#065f46' },
     ],
   },
 ];
@@ -86,13 +93,67 @@ function CategoryPicker({ value, onChange }) {
   );
 }
 
+// ─── Syllabus code picker (per category) ──────────────────────────────────────
+
+function SyllabusCodePicker({ categories, value, onChange, allSyllabusCodes }) {
+  // value: [{ category, code }]
+  // allSyllabusCodes: [{ id, course_type, code, title, position }]
+
+  if (!categories.length) return null;
+
+  function getSelected(cat) {
+    return value.find(x => x.category === cat)?.code || '';
+  }
+
+  function setForCat(cat, code) {
+    const next = value.filter(x => x.category !== cat);
+    if (code) next.push({ category: cat, code });
+    onChange(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {categories.map(catId => {
+        const cat = CAT_MAP[catId];
+        if (!cat) return null;
+        const codes = allSyllabusCodes.filter(c => c.course_type === catId);
+        const selected = getSelected(catId);
+        return (
+          <div key={catId}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: cat.color, fontFamily: 'var(--mono)' }}>
+                {cat.label}
+              </span>
+            </div>
+            <select
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '7px 10px',
+                borderRadius: 8, border: `1.5px solid ${selected ? cat.color + '60' : 'var(--line)'}`,
+                background: 'var(--bg)', color: 'var(--ink)', fontSize: 13,
+                fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
+              }}
+              value={selected}
+              onChange={e => setForCat(catId, e.target.value)}
+            >
+              <option value="">— bez koda —</option>
+              {codes.map(c => (
+                <option key={c.id} value={c.code}>{c.code} — {c.title}</option>
+              ))}
+            </select>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const TYPES = ['mcq', 'true_false', 'fill_blank', 'short_answer', 'chem_equation'];
 const TYPE_LABELS = { mcq: 'MCQ', true_false: 'Točno/Netočno', fill_blank: 'Dopuni', short_answer: 'Kratki odgovor', chem_equation: 'Kemijska jednadžba' };
-const DIFFICULTIES = ['easy', 'medium', 'hard'];
-const DIFF_LABELS = { easy: 'Lako', medium: 'Srednje', hard: 'Teško' };
-const DIFF_COLORS = { easy: '#16a34a', medium: '#d97706', hard: '#dc2626' };
+const DIFFICULTIES = ['easy', 'medium', 'hard', 'multi_topic'];
+const DIFF_LABELS = { easy: 'Lako', medium: 'Srednje', hard: 'Teško', multi_topic: 'Multi-tema' };
+const DIFF_COLORS = { easy: '#16a34a', medium: '#d97706', hard: '#dc2626', multi_topic: '#7c3aed' };
 const STATUS_LABELS = { approved: 'Odobreno', pending_approval: 'Na čekanju', archived: 'Arhivirano', rejected: 'Odbijeno', ai_generated_pending_approval: 'AI — na čekanju' };
 const STATUS_COLORS = {
   approved:   { bg: 'color-mix(in srgb,#22c55e 12%,transparent)', color: '#16a34a' },
@@ -101,6 +162,13 @@ const STATUS_COLORS = {
   archived:   { bg: 'color-mix(in srgb,var(--ink-soft) 10%,transparent)', color: 'var(--ink-soft)' },
   ai_generated_pending_approval: { bg: 'color-mix(in srgb,#8b5cf6 12%,transparent)', color: '#7c3aed' },
 };
+
+const SOURCE_TYPES = [
+  { id: 'teacher',       label: 'Izvorno (nastavnik)' },
+  { id: 'past_exam',     label: 'Stari ispit' },
+  { id: 'entrance_exam', label: 'Prijemni ispit' },
+  { id: 'uni_exam',      label: 'Fakultetski ispit' },
+];
 
 const QUIZ_TYPES = [
   { id: 'mock_exam',       label: 'Lažni ispit (Mock)',       icon: '📝', desc: 'Vremenski ograničen, ocjenjen, simulacija pravog ispita.' },
@@ -225,8 +293,6 @@ function EquationInput({ latex, onChange }) {
 
 // ─── Stem block editor ─────────────────────────────────────────────────────────
 
-// stem_blocks: array of { type: 'text'|'equation'|'image', content: {} }
-
 function StemBlockEditor({ blocks, onChange }) {
   function addBlock(type) {
     const defaults = {
@@ -258,7 +324,6 @@ function StemBlockEditor({ blocks, onChange }) {
 
       {blocks.map((b, i) => (
         <div key={i} style={{ marginBottom: 8, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: 'var(--surface)' }}>
-          {/* Block header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>
             <span style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', flex: 1 }}>
               {b.type === 'text' ? '¶ Tekst' : b.type === 'equation' ? '∑ Jednadžba' : '🖼 Slika'}
@@ -267,7 +332,6 @@ function StemBlockEditor({ blocks, onChange }) {
             <button type="button" onClick={() => moveBlock(i, 1)} disabled={i === blocks.length - 1} style={{ background: 'none', border: 'none', cursor: i === blocks.length - 1 ? 'default' : 'pointer', color: i === blocks.length - 1 ? 'var(--line)' : 'var(--ink-soft)', fontSize: 11, padding: '1px 4px' }}>▼</button>
             <button type="button" onClick={() => removeBlock(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: '1px 4px' }}>✕</button>
           </div>
-          {/* Block content */}
           <div style={{ padding: 10 }}>
             {b.type === 'text' && (
               <RichTextEditor value={b.content.html || ''} onChange={html => updateBlock(i, { ...b.content, html })} minHeight={60} placeholder="Tekst pitanja…" />
@@ -286,7 +350,6 @@ function StemBlockEditor({ blocks, onChange }) {
         </div>
       ))}
 
-      {/* Add buttons */}
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
         {[
           { type: 'text',     icon: '¶',  label: 'Tekst' },
@@ -306,7 +369,7 @@ function StemBlockEditor({ blocks, onChange }) {
   );
 }
 
-// ─── MCQ options editor (supports rich text + equation per option) ──────────────
+// ─── MCQ options editor ────────────────────────────────────────────────────────
 
 function OptionsEditor({ options, onChange }) {
   function update(i, key, val) {
@@ -320,7 +383,6 @@ function OptionsEditor({ options, onChange }) {
     onChange(options.filter((_, j) => j !== i));
   }
   function toggleCorrect(i) {
-    // For MCQ: allow multiple correct (checkbox), will be single for true_false
     onChange(options.map((o, j) => j === i ? { ...o, is_correct: !o.is_correct } : o));
   }
 
@@ -356,7 +418,6 @@ function OptionsEditor({ options, onChange }) {
               onChange={e => update(i, 'text', e.target.value)}
               placeholder={`Tekst opcije ${String.fromCharCode(65 + i)}…`}
             />
-            {/* Equation toggle */}
             {opt.equation !== undefined && opt.equation !== null && (
               <EquationInput latex={opt.equation || ''} onChange={eq => update(i, 'equation', eq)} />
             )}
@@ -380,18 +441,25 @@ function OptionsEditor({ options, onChange }) {
 
 // ─── Question modal ────────────────────────────────────────────────────────────
 
-function QuestionModal({ initial, topics, onSave, onClose }) {
-  const [type,        setType]        = useState(initial?.type        || 'mcq');
-  const [stemBlocks,  setStemBlocks]  = useState(
+function QuestionModal({ initial, topics, allSyllabusCodes, onSave, onClose }) {
+  const [type,         setType]         = useState(initial?.type        || 'mcq');
+  const [stemBlocks,   setStemBlocks]   = useState(
     initial?.stem_blocks?.length ? initial.stem_blocks : [{ type: 'text', content: { html: initial?.stem || '' } }]
   );
-  const [explanation, setExplanation] = useState(initial?.explanation || '');
-  const [modelAnswer, setModelAnswer] = useState(initial?.model_answer || '');
-  const [difficulty,  setDifficulty]  = useState(initial?.difficulty  || 'medium');
-  const [topicId,     setTopicId]     = useState(initial?.topic_id    || '');
-  const [categories,  setCategories]  = useState(initial?.categories  || []);
-  const [points,      setPoints]      = useState(initial?.points      ?? 1);
-  const [options,     setOptions]     = useState(initial?.options?.map(o => ({ ...o, equation: o.equation ?? null })) || [
+  const [explanation,  setExplanation]  = useState(initial?.explanation || '');
+  const [modelAnswer,  setModelAnswer]  = useState(initial?.model_answer || '');
+  const [difficulty,   setDifficulty]   = useState(initial?.difficulty  || 'medium');
+  const [topicId,      setTopicId]      = useState(initial?.topic_id    || '');
+  const [categories,   setCategories]   = useState(initial?.categories  || []);
+  const [syllabusCodesByCategory, setSyllabusCodesByCategory] = useState(
+    initial?.syllabus_codes?.length ? initial.syllabus_codes : []
+  );
+  const [points,       setPoints]       = useState(initial?.points ?? initial?.max_points ?? 1);
+  const [sourceType,   setSourceType]   = useState(initial?.source_type || 'teacher');
+  const [sourceYear,   setSourceYear]   = useState(initial?.source_year || '');
+  const [sourceMonth,  setSourceMonth]  = useState(initial?.source_month || '');
+  const [ibPaper,      setIbPaper]      = useState(initial?.ib_paper || '');
+  const [options,      setOptions]      = useState(initial?.options?.map(o => ({ ...o, equation: o.equation ?? null })) || [
     { text: '', is_correct: true,  equation: null },
     { text: '', is_correct: false, equation: null },
     { text: '', is_correct: false, equation: null },
@@ -408,6 +476,11 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
     }
   }, [type]);
 
+  // Remove syllabus codes for categories that were deselected
+  useEffect(() => {
+    setSyllabusCodesByCategory(prev => prev.filter(x => categories.includes(x.category)));
+  }, [categories]);
+
   function stemPlainText() {
     return stemBlocks.map(b => {
       if (b.type === 'text') return b.content.html?.replace(/<[^>]*>/g, '') || '';
@@ -415,6 +488,8 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
       return b.content.caption || b.content.url || '';
     }).join(' ').trim();
   }
+
+  const showSourceExtra = sourceType !== 'teacher';
 
   async function submit(e) {
     e.preventDefault();
@@ -429,8 +504,13 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
         model_answer: modelAnswer.trim() || null,
         difficulty,
         topic_id: topicId ? Number(topicId) : null,
-        source_type: 'teacher',
+        source_type: sourceType,
+        source_year: sourceYear ? Number(sourceYear) : null,
+        source_month: sourceMonth ? Number(sourceMonth) : null,
+        ib_paper: ibPaper ? Number(ibPaper) : null,
         categories,
+        syllabus_codes: syllabusCodesByCategory,
+        max_points: Number(points) || 1,
         points: Number(points) || 1,
         options: needsOptions ? options : [],
       });
@@ -443,7 +523,7 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--line)', padding: 28, width: 680, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--line)', padding: 28, width: 720, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>{initial ? 'Uredi pitanje' : 'Novo pitanje'}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--ink-soft)', lineHeight: 1, padding: 4 }}>×</button>
@@ -489,10 +569,59 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
             <RichTextEditor value={explanation} onChange={setExplanation} minHeight={56} placeholder="Zašto je ovaj odgovor točan…" />
           </Field>
 
+          {/* Source */}
+          <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, background: 'var(--bg)' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 10, fontFamily: 'var(--mono)', letterSpacing: '.06em', textTransform: 'uppercase' }}>Izvor</div>
+            <div style={{ display: 'grid', gridTemplateColumns: showSourceExtra ? '1fr 1fr 1fr' : '1fr', gap: 10 }}>
+              <div>
+                <select style={inp} value={sourceType} onChange={e => setSourceType(e.target.value)}>
+                  {SOURCE_TYPES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+              </div>
+              {showSourceExtra && (
+                <>
+                  <input
+                    type="number" min="1990" max="2030" style={inp}
+                    value={sourceYear} onChange={e => setSourceYear(e.target.value)}
+                    placeholder="Godina (npr. 2023)"
+                  />
+                  {['past_exam'].includes(sourceType) ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <input
+                        type="number" min="1" max="12" style={inp}
+                        value={sourceMonth} onChange={e => setSourceMonth(e.target.value)}
+                        placeholder="Mjesec"
+                      />
+                      <input
+                        type="number" min="1" max="3" style={inp}
+                        value={ibPaper} onChange={e => setIbPaper(e.target.value)}
+                        placeholder="Rad (1/2/3)"
+                      />
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Categories */}
           <Field label="Kategorije" hint="Može biti više">
             <CategoryPicker value={categories} onChange={setCategories} />
           </Field>
+
+          {/* Syllabus codes per category */}
+          {categories.length > 0 && (
+            <Field label="Kod kurikuluma" hint="Jedan kod po kategoriji">
+              <SyllabusCodePicker
+                categories={categories}
+                value={syllabusCodesByCategory}
+                onChange={setSyllabusCodesByCategory}
+                allSyllabusCodes={allSyllabusCodes}
+              />
+            </Field>
+          )}
 
           {/* Topic */}
           <Field label="Tema (neobavezno)">
@@ -518,6 +647,23 @@ function QuestionModal({ initial, topics, onSave, onClose }) {
 function QuestionCard({ q, onEdit, onDelete, onStatus, selectable, selected, onSelect }) {
   const [expanded, setExpanded] = useState(false);
 
+  const syllabusTags = q.syllabus_codes?.length > 0
+    ? q.syllabus_codes.map(sc => {
+        const cat = CAT_MAP[sc.category];
+        return cat ? (
+          <span key={`${sc.category}-${sc.code}`} style={{
+            fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700,
+            padding: '1px 6px', borderRadius: 4,
+            background: cat.color + '15', color: cat.color,
+            border: `1px solid ${cat.color}35`,
+            whiteSpace: 'nowrap',
+          }}>
+            {sc.code}
+          </span>
+        ) : null;
+      })
+    : null;
+
   return (
     <div style={{ padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${selected ? 'var(--accent)' : 'var(--line)'}`, background: selected ? 'var(--accent-wash)' : 'var(--surface)', marginBottom: 6, transition: 'border-color .12s, background .12s' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -527,29 +673,34 @@ function QuestionCard({ q, onEdit, onDelete, onStatus, selectable, selected, onS
           >{selected ? '✓' : ''}</button>
         )}
 
-        {/* Type chip */}
         <span style={{ flexShrink: 0, marginTop: 2, fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--ink-faint)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
           {TYPE_LABELS[q.type] || q.type}
         </span>
 
-        {/* Stem preview */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--ink)', lineHeight: 1.45 }}>
             {q.stem?.length > 140 ? q.stem.slice(0, 140) + '…' : q.stem}
           </p>
-          {/* Category pills */}
-          {q.categories?.length > 0 && (
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 5 }}>
-              {q.categories.map(c => <CategoryPill key={c} id={c} />)}
+          {/* Category pills + syllabus code tags */}
+          {(q.categories?.length > 0 || syllabusTags) && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginTop: 5 }}>
+              {q.categories?.map(c => <CategoryPill key={c} id={c} />)}
+              {syllabusTags}
+            </div>
+          )}
+          {/* Performance stats */}
+          {q.attempt_count > 0 && (
+            <div style={{ marginTop: 4, fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
+              {Math.round((q.correct_count / q.attempt_count) * 100)}% točno · {q.attempt_count} pokušaja
+              {q.avg_time_seconds > 0 && ` · ${Math.round(q.avg_time_seconds)}s prosj.`}
             </div>
           )}
         </div>
 
-        {/* Right actions */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <DiffBadge difficulty={q.difficulty} />
           {q.points != null && q.points !== 1 && (
-            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>{q.points}b</span>
+            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>{q.points || q.max_points}b</span>
           )}
           <StatusBadge status={q.status} />
           {!selectable && (
@@ -562,7 +713,6 @@ function QuestionCard({ q, onEdit, onDelete, onStatus, selectable, selected, onS
         </div>
       </div>
 
-      {/* Expanded details */}
       {expanded && !selectable && (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
           {q.options?.length > 0 && (
@@ -576,6 +726,14 @@ function QuestionCard({ q, onEdit, onDelete, onStatus, selectable, selected, onS
             </div>
           )}
           {q.explanation && <div style={{ fontSize: 13, color: 'var(--ink-soft)', background: 'var(--bg)', padding: '8px 12px', borderRadius: 7, borderLeft: '3px solid var(--accent)' }}><b>Objašnjenje:</b> {q.explanation}</div>}
+          {q.source_type && q.source_type !== 'teacher' && (
+            <div style={{ marginTop: 8, fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
+              {SOURCE_TYPES.find(s => s.id === q.source_type)?.label}
+              {q.source_year ? ` · ${q.source_year}` : ''}
+              {q.source_month ? `/${q.source_month}` : ''}
+              {q.ib_paper ? ` · Rad ${q.ib_paper}` : ''}
+            </div>
+          )}
           {q.status === 'pending_approval' && (
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <button onClick={() => onStatus(q, 'approved')} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 7, border: 'none', background: 'color-mix(in srgb,#22c55e 15%,transparent)', color: '#16a34a', fontWeight: 700, cursor: 'pointer' }}>✓ Odobri</button>
@@ -593,12 +751,12 @@ function QuestionCard({ q, onEdit, onDelete, onStatus, selectable, selected, onS
 function QuizBuilderPanel({ questions, allTopics, onSaved }) {
   const [quizzes,     setQuizzes]     = useState([]);
   const [loading,     setLoading]     = useState(true);
-  const [editQuiz,    setEditQuiz]    = useState(null);  // null | 'new' | quiz obj
+  const [editQuiz,    setEditQuiz]    = useState(null);
   const [search,      setSearch]      = useState('');
   const [filterCat,   setFilterCat]   = useState('');
   const [filterDiff,  setFilterDiff]  = useState('');
   const [filterType,  setFilterType]  = useState('');
-  const [selected,    setSelected]    = useState([]);  // question ids
+  const [selected,    setSelected]    = useState([]);
   const [quizName,    setQuizName]    = useState('');
   const [quizDesc,    setQuizDesc]    = useState('');
   const [quizType,    setQuizType]    = useState('topic_quiz');
@@ -679,17 +837,16 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
   }
 
   const selectedQuestions = questions.filter(q => selected.includes(q.id));
-  const totalPoints = selectedQuestions.reduce((s, q) => s + (q.points || 1), 0);
+  const totalPoints = selectedQuestions.reduce((s, q) => s + (q.points || q.max_points || 1), 0);
   const qt = QUIZ_TYPES.find(x => x.id === quizType) || QUIZ_TYPES[0];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 20, alignItems: 'start' }}>
 
-      {/* ── Left: question picker ── */}
+      {/* Left: question picker */}
       <div>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>Odaberi pitanja</h3>
-          {/* Filters */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
             <input style={{ ...inp, maxWidth: 220, padding: '6px 10px', fontSize: 13 }} placeholder="Pretraži…" value={search} onChange={e => setSearch(e.target.value)} />
             <select style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 13, cursor: 'pointer' }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
@@ -724,7 +881,7 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
         </div>
       </div>
 
-      {/* ── Right: quiz config ── */}
+      {/* Right: quiz config */}
       <div style={{ position: 'sticky', top: 80 }}>
         <div style={{ background: 'var(--surface)', border: '1.5px solid var(--line)', borderRadius: 12, padding: 20, marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -742,7 +899,6 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
             <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={quizDesc} onChange={e => setQuizDesc(e.target.value)} placeholder="Kratki opis, upute za studente…" />
           </Field>
 
-          {/* Quiz type */}
           <Field label="Vrsta kviza">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {QUIZ_TYPES.map(qt2 => (
@@ -755,7 +911,6 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
             </div>
           </Field>
 
-          {/* Type-specific fields */}
           {['mock_exam', 'homework', 'class_quiz'].includes(quizType) && (
             <Field label="Vremensko ograničenje (min)" hint="0 = bez ograničenja">
               <input type="number" min="0" style={inp} value={timeLimit} onChange={e => setTimeLimit(e.target.value)} placeholder="npr. 45" />
@@ -770,7 +925,6 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
             </Field>
           )}
 
-          {/* Selected questions summary */}
           <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Odabrana pitanja ({selected.length})</div>
             {selected.length === 0 ? (
@@ -781,7 +935,7 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
                   <div key={q.id} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)', flexShrink: 0 }}>{i + 1}.</span>
                     <span style={{ fontSize: 12, color: 'var(--ink-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.stem?.slice(0, 50)}…</span>
-                    <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>{q.points || 1}b</span>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>{q.points || q.max_points || 1}b</span>
                     <button type="button" onClick={() => toggleSelect(q)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 11, padding: 0 }}>✕</button>
                   </div>
                 ))}
@@ -803,7 +957,6 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
           <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center' }}>{qt.desc}</div>
         </div>
 
-        {/* Existing quizzes */}
         {!loading && quizzes.length > 0 && (
           <div>
             <div style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Moji kvizovi ({quizzes.length})</div>
@@ -832,18 +985,20 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminQuestionsPage() {
-  const [tab,       setTab]       = useState('bank'); // 'bank' | 'builder'
+  const [tab,       setTab]       = useState('bank');
   const [questions, setQuestions] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [modal,     setModal]     = useState(null);
   const [allTopics, setAllTopics] = useState([]);
+  const [allSyllabusCodes, setAllSyllabusCodes] = useState([]);
 
   // Filters
-  const [search,      setSearch]      = useState('');
-  const [filterType,  setFilterType]  = useState('');
-  const [filterDiff,  setFilterDiff]  = useState('');
-  const [filterStatus,setFilterStatus]= useState('approved');
-  const [filterCat,   setFilterCat]   = useState('');
+  const [search,       setSearch]       = useState('');
+  const [filterType,   setFilterType]   = useState('');
+  const [filterDiff,   setFilterDiff]   = useState('');
+  const [filterStatus, setFilterStatus] = useState('approved');
+  const [filterCat,    setFilterCat]    = useState('');
+  const [filterCode,   setFilterCode]   = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -868,11 +1023,19 @@ export default function AdminQuestionsPage() {
         }).then(r => r.json()).then(d => d.topics || [])
       )).then(arrays => setAllTopics(arrays.flat())).catch(() => {})
     ).catch(() => {});
+
+    getSyllabusCodes().then(codes => setAllSyllabusCodes(codes || [])).catch(() => {});
   }, []);
 
   const visible = questions.filter(q => {
     if (search && !q.stem.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCat && !(q.categories || []).includes(filterCat)) return false;
+    if (filterCode) {
+      const hasCode = (q.syllabus_codes || []).some(sc =>
+        sc.code.toLowerCase().includes(filterCode.toLowerCase())
+      );
+      if (!hasCode) return false;
+    }
     return true;
   });
 
@@ -902,7 +1065,6 @@ export default function AdminQuestionsPage() {
     background: 'var(--surface)', color: 'var(--ink)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
   };
 
-  // Counts by category for sidebar
   const catCounts = {};
   questions.forEach(q => (q.categories || []).forEach(c => { catCounts[c] = (catCounts[c] || 0) + 1; }));
 
@@ -963,10 +1125,17 @@ export default function AdminQuestionsPage() {
           <div>
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: 280 }}>
+              <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: 260 }}>
                 <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-faint)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
                 <input style={{ ...selStyle, paddingLeft: 30, width: '100%', boxSizing: 'border-box' }} placeholder="Pretraži pitanja…" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
+              <input
+                style={{ ...selStyle, width: 130, fontFamily: 'var(--mono)', fontSize: 12 }}
+                placeholder="Kod (npr. 4.2)"
+                value={filterCode}
+                onChange={e => setFilterCode(e.target.value)}
+                title="Filtriraj po kodu kurikuluma"
+              />
               <select style={selStyle} value={filterType} onChange={e => setFilterType(e.target.value)}>
                 <option value="">Sve vrste</option>
                 {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
@@ -985,7 +1154,7 @@ export default function AdminQuestionsPage() {
             </div>
 
             <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-soft)', marginBottom: 10 }}>
-              {loading ? 'Učitavam…' : `${visible.length} pitanja${filterCat ? ` · ${CAT_MAP[filterCat]?.label}` : ''}`}
+              {loading ? 'Učitavam…' : `${visible.length} pitanja${filterCat ? ` · ${CAT_MAP[filterCat]?.label}` : ''}${filterCode ? ` · kod: ${filterCode}` : ''}`}
             </div>
 
             {!loading && visible.length === 0 && (
@@ -1017,6 +1186,7 @@ export default function AdminQuestionsPage() {
         <QuestionModal
           initial={modal === 'new' ? null : modal}
           topics={allTopics}
+          allSyllabusCodes={allSyllabusCodes}
           onSave={handleSave}
           onClose={() => setModal(null)}
         />

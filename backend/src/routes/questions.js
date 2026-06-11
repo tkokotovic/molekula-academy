@@ -9,7 +9,7 @@ const { needsGeneration, generateForQuestion } = require('../services/aiAnswerGe
 router.use(requireAuth, requireTeacher);
 
 const VALID_TYPES = ['true_false', 'mcq', 'fill_blank', 'short_answer', 'chem_equation'];
-const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
+const VALID_DIFFICULTIES = ['easy', 'medium', 'hard', 'multi_topic'];
 const VALID_STATUSES = ['pending_approval', 'approved', 'rejected', 'archived', 'ai_generated_pending_approval'];
 const VALID_SOURCE_TYPES = ['teacher', 'past_exam', 'entrance_exam', 'uni_exam'];
 const VALID_IB_LEVELS = ['HL', 'SL', 'both'];
@@ -26,6 +26,7 @@ function parseQuestion(row) {
     source_year: row.source_year ?? null,
     source_month: row.source_month ?? null,
     syllabus_item_ids: JSON.parse(row.syllabus_item_ids || '[]'),
+    stem_blocks: row.stem_blocks ? JSON.parse(row.stem_blocks) : null,
   };
 }
 
@@ -184,6 +185,7 @@ router.post('/', (req, res) => {
     model_answer = null,
     categories = [],
     syllabus_codes = [],
+    stem_blocks = null,
   } = req.body;
 
   if (!stem) return res.status(400).json({ error: 'stem is required' });
@@ -203,12 +205,13 @@ router.post('/', (req, res) => {
 
   const { lastInsertRowid } = db.prepare(`
     INSERT INTO questions
-      (type, stem, explanation, model_answer, difficulty, max_points, ib_level, ib_paper,
+      (type, stem, stem_blocks, explanation, model_answer, difficulty, max_points, ib_level, ib_paper,
        source_type, source_year, source_month, source_label,
        topic_id, syllabus_item_ids, status, import_batch_id, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
   `).run(
-    type, stem, explanation ?? null, finalModelAnswer, difficulty, max_points,
+    type, stem, stem_blocks ? JSON.stringify(stem_blocks) : null,
+    explanation ?? null, finalModelAnswer, difficulty, max_points,
     ib_level ?? null, ib_paper ?? null,
     source_type, source_year ?? null, source_month ?? null, source_label ?? null,
     topic_id ?? null, JSON.stringify(syllabus_item_ids),
@@ -287,7 +290,7 @@ router.put('/:id', (req, res) => {
     stem, explanation, model_answer, difficulty, max_points,
     ib_level, ib_paper, source_type, source_year, source_month, source_label,
     topic_id, syllabus_item_ids, options,
-    categories, syllabus_codes,
+    categories, syllabus_codes, stem_blocks,
   } = req.body;
 
   if (difficulty && !VALID_DIFFICULTIES.includes(difficulty))
@@ -296,6 +299,7 @@ router.put('/:id', (req, res) => {
   db.prepare(`
     UPDATE questions SET
       stem = COALESCE(?, stem),
+      stem_blocks = COALESCE(?, stem_blocks),
       explanation = COALESCE(?, explanation),
       model_answer = COALESCE(?, model_answer),
       difficulty = COALESCE(?, difficulty),
@@ -311,7 +315,9 @@ router.put('/:id', (req, res) => {
       updated_at = datetime('now')
     WHERE id = ?
   `).run(
-    stem ?? null, explanation ?? null, model_answer ?? null, difficulty ?? null, max_points ?? null,
+    stem ?? null,
+    stem_blocks !== undefined ? (stem_blocks ? JSON.stringify(stem_blocks) : null) : null,
+    explanation ?? null, model_answer ?? null, difficulty ?? null, max_points ?? null,
     ib_level ?? null, ib_paper ?? null,
     source_type ?? null, source_year ?? null, source_month ?? null, source_label ?? null,
     topic_id ?? null,

@@ -618,6 +618,8 @@ const migrations = [
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
     FOREIGN KEY (syllabus_code_id) REFERENCES syllabus_codes(id) ON DELETE CASCADE
   )`,
+  // R11b — Rich stem blocks stored as JSON
+  `ALTER TABLE questions ADD COLUMN stem_blocks TEXT`,
 ];
 
 for (const sql of migrations) {
