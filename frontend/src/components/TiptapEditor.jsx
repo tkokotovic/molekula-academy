@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -106,6 +107,109 @@ function ImageDialog({ editor, onClose }) {
         <button type="button" onClick={insert} style={{ width: '100%', padding: '8px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Umetni sliku</button>
       </div>
     </div>
+  );
+}
+
+// ─── Selection toolbar (select-and-tag) ────────────────────────────────────────
+// Tiptap v3 removed the BubbleMenu React component, so this is a custom floating
+// toolbar: select text → a dark pill appears above it to tag/format the selection.
+
+function SelToolBtn({ onRun, active, title, children }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={e => e.preventDefault()}   // keep the editor selection alive
+      onClick={onRun}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        minWidth: 28, height: 28, padding: '0 7px', border: 'none', cursor: 'pointer',
+        background: active ? 'rgba(30,200,182,.22)' : 'transparent',
+        color: active ? '#1ec8b6' : '#eaf3f1', borderRadius: 6,
+        fontSize: 13, fontWeight: 600, fontFamily: 'var(--body, sans-serif)', lineHeight: 1,
+      }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,.10)'; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+    >{children}</button>
+  );
+}
+
+function SelectionToolbar({ editor, onLink }) {
+  const [pos, setPos] = useState(null);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const { state, view } = editor;
+      const { from, to, empty } = state.selection;
+      // Only for non-empty text selections (skip node/image selections)
+      if (empty || from === to || !editor.isEditable || !state.doc.textBetween(from, to).trim()) {
+        setPos(null);
+        return;
+      }
+      const start = view.coordsAtPos(from);
+      const end = view.coordsAtPos(to);
+      setPos({ top: Math.min(start.top, end.top), left: (start.left + end.left) / 2 });
+    };
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
+    const onScroll = () => setPos(null);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [editor]);
+
+  if (!pos || !editor) return null;
+
+  const sep = <span style={{ width: 1, height: 18, background: 'rgba(255,255,255,.16)', margin: '0 3px' }} />;
+  const headingVal =
+    editor.isActive('heading', { level: 1 }) ? '1' :
+    editor.isActive('heading', { level: 2 }) ? '2' :
+    editor.isActive('heading', { level: 3 }) ? '3' : '0';
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed', top: pos.top - 46, left: pos.left, transform: 'translateX(-50%)',
+        zIndex: 500, display: 'flex', alignItems: 'center', gap: 1,
+        background: '#0b343c', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10,
+        padding: '4px 5px', boxShadow: '0 10px 30px rgba(11,52,60,.35)',
+      }}
+    >
+      <select
+        value={headingVal}
+        onMouseDown={e => e.stopPropagation()}
+        onChange={e => {
+          const lvl = Number(e.target.value);
+          if (lvl === 0) editor.chain().focus().setParagraph().run();
+          else editor.chain().focus().toggleHeading({ level: lvl }).run();
+        }}
+        title="Pretvori u…"
+        style={{ height: 28, background: 'transparent', color: '#eaf3f1', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', outline: 'none' }}
+      >
+        <option style={{ color: '#0b343c' }} value="0">Tekst</option>
+        <option style={{ color: '#0b343c' }} value="1">H1</option>
+        <option style={{ color: '#0b343c' }} value="2">H2</option>
+        <option style={{ color: '#0b343c' }} value="3">H3</option>
+      </select>
+      {sep}
+      <SelToolBtn onRun={() => editor.chain().focus().toggleBold().run()}        active={editor.isActive('bold')}        title="Podebljano"><b>B</b></SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleItalic().run()}      active={editor.isActive('italic')}      title="Kurziv"><i>I</i></SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleUnderline().run()}   active={editor.isActive('underline')}   title="Podcrtano"><u>U</u></SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleStrike().run()}      active={editor.isActive('strike')}      title="Precrtano"><s>S</s></SelToolBtn>
+      {sep}
+      <SelToolBtn onRun={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive('superscript')} title="Gornji indeks">x²</SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleSubscript().run()}   active={editor.isActive('subscript')}   title="Donji indeks">x₂</SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleCode().run()}        active={editor.isActive('code')}        title="Kod">{'</>'}</SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().toggleHighlight({ color: '#fef08a' }).run()} active={editor.isActive('highlight')} title="Označivač"><span style={{ background: '#fef08a', color: '#0b343c', borderRadius: 2, padding: '0 3px' }}>H</span></SelToolBtn>
+      {sep}
+      <SelToolBtn onRun={() => onLink?.()} active={editor.isActive('link')} title="Link">🔗</SelToolBtn>
+      <SelToolBtn onRun={() => editor.chain().focus().unsetAllMarks().run()} title="Ukloni formatiranje">✕</SelToolBtn>
+    </div>,
+    document.body
   );
 }
 
@@ -300,6 +404,9 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
 
       {/* ── Editor content ── */}
       <EditorContent editor={editor} />
+
+      {/* ── Floating select-and-tag toolbar ── */}
+      <SelectionToolbar editor={editor} onLink={() => setLinkOpen(true)} />
 
       {/* ── Word / char count ── */}
       <div style={{ padding: '4px 16px 6px', fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'var(--mono)', borderTop: '1px solid var(--line)', display: 'flex', gap: 12 }}>
