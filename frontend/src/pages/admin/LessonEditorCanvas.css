@@ -1,0 +1,96 @@
+/* Branded WYSIWYG lesson canvas — what the teacher writes on is what the student sees.
+   Warm paper, deep-teal branded header/footer, faint molecule watermark behind text. */
+
+.mol-canvas {
+  max-width: 860px;
+  margin: 32px auto 120px;
+  background: #fbfaf6;
+  border: 1px solid #e7e3d7;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(11, 52, 60, 0.04), 0 12px 40px rgba(11, 52, 60, 0.07);
+}
+
+/* ── Branded header ── */
+.mol-canvas__header {
+  background: #0b343c;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.mol-canvas__brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.mol-canvas__wordmark {
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.mol-canvas__crumb {
+  color: #9fe1cb;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Body + watermark ── */
+.mol-canvas__body {
+  position: relative;
+  padding: 44px 56px 56px;
+}
+.mol-canvas__watermark {
+  position: absolute;
+  top: 48px;
+  right: -40px;
+  opacity: 0.045;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+.mol-canvas__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Branded footer ── */
+.mol-canvas__footer {
+  border-top: 1px solid #e7e3d7;
+  background: #f6f4ec;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mol-canvas__footer span {
+  color: #7a8a86;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+/* ── Mobile readability (students read on phones) ── */
+@media (max-width: 640px) {
+  .mol-canvas {
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+  .mol-canvas__header { padding: 13px 18px; }
+  .mol-canvas__wordmark { font-size: 15px; }
+  .mol-canvas__crumb { display: none; }
+  .mol-canvas__body { padding: 28px 20px 40px; }
+  .mol-canvas__watermark { opacity: 0.03; width: 220px; height: 220px; top: 24px; right: -30px; }
+}

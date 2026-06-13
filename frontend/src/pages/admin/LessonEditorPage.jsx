@@ -15,7 +15,9 @@ import {
   setLessonStatus, getToken,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
+import MolekulaMark from '../../components/MolekulaMark';
 import SmilesDrawer from 'smiles-drawer';
+import './LessonEditorCanvas.css';
 
 // ─── Block type registry ───────────────────────────────────────────────────────
 
@@ -41,6 +43,16 @@ const BLOCK_TYPES = [
 ];
 
 const TYPE_MAP = Object.fromEntries(BLOCK_TYPES.map(b => [b.type, b]));
+
+// ─── Signal-block colour system ─────────────────────────────────────────────────
+// Colour as a signal, not decoration. Five semantic roles, each a left-accent bar
+// + tinted wash + uppercase label. Locked palette (see lesson-editor-redesign memory).
+const SIGNAL = {
+  callout:  { accent: '#0f8f86', wash: '#e7f4f0', label: '#0f6e56', body: '#0b343c', icon: '💡', title: 'Ključna točka' },
+  exam_tip: { accent: '#ba7517', wash: '#faeeda', label: '#854f0b', body: '#412402', icon: '🎓', title: 'Savjet za ispit' },
+  warning:  { accent: '#d85a30', wash: '#faece7', label: '#993c1d', body: '#4a1b0c', icon: '⚠️', title: 'Upozorenje / česta greška' },
+  summary:  { accent: '#639922', wash: '#eaf3de', label: '#3b6d11', body: '#173404', icon: '📋', title: 'Sažetak' },
+};
 
 // ─── Block visibility (R07) ────────────────────────────────────────────────────
 // public  → svi vide (i besplatni pregled)
@@ -210,16 +222,19 @@ function CalloutBlock({ content, onChange }) {
   useEffect(() => {
     if (taRef.current) { taRef.current.style.height = 'auto'; taRef.current.style.height = taRef.current.scrollHeight + 'px'; }
   }, [content.text]);
+  const s = SIGNAL.callout;
   return (
-    <div style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1.5px solid color-mix(in srgb, var(--accent) 35%, transparent)', borderRadius: 10, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>💡</span>
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
       <textarea
         ref={taRef}
         value={content.text || ''}
         onChange={e => onChange({ ...content, text: e.target.value })}
         placeholder="Ključna točka…"
         rows={2}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: 'var(--ink)', fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden' }}
+        style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: s.body, fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden', boxSizing: 'border-box' }}
       />
     </div>
   );
@@ -230,16 +245,19 @@ function WarningBlock({ content, onChange }) {
   useEffect(() => {
     if (taRef.current) { taRef.current.style.height = 'auto'; taRef.current.style.height = taRef.current.scrollHeight + 'px'; }
   }, [content.text]);
+  const s = SIGNAL.warning;
   return (
-    <div style={{ background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: 10, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
       <textarea
         ref={taRef}
         value={content.text || ''}
         onChange={e => onChange({ ...content, text: e.target.value })}
         placeholder="Upozorenje…"
         rows={2}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: '#92400e', fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden' }}
+        style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: s.body, fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden', boxSizing: 'border-box' }}
       />
     </div>
   );
@@ -266,12 +284,15 @@ function SummaryBlock({ content, onChange }) {
     }
   }
 
+  const s = SIGNAL.summary;
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: 10, padding: '14px 18px', border: '1px solid var(--line)' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', marginBottom: 10, fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.06em' }}>📋 Sažetak</div>
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '14px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
       {items.map((item, i) => (
         <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>•</span>
+          <span style={{ color: s.accent, fontWeight: 700, fontSize: 16, flexShrink: 0 }}>•</span>
           <input
             ref={el => inputRefs.current[i] = el}
             value={item}
@@ -734,34 +755,87 @@ function MediaPreview({ type, content, onOpenSettings }) {
   }
 }
 
-// ─── Block picker modal ────────────────────────────────────────────────────────
+// ─── Block search (slash menu) ─────────────────────────────────────────────────
+// Bilingual match: HR label, EN-ish type id, and group name.
+function filterBlockTypes(query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return BLOCK_TYPES;
+  return BLOCK_TYPES.filter(b =>
+    b.label.toLowerCase().includes(q) ||
+    b.type.toLowerCase().includes(q) ||
+    b.group.toLowerCase().includes(q)
+  );
+}
+
+// One result row used by both the modal picker and the inline slash menu.
+function BlockResultRow({ bt, active, onPick, onHover }) {
+  return (
+    <button
+      type="button"
+      onMouseEnter={onHover}
+      onClick={() => onPick(bt.type)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+        padding: '8px 12px', border: 'none', borderRadius: 8, cursor: 'pointer',
+        background: active ? 'var(--accent-wash)' : 'transparent',
+        color: 'var(--ink)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
+      }}
+    >
+      <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{bt.icon}</span>
+      <span style={{ flex: 1 }}>{bt.label}</span>
+      <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{bt.group}</span>
+    </button>
+  );
+}
+
+// Filterable, keyboard-navigable list. Parent owns query + active index.
+function BlockResultsList({ query, activeIdx, setActiveIdx, onPick }) {
+  const results = filterBlockTypes(query);
+  if (results.length === 0) {
+    return <div style={{ padding: '14px 12px', color: 'var(--ink-faint)', fontSize: 13, fontFamily: 'var(--mono)' }}>Nema rezultata za “{query}”</div>;
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {results.map((bt, i) => (
+        <BlockResultRow key={bt.type} bt={bt} active={i === activeIdx}
+          onHover={() => setActiveIdx(i)} onPick={onPick} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Block picker modal (top-bar "+ Dodaj blok") ───────────────────────────────
 
 function BlockPicker({ onPick, onClose }) {
-  const groups = [...new Set(BLOCK_TYPES.map(b => b.group))];
+  const [query, setQuery] = useState('');
+  const [activeIdx, setActiveIdx] = useState(0);
+  const results = filterBlockTypes(query);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  function handleKey(e) {
+    const n = results.length;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, n - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[activeIdx]) { onPick(results[activeIdx].type); onClose(); } }
+    else if (e.key === 'Escape') { onClose(); }
+  }
+
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--line)', padding: 28, width: 580, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 64px)', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, fontFamily: 'var(--display)', color: 'var(--ink)' }}>Dodaj blok sadržaja</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--ink-soft)', lineHeight: 1, padding: 4 }}>×</button>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '12vh' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--line)', width: 460, maxWidth: 'calc(100vw - 32px)', maxHeight: '70vh', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column' }}>
+        <input
+          autoFocus
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={handleKey}
+          placeholder="Traži blok… (npr. naslov, slika, jednadžba)"
+          style={{ border: 'none', borderBottom: '1px solid var(--line)', outline: 'none', padding: '14px 18px', fontSize: 15, fontFamily: 'inherit', color: 'var(--ink)', background: 'transparent' }}
+        />
+        <div style={{ overflowY: 'auto', padding: 8 }}>
+          <BlockResultsList query={query} activeIdx={activeIdx} setActiveIdx={setActiveIdx}
+            onPick={t => { onPick(t); onClose(); }} />
         </div>
-        {groups.map(group => (
-          <div key={group} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', marginBottom: 8, fontFamily: 'var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase' }}>{group}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
-              {BLOCK_TYPES.filter(b => b.group === group).map(bt => (
-                <button key={bt.type} type="button" onClick={() => { onPick(bt.type); onClose(); }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 10px', border: '1.5px solid var(--line)', borderRadius: 10, background: 'var(--bg)', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-wash)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.background = 'var(--bg)'; }}
-                >
-                  <span style={{ fontSize: 22 }}>{bt.icon}</span>
-                  <span>{bt.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -845,11 +919,6 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttribute
           </div>
         )}
 
-        {/* Saving indicator */}
-        {saving && (
-          <div style={{ position: 'absolute', top: 4, right: 4, fontSize: 10, color: 'var(--ink-faint)', fontFamily: 'var(--mono)' }}>ukl…</div>
-        )}
-
         {/* Render the block */}
         {isMedia ? (
           <MediaPreview type={block.type} content={draft} onOpenSettings={() => setShowSettings(true)} />
@@ -874,10 +943,14 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttribute
         ) : null}
       </div>
 
-      {/* Right controls: visibility (always shown) + settings/delete (on hover) */}
+      {/* Block toolbar: visibility + settings + delete — hover, top-right, inside the canvas */}
       <div style={{
-        position: 'absolute', right: -118, top: 8,
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6,
+        position: 'absolute', right: 4, top: -14, zIndex: 5,
+        display: 'flex', alignItems: 'center', gap: 5,
+        opacity: isHovered ? 1 : 0, transition: 'opacity .15s',
+        pointerEvents: isHovered ? 'auto' : 'none',
+        background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 9,
+        padding: '3px 5px', boxShadow: '0 4px 14px rgba(11,52,60,.10)',
       }}>
         {(() => {
           const vis = block.visibility || 'public';
@@ -885,39 +958,33 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttribute
           return (
             <button
               onClick={() => onSetVisibility(nextVisibility(vis))}
-              title={`Vidljivost: ${m.label} — klikni za promjenu`}
+              title={`Vidljivost: ${m.label} — klikni za promjenu (Svi → Basic → Premium)`}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
-                background: m.bg, border: `1px solid ${m.border}`, borderRadius: 20,
+                background: m.bg, border: `1px solid ${m.border}`, borderRadius: 16,
                 padding: '2px 9px', cursor: 'pointer', color: m.color,
                 fontSize: 11, fontWeight: 700, fontFamily: 'var(--mono)', whiteSpace: 'nowrap',
               }}
             >{m.icon} {m.label}</button>
           );
         })()}
-        <div style={{
-          display: 'flex', gap: 4,
-          opacity: isHovered ? 1 : 0, transition: 'opacity .15s',
-          pointerEvents: isHovered ? 'auto' : 'none',
-        }}>
-          {isMedia && (
-            <button
-              onClick={() => setShowSettings(s => !s)}
-              title="Postavke"
-              style={{
-                background: showSettings ? 'var(--accent-wash)' : 'var(--surface)',
-                border: `1px solid ${showSettings ? 'var(--accent)' : 'var(--line)'}`,
-                borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
-                color: showSettings ? 'var(--accent-ink)' : 'var(--ink-soft)', fontSize: 13,
-              }}
-            >⚙</button>
-          )}
+        {isMedia && (
           <button
-            onClick={onDelete}
-            title="Obriši blok"
-            style={{ background: 'color-mix(in srgb,#ef4444 8%,transparent)', border: '1px solid color-mix(in srgb,#ef4444 25%,transparent)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 13 }}
-          >🗑</button>
-        </div>
+            onClick={() => setShowSettings(s => !s)}
+            title="Postavke"
+            style={{
+              background: showSettings ? 'var(--accent-wash)' : 'transparent',
+              border: `1px solid ${showSettings ? 'var(--accent)' : 'var(--line)'}`,
+              borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
+              color: showSettings ? 'var(--accent-ink)' : 'var(--ink-soft)', fontSize: 13,
+            }}
+          >⚙</button>
+        )}
+        <button
+          onClick={onDelete}
+          title="Obriši blok"
+          style={{ background: 'transparent', border: '1px solid color-mix(in srgb,#ef4444 25%,transparent)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 13 }}
+        >🗑</button>
       </div>
 
       {/* Inline settings panel for media blocks */}
@@ -952,26 +1019,67 @@ function SortableNotionBlock(props) {
   );
 }
 
-// ─── Add block button ──────────────────────────────────────────────────────────
+// ─── Inline slash menu ─────────────────────────────────────────────────────────
+// Type "/" to open a filterable block menu right at the insertion point.
 
-function AddBlockButton({ onClick }) {
-  const [hovered, setHovered] = useState(false);
+function AddBlockButton({ onPick }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeIdx, setActiveIdx] = useState(0);
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const results = filterBlockTypes(query);
+
+  useEffect(() => { setActiveIdx(0); }, [query, open]);
+
+  // Close when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) reset(); }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  function reset() { setOpen(false); setQuery(''); setActiveIdx(0); }
+  function pick(type) { onPick(type); reset(); }
+
+  function handleChange(e) {
+    let v = e.target.value;
+    if (v.startsWith('/')) v = v.slice(1);  // tolerate a leading slash
+    setQuery(v);
+    setOpen(true);
+  }
+
+  function handleKey(e) {
+    const n = results.length;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActiveIdx(i => Math.min(i + 1, n - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[activeIdx]) pick(results[activeIdx].type); }
+    else if (e.key === 'Escape') { reset(); inputRef.current?.blur(); }
+  }
+
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: '100%', padding: '10px 0', marginTop: 16,
-        border: `1.5px dashed ${hovered ? 'var(--accent)' : 'var(--line)'}`,
-        borderRadius: 10, background: 'none',
-        color: hovered ? 'var(--accent-ink)' : 'var(--ink-faint)',
-        cursor: 'pointer', fontSize: 14, fontWeight: 600,
-        transition: 'border-color .15s, color .15s',
-      }}
-    >
-      + Dodaj blok
-    </button>
+    <div ref={wrapRef} style={{ position: 'relative', marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1.5px dashed ${open ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 10, padding: '9px 14px', background: open ? 'var(--accent-wash)' : 'transparent', transition: 'border-color .15s, background .15s' }}>
+        <span style={{ color: 'var(--accent)', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>＋</span>
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={handleChange}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKey}
+          placeholder={'Upiši "/" za blok — naslov, tekst, slika, jednadžba…'}
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--ink)', fontFamily: 'var(--mono)' }}
+        />
+      </div>
+
+      {open && (
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 'calc(100% + 6px)', zIndex: 60, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: '0 16px 48px rgba(11,52,60,.18)', padding: 8, maxHeight: 340, overflowY: 'auto' }}>
+          <BlockResultsList query={query} activeIdx={activeIdx} setActiveIdx={setActiveIdx} onPick={pick} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1346,6 +1454,8 @@ export default function LessonEditorPage() {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [scheduleDate,   setScheduleDate]   = useState('');
   const [statusSaving,   setStatusSaving]   = useState(false);
+  const [saveState,      setSaveState]      = useState('idle'); // idle | saving | saved
+  const saveStateTimer                      = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1390,8 +1500,17 @@ export default function LessonEditorPage() {
   }
 
   async function handleUpdate(block, newContent) {
-    const updated = await updateLessonBlock(block.id, newContent);
-    setBlocks(bs => bs.map(b => b.id === updated.id ? updated : b));
+    setSaveState('saving');
+    try {
+      const updated = await updateLessonBlock(block.id, newContent);
+      setBlocks(bs => bs.map(b => b.id === updated.id ? updated : b));
+      setSaveState('saved');
+      clearTimeout(saveStateTimer.current);
+      saveStateTimer.current = setTimeout(() => setSaveState('idle'), 1600);
+    } catch (e) {
+      setSaveState('idle');
+      throw e;
+    }
   }
 
   async function handleDelete(block) {
@@ -1468,6 +1587,20 @@ export default function LessonEditorPage() {
         <span style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>
           {blocks.length} {blocks.length === 1 ? 'blok' : 'blokova'}
         </span>
+        {(() => {
+          const map = {
+            saving: { dot: '#ba7517', text: 'Spremam…' },
+            saved:  { dot: '#0f8f86', text: 'Spremljeno' },
+            idle:   { dot: '#cfdcda', text: 'Automatsko spremanje' },
+          };
+          const s = map[saveState];
+          return (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--ink-faint)', whiteSpace: 'nowrap' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
+              {s.text}
+            </span>
+          );
+        })()}
 
         {/* ── Status control ── */}
         <StatusControl
@@ -1507,11 +1640,22 @@ export default function LessonEditorPage() {
         </button>
       </div>
 
-      {/* ── Editor area ── */}
-      <div style={{ maxWidth: 780, margin: '0 auto', padding: '40px 80px 120px' }}>
+      {/* ── Branded WYSIWYG canvas ── */}
+      <div className="mol-canvas">
+        <div className="mol-canvas__header">
+          <div className="mol-canvas__brand">
+            <MolekulaMark variant="dark" size={28} />
+            <span className="mol-canvas__wordmark">Molekula Academy</span>
+          </div>
+          {lesson?.topic_title && <span className="mol-canvas__crumb">{lesson.topic_title}</span>}
+        </div>
+
+        <div className="mol-canvas__body">
+          <MolekulaMark variant="watermark" size={380} className="mol-canvas__watermark" />
+          <div className="mol-canvas__content">
 
         {/* Lesson title */}
-        <h1 style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 36, color: 'var(--ink)', marginBottom: 8, marginTop: 0 }}>
+        <h1 style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 34, color: '#0b343c', marginBottom: 8, marginTop: 0 }}>
           {lesson?.title}
         </h1>
         {lesson?.summary && (
@@ -1530,13 +1674,9 @@ export default function LessonEditorPage() {
 
         {/* Empty state */}
         {blocks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--ink-faint)' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✏️</div>
-            <p style={{ fontFamily: 'var(--mono)', fontSize: 14, marginBottom: 24 }}>Lekcija nema sadržaja. Dodaj prvi blok.</p>
-            <button onClick={() => setShowPicker(true)}
-              style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-              ＋ Dodaj prvi blok
-            </button>
+          <div style={{ padding: '32px 0' }}>
+            <p style={{ fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14, color: 'var(--ink-faint)', textAlign: 'center' }}>Lekcija nema sadržaja. Upiši “/” da dodaš prvi blok.</p>
+            <AddBlockButton onPick={handleAddBlock} />
           </div>
         ) : (
           <>
@@ -1555,9 +1695,16 @@ export default function LessonEditorPage() {
               </SortableContext>
             </DndContext>
 
-            <AddBlockButton onClick={() => setShowPicker(true)} />
+            <AddBlockButton onPick={handleAddBlock} />
           </>
         )}
+          </div>
+        </div>
+
+        <div className="mol-canvas__footer">
+          <span>molekula.academy</span>
+          <span>© Molekula Academy{lesson?.topic_title ? ` · ${lesson.topic_title}` : ''}</span>
+        </div>
       </div>
 
       {showPicker && <BlockPicker onPick={handleAddBlock} onClose={() => setShowPicker(false)} />}

@@ -5,9 +5,22 @@ const { requireAuth, requireTeacher } = require('../middleware/auth');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Block type registry — kept in sync with the frontend slash-menu registry
+// (frontend/src/pages/admin/LessonEditorPage.jsx BLOCK_TYPES). Grouped here for clarity.
 const VALID_TYPES = [
-  'text', 'equation', 'image', 'animation', 'pdf',
-  'video', 'molecule3d', 'table', 'link', 'flashcard', 'summary',
+  // Tekst
+  'heading', 'text', 'quote', 'divider',
+  'list', 'checklist', 'toggle', 'columns', 'toc',
+  // Istaknuto (signal blocks)
+  'callout', 'exam_tip', 'warning', 'summary',
+  // Kemija
+  'equation', 'formula', 'molecule3d', 'smiles',
+  // Mediji
+  'image', 'gif', 'video', 'animation', 'pdf',
+  // Podaci
+  'table', 'graph', 'python',
+  // Veze / ostalo
+  'link', 'quiz_link', 'flashcard', 'embed',
 ];
 
 // Block-level access: public = everyone, basic = basic+premium, premium = premium only

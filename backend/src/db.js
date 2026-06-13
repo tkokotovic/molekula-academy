@@ -115,8 +115,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS lesson_blocks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lesson_id INTEGER NOT NULL,
-    -- type: text | equation | image | animation | pdf | video |
-    --        molecule3d | table | link | flashcard | summary
+    -- type: see VALID_TYPES in backend/src/routes/lesson_blocks.js
+    --        (heading, text, quote, callout, exam_tip, warning, summary, equation,
+    --         molecule3d, image, video, table, graph, python, link, … etc.)
     type TEXT NOT NULL,
     -- content: JSON, shape depends on type
     content TEXT NOT NULL DEFAULT '{}',
@@ -448,6 +449,10 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN admin_notes TEXT`,
   // Lesson fork model: a fork points back to the master lesson it was copied from
   `ALTER TABLE lessons ADD COLUMN master_lesson_id INTEGER`,
+  // Bilingual: each lesson is authored in one language; its translation is a separate
+  // linked copy. translation_of points to the source lesson (NULL = original).
+  `ALTER TABLE lessons ADD COLUMN lang TEXT NOT NULL DEFAULT 'hr'`,
+  `ALTER TABLE lessons ADD COLUMN translation_of INTEGER`,
   // Flag the hidden system course that holds the master lesson library
   `ALTER TABLE courses ADD COLUMN is_library INTEGER NOT NULL DEFAULT 0`,
   // Block-level visibility: public (everyone) | basic (basic+premium) | premium (premium only)

@@ -231,9 +231,10 @@ router.get('/lessons/:id', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
   maybeAutoPublish(id);
   const row = db.prepare(`
-    SELECT l.*, m.title AS master_title
+    SELECT l.*, m.title AS master_title, t.title AS topic_title
     FROM lessons l
     LEFT JOIN lessons m ON m.id = l.master_lesson_id
+    LEFT JOIN topics t ON t.id = l.topic_id
     WHERE l.id = ?
   `).get(id);
   const lesson = parseLesson(row);
