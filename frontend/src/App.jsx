@@ -27,6 +27,7 @@ import AdminReportsPage from './pages/admin/AdminReportsPage';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage';
 import LessonEditorPage from './pages/admin/LessonEditorPage';
 import LessonPrintPage from './pages/admin/LessonPrintPage';
+import StudentHomeworksPage from './pages/StudentHomeworksPage';
 import LoginPage from './pages/LoginPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/quizzes"           element={<RequireAuth><QuizzesPage /></RequireAuth>} />
         <Route path="/schedule"          element={<RequireAuth><SchedulePage /></RequireAuth>} />
         <Route path="/messages"          element={<RequireAuth><MessagesPage /></RequireAuth>} />
+        <Route path="/homeworks"         element={<RequireAuth><StudentHomeworksPage /></RequireAuth>} />
         <Route path="/settings"          element={<RequireAuth><SettingsPage /></RequireAuth>} />
 
         {/* Admin panel — teacher/owner only */}

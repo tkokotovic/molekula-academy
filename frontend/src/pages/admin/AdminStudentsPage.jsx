@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAdminStudents, setStudentSubscription } from '../../api/client';
+import { getAdminStudents, setStudentSubscription, getHomeworkInbox } from '../../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,19 +63,32 @@ export default function AdminStudentsPage() {
   const lang = localStorage.getItem('mol_lang') || 'hr';
   const t = (hr, en) => lang === 'en' ? en : hr;
 
-  const [students, setStudents] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState('');
+  const [students,   setStudents]   = useState([]);
+  const [hwInbox,    setHwInbox]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [search,     setSearch]     = useState('');
 
   function load() {
     setLoading(true);
-    getAdminStudents()
-      .then(setStudents)
+    Promise.all([getAdminStudents(), getHomeworkInbox().catch(() => [])])
+      .then(([s, hw]) => { setStudents(s || []); setHwInbox(hw || []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
   useEffect(() => { load(); }, []);
+
+  function hwDot(studentId) {
+    const mine = hwInbox.filter(a => a.student_id === studentId);
+    if (!mine.length) return null;
+    const hasOverdue  = mine.some(a => a.status !== 'corrected' && a.deadline && new Date(a.deadline.replace(' ', 'T') + 'Z') < new Date());
+    const hasSubmitted = mine.some(a => a.status === 'submitted');
+    const allDone     = mine.every(a => a.status === 'corrected');
+    if (hasOverdue)   return { color: '#dc2626', title: 'Kasni sa zadaćom' };
+    if (hasSubmitted) return { color: '#d97706', title: 'Čeka ispravljanje' };
+    if (allDone)      return { color: '#16a34a', title: 'Sve zadaće ispravljene' };
+    return null;
+  }
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -148,7 +161,7 @@ export default function AdminStudentsPage() {
           {/* Table header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px',
+            gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px 36px',
             padding: '10px 16px',
             borderBottom: '1px solid var(--line)',
             fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em',
@@ -162,6 +175,7 @@ export default function AdminStudentsPage() {
             <span>{t('Kvizovi', 'Quizzes')}</span>
             <span>{t('Prosjek', 'Avg score')}</span>
             <span>{t('Aktivan', 'Last active')}</span>
+            <span title="Zadaće">ZD</span>
           </div>
 
           {filtered.map((s, i) => (
@@ -169,7 +183,7 @@ export default function AdminStudentsPage() {
               key={s.id}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px',
+                gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px 36px',
                 padding: '12px 16px',
                 borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
                 alignItems: 'center',
@@ -207,6 +221,9 @@ export default function AdminStudentsPage() {
                 {s.avg_score != null ? `${s.avg_score}%` : '—'}
               </span>
               <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{timeAgo(s.last_active)}</span>
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                {(() => { const dot = hwDot(s.id); return dot ? <span title={dot.title} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: dot.color }} /> : null; })()}
+              </span>
             </div>
           ))}
         </div>
