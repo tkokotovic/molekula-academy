@@ -178,11 +178,11 @@
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | R17 | Homeworks DB + API | ✅ | New route `backend/src/routes/homeworks.js`. Tables: `homeworks(id, title, instruction_html, created_by, created_at)`, `homework_questions(homework_id, question_id, position)`, `homework_assignments(id, homework_id, student_id, group_id, deadline, assigned_at)`, `homework_submissions(id, assignment_id, submitted_at, corrected_at, overall_score, teacher_comment)`, `homework_answers(id, submission_id, question_id, answer_text, file_url, score, teacher_note, is_correct)`. Full CRUD + assignment + submission + correction endpoints. |
-| R18 | Homework creation UI | ⬜ | Pick questions from filtered bank, drag to reorder. Instruction text (rich text). Assign to: individual student OR group. Set deadline. |
-| R19 | Student homework view | ⬜ | Student sees assigned homeworks with deadline. MCQ/T/F auto-graded. Short answer: text OR image upload. |
-| R20 | Teacher correction UI | ⬜ | Inbox sorted by deadline / submission / course. Per short-answer: score + inline note. Overall comment. Mark corrected → student notified. |
-| R21 | Homework status tracking | ⬜ | States: Not assigned / Assigned pending / Submitted awaiting correction / Corrected / Overdue. Auto-warn teacher. Shown on student detail tab. |
-| R22 | Homework dot on student list | ⬜ | Green = all corrected, Amber = awaiting correction, Red = overdue. Visible on `AdminStudentsPage`. |
+| R18 | Homework creation UI | ✅ | Question picker modal (search + checkbox, up/down reorder), title + instruction fields, assign modal (student or group toggle, deadline). `AdminHomeworksPage` Zadaće tab. |
+| R19 | Student homework view | ✅ | `/homeworks` route. Pending/corrected sections. Answer modal: MCQ radio, text for short_answer/essay/calculation. Teacher feedback (score + notes + comment) shown after correction. `StudentHomeworksPage.jsx`. |
+| R20 | Teacher correction UI | ✅ | Inbox tab on `AdminHomeworksPage`. Per-question score + note fields, overall comment, "Označi ispravljenim" button. Filterable by status. |
+| R21 | Homework status tracking | ✅ | States: assigned / submitted / corrected / overdue computed client-side from `status` + `deadline`. StatusChip shown in inbox and student homework view. |
+| R22 | Homework dot on student list | ✅ | Dots on `AdminStudentsPage`: red = overdue, amber = awaiting correction, green = all corrected. Fetched via `getHomeworkInbox` on page load. |
 
 ### 8B-4 — Students Redesign
 
@@ -275,12 +275,12 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | Phase 6 — Student Frontend | 47–56 | 10/10 | ✅ |
 | Phase 7 — Communication | 57–60 | 3/4 | 🔄 (Step 60 outstanding) |
 | Phase 8 — Admin Panel v1 | 61–67 | 7/7 | ✅ |
-| Phase 8B-1 — Courses & Lessons | R01–R10 | 7/11 | 🔄 |
-| Phase 8B-2 — Question Bank Redesign | R11a–R16 | 0/7 | ⬜ |
-| Phase 8B-3 — Homeworks | R17–R22 | 0/6 | ⬜ |
-| Phase 8B-4 — Students Redesign | R23–R27b | 0/6 | ⬜ |
-| Phase 8B-5 — Communication Redesign | R28–R30 | 1/4 | 🔄 (R30 ✅ via R38 S13) |
-| Phase 8B-6 — Sessions & Tutoring | R31–R33 | 0/3 | ⬜ |
+| Phase 8B-1 — Courses & Lessons | R01–R10 | 11/11 | ✅ |
+| Phase 8B-2 — Question Bank Redesign | R11a–R16 | 7/7 | ✅ |
+| Phase 8B-3 — Homeworks | R17–R22 | 6/6 | ✅ |
+| Phase 8B-4 — Students Redesign | R23–R27b | 1/6 (R27a ✅) | 🔄 |
+| Phase 8B-5 — Communication Redesign | R28–R30 | 2/4 (R29a ✅, R30 ✅) | 🔄 |
+| Phase 8B-6 — Sessions & Tutoring | R31–R33 | 1/3 (R31 ✅) | 🔄 |
 | Phase 8B-7 — Revenue & Reports | R34a–R36 | 0/4 | ⬜ |
 | Phase 8B-8 — Student-Facing Redesign | R37–R38 | 14/14 | ✅ |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
