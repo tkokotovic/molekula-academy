@@ -1008,10 +1008,12 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, onChangeType,
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Left controls: drag handle (click = menu, drag = move) */}
+      {/* Left controls: fills the whole gutter so the hover zone is continuous
+          (no dead gap where the handle would vanish before you reach it). */}
       <div style={{
-        position: 'absolute', left: -44, top: 8,
-        display: 'flex', flexDirection: 'column', gap: 2,
+        position: 'absolute', left: -44, top: 0, bottom: 0, width: 44,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start',
+        paddingTop: 6, paddingRight: 4,
         opacity: isHovered || menuOpen ? 1 : 0, transition: 'opacity .15s',
         pointerEvents: isHovered || menuOpen ? 'auto' : 'none',
       }}>
@@ -1020,7 +1022,7 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, onChangeType,
           {...dragListeners}
           onClick={() => setMenuOpen(o => !o)}
           title="Klikni za izbornik · povuci za premještanje"
-          style={{ background: menuOpen ? 'var(--accent-wash)' : 'none', border: 'none', cursor: isDragging ? 'grabbing' : 'grab', color: 'var(--ink-faint)', fontSize: 16, padding: '3px 5px', borderRadius: 5, lineHeight: 1 }}
+          style={{ background: menuOpen ? 'var(--accent-wash)' : 'none', border: 'none', cursor: isDragging ? 'grabbing' : 'grab', color: 'var(--ink-faint)', fontSize: 16, padding: '4px 6px', borderRadius: 6, lineHeight: 1 }}
         >⠿</button>
       </div>
 
