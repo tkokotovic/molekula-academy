@@ -5,6 +5,21 @@ import {
   getStudentCourse, getStudentTopic,
   getLessonProgress, markLessonProgress,
 } from '../api/client';
+import { hydrateChemHtml } from '../components/extensions/chem';
+
+// Render saved text-block HTML, hydrating inline chem/math (data-chem spans) with
+// KaTeX. KaTeX loads deferred, so re-hydrate once it's available.
+function useChemHtml(raw) {
+  const [html, setHtml] = useState(() => hydrateChemHtml(raw));
+  useEffect(() => {
+    setHtml(hydrateChemHtml(raw));
+    if (typeof window !== 'undefined' && !window.katex) {
+      const t = setInterval(() => { if (window.katex) { setHtml(hydrateChemHtml(raw)); clearInterval(t); } }, 120);
+      return () => clearInterval(t);
+    }
+  }, [raw]);
+  return html;
+}
 
 const MOBILE_NUDGE_KEY = 'molekula_mobile_nudge_dismissed';
 
@@ -29,12 +44,14 @@ function DiffBadge({ difficulty }) {
 // ─── Block renderers ──────────────────────────────────────────────────────────
 
 function BlockText({ content }) {
-  if (!content?.html && !content?.text) return null;
+  const raw = content?.html || (content?.text ? `<p>${content.text}</p>` : '');
+  const html = useChemHtml(raw);
+  if (!raw) return null;
   return (
     <div
       className="lesson-prose"
       style={{ lineHeight: 1.8, fontSize: 17 }}
-      dangerouslySetInnerHTML={{ __html: content.html || `<p>${content.text}</p>` }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }

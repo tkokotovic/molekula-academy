@@ -169,3 +169,23 @@
 
 /* Highlight */
 .tiptap-shell .ProseMirror mark { border-radius: 3px; padding: 0 2px; }
+
+/* Inline chemistry / math node */
+.mol-chem {
+  display: inline-block;
+  vertical-align: baseline;
+  padding: 0 2px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.tiptap-shell .ProseMirror .mol-chem {
+  cursor: pointer;
+  transition: background .12s;
+}
+.tiptap-shell .ProseMirror .mol-chem:hover {
+  background: var(--accent-wash);
+}
+.tiptap-shell .ProseMirror .mol-chem.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

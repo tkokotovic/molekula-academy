@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getLesson, getLessonBlocks } from '../../api/client';
+import { hydrateChemHtml } from '../../components/extensions/chem';
 import SmilesDrawer from 'smiles-drawer';
 
 // ─── KaTeX helper ──────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ function PrintBlock({ block }) {
       return <Tag className="print-heading">{c.text}</Tag>;
     }
     case 'text':
-      return <div className="print-text" dangerouslySetInnerHTML={{ __html: c.html || '' }} />;
+      return <div className="print-text" dangerouslySetInnerHTML={{ __html: hydrateChemHtml(c.html || '') }} />;
     case 'quote':
       return (
         <blockquote className="print-quote">

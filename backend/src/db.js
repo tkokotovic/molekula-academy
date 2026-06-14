@@ -625,6 +625,17 @@ const migrations = [
   )`,
   // R11b — Rich stem blocks stored as JSON
   `ALTER TABLE questions ADD COLUMN stem_blocks TEXT`,
+  // Inline-chemistry compound library (searchable by HR/EN name → mhchem formula).
+  // owner_id NULL = built-in seed; set = teacher's saved custom compound.
+  `CREATE TABLE IF NOT EXISTS chem_compounds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id INTEGER,
+    name_hr TEXT NOT NULL,
+    name_en TEXT,
+    formula TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
 ];
 
 for (const sql of migrations) {
@@ -763,6 +774,59 @@ const SYLLABUS_SEED = {
     }
   });
   insertAll();
+})();
+
+// ─── Chemistry compound library seed ──────────────────────────────────────────
+// Curated bilingual (HR/EN) starter set for the inline /ch picker. Formulas are
+// mhchem source (rendered with \ce{…}). Teachers add their own on top of these.
+const CHEM_SEED = [
+  // [name_hr, name_en, mhchem formula]
+  ['voda', 'water', 'H2O'],
+  ['vodikov peroksid', 'hydrogen peroxide', 'H2O2'],
+  ['ugljikov dioksid', 'carbon dioxide', 'CO2'],
+  ['ugljikov monoksid', 'carbon monoxide', 'CO'],
+  ['kisik', 'oxygen', 'O2'],
+  ['vodik', 'hydrogen', 'H2'],
+  ['dušik', 'nitrogen', 'N2'],
+  ['ozon', 'ozone', 'O3'],
+  ['amonijak', 'ammonia', 'NH3'],
+  ['metan', 'methane', 'CH4'],
+  ['etanol', 'ethanol', 'C2H5OH'],
+  ['metanol', 'methanol', 'CH3OH'],
+  ['glukoza', 'glucose', 'C6H12O6'],
+  ['octena kiselina', 'acetic acid', 'CH3COOH'],
+  ['sumporna kiselina', 'sulfuric acid', 'H2SO4'],
+  ['solna (klorovodična) kiselina', 'hydrochloric acid', 'HCl'],
+  ['dušična kiselina', 'nitric acid', 'HNO3'],
+  ['fosforna kiselina', 'phosphoric acid', 'H3PO4'],
+  ['ugljična kiselina', 'carbonic acid', 'H2CO3'],
+  ['natrijev hidroksid', 'sodium hydroxide', 'NaOH'],
+  ['kalijev hidroksid', 'potassium hydroxide', 'KOH'],
+  ['kalcijev hidroksid', 'calcium hydroxide', 'Ca(OH)2'],
+  ['amonijev klorid', 'ammonium chloride', 'NH4Cl'],
+  ['natrijev klorid', 'sodium chloride', 'NaCl'],
+  ['natrijev hidrogenkarbonat', 'sodium bicarbonate', 'NaHCO3'],
+  ['natrijev karbonat', 'sodium carbonate', 'Na2CO3'],
+  ['kalcijev karbonat', 'calcium carbonate', 'CaCO3'],
+  ['kalcijev oksid', 'calcium oxide', 'CaO'],
+  ['bakrov(II) sulfat', 'copper(II) sulfate', 'CuSO4'],
+  ['srebrov nitrat', 'silver nitrate', 'AgNO3'],
+  ['kalijev permanganat', 'potassium permanganate', 'KMnO4'],
+  ['sulfatni ion', 'sulfate ion', 'SO4^2-'],
+  ['nitratni ion', 'nitrate ion', 'NO3^-'],
+  ['karbonatni ion', 'carbonate ion', 'CO3^2-'],
+  ['amonijev ion', 'ammonium ion', 'NH4^+'],
+  ['hidronijev ion', 'hydronium ion', 'H3O^+'],
+  ['hidroksidni ion', 'hydroxide ion', 'OH^-'],
+];
+
+(function seedChemCompounds() {
+  const existing = db.prepare('SELECT COUNT(*) as n FROM chem_compounds WHERE owner_id IS NULL').get();
+  if (existing.n > 0) return;
+  const insert = db.prepare(
+    'INSERT INTO chem_compounds (owner_id, name_hr, name_en, formula) VALUES (NULL, ?, ?, ?)'
+  );
+  db.transaction(() => { for (const [hr, en, f] of CHEM_SEED) insert.run(hr, en, f); })();
 })();
 
 // ─── Master lesson library bootstrap ──────────────────────────────────────────

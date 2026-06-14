@@ -15,6 +15,7 @@ import {
   setLessonStatus, getToken,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
+import { hydrateChemHtml } from '../../components/extensions/chem';
 import MolekulaMark from '../../components/MolekulaMark';
 import SmilesDrawer from 'smiles-drawer';
 import './LessonEditorCanvas.css';
@@ -1243,7 +1244,7 @@ function PreviewBlock({ block }) {
       return <Tag style={{ fontFamily: 'var(--display)', color: 'var(--ink)', margin: '6px 0' }}>{content.text || '—'}</Tag>;
     }
     case 'text':
-      return <div style={{ color: 'var(--ink)', lineHeight: 1.6, fontSize: 14 }} dangerouslySetInnerHTML={{ __html: content.html || '' }} />;
+      return <div style={{ color: 'var(--ink)', lineHeight: 1.6, fontSize: 14 }} dangerouslySetInnerHTML={{ __html: hydrateChemHtml(content.html || '') }} />;
     case 'quote':
       return <blockquote style={{ borderLeft: '3px solid var(--accent)', margin: 0, padding: '4px 14px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>{content.text}{content.attribution && <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ink-faint)' }}>— {content.attribution}</div>}</blockquote>;
     case 'callout':

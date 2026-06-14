@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { ChemNode } from './extensions/chem';
+import ChemPicker from './ChemPicker';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Superscript from '@tiptap/extension-superscript';
@@ -200,10 +202,54 @@ function SelectionToolbar({ editor, onLink }) {
   );
 }
 
+// ─── In-editor slash menu ───────────────────────────────────────────────────────
+// Typing "/" inside a text block opens one menu: inline chem/math + block conversions.
+
+const SLASH_ITEMS = [
+  { key: 'ch',    icon: '🧪',  label: 'Kemija (inline)',     kind: 'chem',  tab: 'search', keywords: 'ch kemija chem formula spoj' },
+  { key: 'eq',    icon: '∑',   label: 'Jednadžba (math)',    kind: 'chem',  tab: 'manual', math: true, keywords: 'eq math jednadzba formula' },
+  { key: 'h1',    icon: 'H1',  label: 'Naslov 1',            run: e => e.chain().focus().setHeading({ level: 1 }).run(), keywords: 'h1 naslov heading' },
+  { key: 'h2',    icon: 'H2',  label: 'Naslov 2',            run: e => e.chain().focus().setHeading({ level: 2 }).run(), keywords: 'h2 naslov heading' },
+  { key: 'h3',    icon: 'H3',  label: 'Naslov 3',            run: e => e.chain().focus().setHeading({ level: 3 }).run(), keywords: 'h3 naslov heading' },
+  { key: 'ul',    icon: '•',   label: 'Lista',               run: e => e.chain().focus().toggleBulletList().run(),     keywords: 'ul lista bullet' },
+  { key: 'ol',    icon: '1.',  label: 'Numerirana lista',    run: e => e.chain().focus().toggleOrderedList().run(),    keywords: 'ol numerirana lista numbered' },
+  { key: 'task',  icon: '☑',   label: 'Zadaci (checklist)',  run: e => e.chain().focus().toggleTaskList().run(),       keywords: 'task zadaci checklist' },
+  { key: 'quote', icon: '❝',   label: 'Citat',               run: e => e.chain().focus().toggleBlockquote().run(),     keywords: 'quote citat' },
+  { key: 'code',  icon: '</>', label: 'Blok koda',           run: e => e.chain().focus().toggleCodeBlock().run(),      keywords: 'code kod' },
+];
+
+function filterSlash(q) {
+  const s = (q || '').trim().toLowerCase();
+  if (!s) return SLASH_ITEMS;
+  return SLASH_ITEMS.filter(it => it.key.startsWith(s) || it.label.toLowerCase().includes(s) || it.keywords.includes(s));
+}
+
+// Detect a "/query" being typed at a word boundary in the current text block.
+function detectSlash(editor) {
+  const { state } = editor;
+  const { from, empty } = state.selection;
+  if (!empty) return null;
+  const $from = state.selection.$from;
+  if (!$from.parent.isTextblock) return null;
+  const textBefore = $from.parent.textBetween(0, $from.parentOffset, undefined, '￼');
+  const m = /(?:^|\s)\/(\w*)$/.exec(textBefore);
+  if (!m) return null;
+  return { query: m[1], from: from - m[1].length - 1 };
+}
+
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
-export default function TiptapEditor({ value, onChange, placeholder = 'Počni pisati… (Markdown: # naslov, - lista, > citat)', minHeight = 200 }) {
+export default function TiptapEditor({ value, onChange, placeholder = 'Počni pisati… ( “/” za blok ili formulu )', minHeight = 200 }) {
   const [linkOpen, setLinkOpen] = useState(false);
+  const [slash, setSlash]       = useState(null);  // { query, from, coords }
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [picker, setPicker]     = useState(null);  // { mode, latex, tab, math }
+
+  // refs for keyboard handling inside editorProps (created once)
+  const openRef   = useRef(false);
+  const itemsRef  = useRef([]);
+  const idxRef    = useRef(0);
+  const chooseRef = useRef(() => {});
 
   const editor = useEditor({
     extensions: [
@@ -230,14 +276,22 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
       Image.configure({ inline: false, allowBase64: false }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      ChemNode,
     ],
     content: value || '',
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
     },
     editorProps: {
-      attributes: {
-        style: `min-height:${minHeight}px`,
+      attributes: { style: `min-height:${minHeight}px` },
+      handleKeyDown(view, event) {
+        if (!openRef.current) return false;
+        const items = itemsRef.current;
+        if (event.key === 'ArrowDown') { setActiveIdx(i => Math.min(i + 1, items.length - 1)); return true; }
+        if (event.key === 'ArrowUp')   { setActiveIdx(i => Math.max(i - 1, 0)); return true; }
+        if (event.key === 'Enter')     { const it = items[idxRef.current]; if (it) chooseRef.current(it); return true; }
+        if (event.key === 'Escape')    { setSlash(null); return true; }
+        return false;
       },
     },
   });
@@ -249,19 +303,95 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
     }
   }, [editor]);  // eslint-disable-line
 
+  // Detect "/" slash trigger as the user types / moves
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      const s = detectSlash(editor);
+      if (!s) { setSlash(null); return; }
+      let coords = null;
+      try { coords = editor.view.coordsAtPos(editor.state.selection.from); } catch { /* */ }
+      setSlash({ ...s, coords });
+      setActiveIdx(0);
+    };
+    editor.on('selectionUpdate', update);
+    editor.on('update', update);
+    return () => { editor.off('selectionUpdate', update); editor.off('update', update); };
+  }, [editor]);
+
+  // Open the picker when an existing chem node is clicked
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom;
+    const onEdit = () => {
+      const attrs = editor.getAttributes('chem');
+      setPicker({ mode: 'edit', latex: attrs.latex || '', tab: 'manual' });
+    };
+    dom.addEventListener('mol-chem-edit', onEdit);
+    return () => dom.removeEventListener('mol-chem-edit', onEdit);
+  }, [editor]);
+
+  const items = slash ? filterSlash(slash.query) : [];
+
+  function chooseItem(item) {
+    if (!editor) return;
+    const to = editor.state.selection.from;
+    const from = slash?.from;
+    if (from != null) editor.chain().focus().deleteRange({ from, to }).run();
+    setSlash(null);
+    if (item.kind === 'chem') setPicker({ mode: 'insert', tab: item.tab, math: !!item.math });
+    else item.run?.(editor);
+  }
+
+  // keep refs current for the static handleKeyDown
+  openRef.current   = !!slash;
+  itemsRef.current  = items;
+  idxRef.current    = activeIdx;
+  chooseRef.current = chooseItem;
+
   if (!editor) return null;
 
   return (
     <div className="tiptap-shell">
-      {/* No always-on toolbar (Notion model): markdown shortcuts to create blocks,
-          floating SelectionToolbar to format / convert / colour / align / link. */}
+      {/* No always-on toolbar (Notion model): "/" slash menu + markdown shortcuts to
+          create blocks; floating SelectionToolbar to format / convert / colour / link. */}
       <EditorContent editor={editor} />
 
       {/* ── Floating select-and-tag toolbar ── */}
       <SelectionToolbar editor={editor} onLink={() => setLinkOpen(true)} />
 
+      {/* ── Slash menu ── */}
+      {slash && slash.coords && items.length > 0 && createPortal(
+        <div style={{ position: 'fixed', top: slash.coords.bottom + 4, left: slash.coords.left, zIndex: 600, width: 250, maxHeight: 320, overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: '0 16px 48px rgba(11,52,60,.20)', padding: 6 }}>
+          {items.map((it, i) => (
+            <button key={it.key} type="button"
+              onMouseEnter={() => setActiveIdx(i)}
+              onMouseDown={e => { e.preventDefault(); chooseItem(it); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', padding: '8px 11px', border: 'none', borderRadius: 8, cursor: 'pointer', background: i === activeIdx ? 'var(--accent-wash)' : 'transparent', color: 'var(--ink)', fontSize: 14, fontFamily: 'inherit' }}>
+              <span style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: 'var(--ink-soft)' }}>{it.icon}</span>
+              <span style={{ flex: 1 }}>{it.label}</span>
+              <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--ink-faint)' }}>/{it.key}</span>
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+
       {/* ── Dialogs ── */}
       {linkOpen && <LinkDialog editor={editor} onClose={() => setLinkOpen(false)} />}
+      {picker && (
+        <ChemPicker
+          mode={picker.mode}
+          initialLatex={picker.latex || ''}
+          initialTab={picker.tab}
+          mathDefault={picker.math}
+          onInsert={(latex, display) => {
+            if (picker.mode === 'edit') editor.chain().focus().updateChem({ latex, display }).run();
+            else editor.chain().focus().insertChem({ latex, display }).run();
+          }}
+          onClose={() => setPicker(null)}
+        />
+      )}
     </div>
   );
 }

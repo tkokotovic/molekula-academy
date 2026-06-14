@@ -289,6 +289,25 @@ export async function changeLessonBlockType(blockId, type, content) {
   return data.block;
 }
 
+// ─── Chemistry compound library (inline /ch picker) ────────────────────────────
+
+export async function getChemCompounds(q = '') {
+  const data = await apiFetch(`/api/teacher/chem-compounds${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+  return data.compounds;
+}
+
+export async function saveChemCompound({ name_hr, name_en, formula }) {
+  const data = await apiFetch('/api/teacher/chem-compounds', {
+    method: 'POST',
+    body: JSON.stringify({ name_hr, name_en, formula }),
+  });
+  return data.compound;
+}
+
+export async function deleteChemCompound(id) {
+  return apiFetch(`/api/teacher/chem-compounds/${id}`, { method: 'DELETE' });
+}
+
 // Set a block's access level: 'public' | 'basic' | 'premium'
 export async function setBlockVisibility(blockId, visibility) {
   const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {
