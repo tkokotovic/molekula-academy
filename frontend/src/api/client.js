@@ -280,6 +280,15 @@ export async function deleteLessonBlock(blockId) {
   return apiFetch(`/api/teacher/blocks/${blockId}`, { method: 'DELETE' });
 }
 
+// Convert a block to another type (optionally resetting/carrying content)
+export async function changeLessonBlockType(blockId, type, content) {
+  const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ type, content }),
+  });
+  return data.block;
+}
+
 // Set a block's access level: 'public' | 'basic' | 'premium'
 export async function setBlockVisibility(blockId, visibility) {
   const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {

@@ -10,7 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
-  deleteLessonBlock, reorderLessonBlocks, setBlockVisibility,
+  deleteLessonBlock, reorderLessonBlocks, setBlockVisibility, changeLessonBlockType,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
   setLessonStatus, getToken,
 } from '../../api/client';
@@ -92,6 +92,39 @@ const DEFAULT_CONTENT = {
   quiz_link:  { quiz_id: '', label: '', description: '' },
   pdf:        { url: '', label: '' },
 };
+
+// ─── Block type conversion (Turn into) ─────────────────────────────────────────
+// Pull the plain-text gist out of any block so a conversion can carry it over.
+function extractText(type, content = {}) {
+  switch (type) {
+    case 'text':    return (content.html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    case 'heading':
+    case 'quote':
+    case 'callout':
+    case 'warning': return (content.text || '').trim();
+    case 'summary': return (Array.isArray(content.items) ? content.items : []).filter(Boolean).join('\n');
+    case 'equation':return (content.latex || '').trim();
+    default:        return '';
+  }
+}
+
+// Build the target block's content when converting, carrying text where it fits.
+function convertedContent(fromType, toType, content) {
+  const base = JSON.parse(JSON.stringify(DEFAULT_CONTENT[toType] || {}));
+  const text = extractText(fromType, content);
+  if (!text) return base;
+  switch (toType) {
+    case 'text':    base.html = `<p>${text.replace(/\n+/g, '</p><p>')}</p>`; break;
+    case 'heading':
+    case 'quote':
+    case 'callout':
+    case 'warning': base.text = text.replace(/\n+/g, ' '); break;
+    case 'summary': base.items = text.split('\n').filter(Boolean); break;
+    case 'equation':base.latex = text; break;
+    default: break; // media/link/etc — keep defaults, text doesn't map
+  }
+  return base;
+}
 
 // ─── Auto-save debounce hook ───────────────────────────────────────────────────
 
@@ -841,6 +874,92 @@ function BlockPicker({ onPick, onClose }) {
   );
 }
 
+// ─── Block handle menu (Notion ⠿) ──────────────────────────────────────────────
+// Opens from the left drag handle: Turn into / Duplicate / Visibility / Move / Delete.
+
+function MenuRow({ icon, label, hint, onClick, danger }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+        padding: '8px 12px', border: 'none', borderRadius: 8, cursor: 'pointer',
+        background: 'transparent', color: danger ? '#dc2626' : 'var(--ink)', fontSize: 14, fontFamily: 'inherit',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = danger ? 'color-mix(in srgb,#ef4444 10%,transparent)' : 'var(--accent-wash)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <span style={{ width: 20, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {hint && <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'var(--mono)' }}>{hint}</span>}
+    </button>
+  );
+}
+
+function BlockHandleMenu({ block, onChangeType, onDuplicate, onMove, onSetVisibility, onDelete, onClose }) {
+  const [view, setView] = useState('root'); // root | turn | vis
+  const menu = {
+    position: 'absolute', top: 28, left: 0, zIndex: 80, width: 240, maxHeight: 360, overflowY: 'auto',
+    background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12,
+    boxShadow: '0 16px 48px rgba(11,52,60,.20)', padding: 6,
+  };
+
+  return (
+    <>
+      {/* click-catcher */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 79 }} />
+      <div style={menu} onClick={e => e.stopPropagation()}>
+        {view === 'root' && (
+          <>
+            <MenuRow icon="🔄" label="Pretvori u…" hint="▸" onClick={() => setView('turn')} />
+            <MenuRow icon="⧉" label="Dupliciraj" onClick={() => { onDuplicate(); onClose(); }} />
+            <MenuRow icon="👁" label="Vidljivost…" hint={VIS_META[block.visibility || 'public'].label} onClick={() => setView('vis')} />
+            <div style={{ height: 1, background: 'var(--line)', margin: '4px 6px' }} />
+            <MenuRow icon="↑" label="Pomakni gore" onClick={() => { onMove(-1); onClose(); }} />
+            <MenuRow icon="↓" label="Pomakni dolje" onClick={() => { onMove(1); onClose(); }} />
+            <div style={{ height: 1, background: 'var(--line)', margin: '4px 6px' }} />
+            <MenuRow icon="🗑" label="Obriši blok" danger onClick={() => { onDelete(); onClose(); }} />
+          </>
+        )}
+        {view === 'turn' && (
+          <>
+            <MenuRow icon="←" label="Natrag" onClick={() => setView('root')} />
+            <div style={{ height: 1, background: 'var(--line)', margin: '4px 6px' }} />
+            {BLOCK_TYPES.map(bt => (
+              <MenuRow
+                key={bt.type}
+                icon={bt.icon}
+                label={bt.label}
+                hint={bt.type === block.type ? '✓' : bt.group}
+                onClick={() => { if (bt.type !== block.type) onChangeType(bt.type); onClose(); }}
+              />
+            ))}
+          </>
+        )}
+        {view === 'vis' && (
+          <>
+            <MenuRow icon="←" label="Natrag" onClick={() => setView('root')} />
+            <div style={{ height: 1, background: 'var(--line)', margin: '4px 6px' }} />
+            {VIS_ORDER.map(v => {
+              const m = VIS_META[v];
+              return (
+                <MenuRow
+                  key={v}
+                  icon={m.icon}
+                  label={m.label}
+                  hint={(block.visibility || 'public') === v ? '✓' : ''}
+                  onClick={() => { onSetVisibility(v); onClose(); }}
+                />
+              );
+            })}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ─── Notion-style block wrapper ────────────────────────────────────────────────
 
 // Blocks that render a visual preview and need a settings panel
@@ -848,10 +967,11 @@ const MEDIA_TYPES = new Set(['molecule3d', 'image', 'gif', 'video', 'graph', 'py
 // Blocks that are always directly editable (no settings needed)
 const INLINE_TYPES = new Set(['heading', 'text', 'quote', 'callout', 'warning', 'summary', 'equation', 'divider', 'table']);
 
-function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
+function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, onChangeType, onDuplicate, onMove, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
   const [draft, setDraft]               = useState(block.content || {});
   const [showSettings, setShowSettings] = useState(false);
   const [isHovered, setIsHovered]       = useState(false);
+  const [menuOpen, setMenuOpen]         = useState(false);
   const [saving, setSaving]             = useState(false);
   const saveTimer                       = useRef(null);
   const bt                              = TYPE_MAP[block.type] || {};
@@ -888,20 +1008,33 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, dragAttribute
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Left controls: drag handle + add */}
+      {/* Left controls: drag handle (click = menu, drag = move) */}
       <div style={{
         position: 'absolute', left: -44, top: 8,
         display: 'flex', flexDirection: 'column', gap: 2,
-        opacity: isHovered ? 1 : 0, transition: 'opacity .15s',
-        pointerEvents: isHovered ? 'auto' : 'none',
+        opacity: isHovered || menuOpen ? 1 : 0, transition: 'opacity .15s',
+        pointerEvents: isHovered || menuOpen ? 'auto' : 'none',
       }}>
         <button
           {...dragAttributes}
           {...dragListeners}
-          title="Povuci za premještanje"
-          style={{ background: 'none', border: 'none', cursor: isDragging ? 'grabbing' : 'grab', color: 'var(--ink-faint)', fontSize: 16, padding: '3px 5px', borderRadius: 5, lineHeight: 1 }}
+          onClick={() => setMenuOpen(o => !o)}
+          title="Klikni za izbornik · povuci za premještanje"
+          style={{ background: menuOpen ? 'var(--accent-wash)' : 'none', border: 'none', cursor: isDragging ? 'grabbing' : 'grab', color: 'var(--ink-faint)', fontSize: 16, padding: '3px 5px', borderRadius: 5, lineHeight: 1 }}
         >⠿</button>
       </div>
+
+      {menuOpen && (
+        <BlockHandleMenu
+          block={block}
+          onChangeType={onChangeType}
+          onDuplicate={onDuplicate}
+          onMove={onMove}
+          onSetVisibility={onSetVisibility}
+          onDelete={onDelete}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
 
       {/* Block content */}
       <div style={{
@@ -1526,6 +1659,41 @@ export default function LessonEditorPage() {
     catch { setBlocks(bs => bs.map(b => b.id === block.id ? { ...b, visibility: block.visibility } : b)); }
   }
 
+  async function handleChangeType(block, newType) {
+    if (newType === block.type) return;
+    const content = convertedContent(block.type, newType, block.content);
+    setSaveState('saving');
+    try {
+      const updated = await changeLessonBlockType(block.id, newType, content);
+      setBlocks(bs => bs.map(b => b.id === updated.id ? updated : b));
+      setSaveState('saved');
+      clearTimeout(saveStateTimer.current);
+      saveStateTimer.current = setTimeout(() => setSaveState('idle'), 1600);
+    } catch (e) { setSaveState('idle'); alert(e.message); }
+  }
+
+  async function handleDuplicate(block) {
+    let copy = await createLessonBlock(lessonId, block.type, JSON.parse(JSON.stringify(block.content || {})));
+    if ((block.visibility || 'public') !== 'public') {
+      copy = await setBlockVisibility(copy.id, block.visibility);
+    }
+    const idx = blocks.findIndex(b => b.id === block.id);
+    const next = [...blocks];
+    next.splice(idx + 1, 0, copy);
+    setBlocks(next);
+    try { await reorderLessonBlocks(lessonId, next.map(b => b.id)); } catch { /* keep optimistic order */ }
+  }
+
+  async function handleMove(block, dir) {
+    const idx = blocks.findIndex(b => b.id === block.id);
+    const target = idx + dir;
+    if (target < 0 || target >= blocks.length) return;
+    const next = arrayMove(blocks, idx, target);
+    setBlocks(next);
+    try { await reorderLessonBlocks(lessonId, next.map(b => b.id)); }
+    catch { setBlocks(blocks); }
+  }
+
   async function handleDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -1689,6 +1857,9 @@ export default function LessonEditorPage() {
                       onUpdate={content => handleUpdate(block, content)}
                       onDelete={() => handleDelete(block)}
                       onSetVisibility={vis => handleSetVisibility(block, vis)}
+                      onChangeType={newType => handleChangeType(block, newType)}
+                      onDuplicate={() => handleDuplicate(block)}
+                      onMove={dir => handleMove(block, dir)}
                     />
                   </div>
                 ))}

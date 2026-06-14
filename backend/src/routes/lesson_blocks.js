@@ -114,7 +114,7 @@ router.patch('/lessons/:lessonId/blocks/reorder', requireAuth, requireTeacher, (
 
 router.patch('/blocks/:id', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
-  const { content, visibility } = req.body;
+  const { content, visibility, type } = req.body;
 
   const existing = db.prepare('SELECT * FROM lesson_blocks WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Block not found' });
@@ -122,12 +122,16 @@ router.patch('/blocks/:id', requireAuth, requireTeacher, (req, res) => {
   if (visibility !== undefined && !VALID_VISIBILITY.includes(visibility)) {
     return res.status(400).json({ error: `visibility must be one of: ${VALID_VISIBILITY.join(', ')}` });
   }
+  if (type !== undefined && !VALID_TYPES.includes(type)) {
+    return res.status(400).json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` });
+  }
 
   const newContent    = content    !== undefined ? JSON.stringify(content) : existing.content;
   const newVisibility = visibility !== undefined ? visibility              : existing.visibility;
+  const newType       = type       !== undefined ? type                    : existing.type;
 
-  db.prepare('UPDATE lesson_blocks SET content = ?, visibility = ? WHERE id = ?')
-    .run(newContent, newVisibility, id);
+  db.prepare('UPDATE lesson_blocks SET content = ?, visibility = ?, type = ? WHERE id = ?')
+    .run(newContent, newVisibility, newType, id);
 
   const block = parseBlock(db.prepare('SELECT * FROM lesson_blocks WHERE id = ?').get(id));
   return res.json({ block });
