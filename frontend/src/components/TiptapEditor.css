@@ -1,139 +1,18 @@
 /* ─── Tiptap editor wrapper ─────────────────────────────────────────────────── */
 
+/* Seamless, borderless text block — Notion-canvas feel (no always-on toolbar). */
 .tiptap-shell {
-  border: 1.5px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--bg);
+  background: transparent;
   display: flex;
   flex-direction: column;
-}
-
-/* ─── Toolbar ───────────────────────────────────────────────────────────────── */
-
-.tiptap-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 6px 8px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.tiptap-toolbar-sep {
-  width: 1px;
-  height: 18px;
-  background: var(--line);
-  margin: 0 4px;
-  flex-shrink: 0;
-}
-
-.tt-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  border-radius: 5px;
-  padding: 4px 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  min-width: 28px;
-  height: 28px;
-  transition: background .1s, color .1s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.tt-btn:hover {
-  background: var(--bg);
-  color: var(--ink);
-}
-.tt-btn.active {
-  background: var(--accent-wash);
-  color: var(--accent-ink);
-}
-.tt-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.tt-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.tt-select {
-  padding: 3px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink);
-  font-size: 12px;
-  font-family: var(--display, inherit);
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-  height: 28px;
-}
-
-.tt-color-input {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1.5px solid var(--line);
-  border-radius: 5px;
-  cursor: pointer;
-  background: none;
-  outline: none;
-}
-
-/* ─── Enumerated heading toggle ─────────────────────────────────────────────── */
-.tiptap-enumerated .ProseMirror {
-  counter-reset: h2 h3 h4 h5;
-}
-.tiptap-enumerated .ProseMirror h2 { counter-reset: h3 h4 h5; }
-.tiptap-enumerated .ProseMirror h3 { counter-reset: h4 h5; }
-.tiptap-enumerated .ProseMirror h4 { counter-reset: h5; }
-
-.tiptap-enumerated .ProseMirror h2::before {
-  counter-increment: h2;
-  content: counter(h2) ". ";
-  color: var(--accent);
-  font-weight: 800;
-}
-.tiptap-enumerated .ProseMirror h3::before {
-  counter-increment: h3;
-  content: counter(h2) "." counter(h3) " ";
-  color: var(--accent);
-  font-weight: 700;
-}
-.tiptap-enumerated .ProseMirror h4::before {
-  counter-increment: h4;
-  content: counter(h2) "." counter(h3) "." counter(h4) " ";
-  color: var(--ink-soft);
-}
-.tiptap-enumerated .ProseMirror h5::before {
-  counter-increment: h5;
-  content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
-  color: var(--ink-faint);
 }
 
 /* ─── ProseMirror content area ──────────────────────────────────────────────── */
 
 .tiptap-shell .ProseMirror {
   outline: none;
-  padding: 16px 20px;
-  min-height: 160px;
+  padding: 2px 0;
+  min-height: 1.8em;
   font-family: var(--body, inherit);
   font-size: 15px;
   line-height: 1.8;
@@ -290,9 +169,3 @@
 
 /* Highlight */
 .tiptap-shell .ProseMirror mark { border-radius: 3px; padding: 0 2px; }
-
-/* Focus ring on the whole shell when editor is focused */
-.tiptap-shell:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
-}
