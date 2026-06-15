@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getLesson, getLessonBlocks } from '../../api/client';
 import { hydrateChemHtml } from '../../components/extensions/chem';
+import MolekulaMark from '../../components/MolekulaMark';
 import SmilesDrawer from 'smiles-drawer';
 
 // ─── KaTeX helper ──────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ function MoleculeDisplay({ smiles, name }) {
 
 // ─── Block renderer ────────────────────────────────────────────────────────────
 
-function PrintBlock({ block }) {
+function PrintBlock({ block, allBlocks = [] }) {
   const c = block.content || {};
 
   switch (block.type) {
@@ -68,15 +69,57 @@ function PrintBlock({ block }) {
           {c.attribution && <footer>— {c.attribution}</footer>}
         </blockquote>
       );
-    case 'callout':
-      return <div className="print-callout">💡 {c.text}</div>;
+    case 'callout': case 'keypoint':
+      return <div className="print-signal print-callout"><span className="print-signal-label">💡 Ključna točka</span>{c.text}</div>;
+    case 'exam_tip':
+      return <div className="print-signal print-examtip"><span className="print-signal-label">🎓 Savjet za ispit</span>{c.text}</div>;
     case 'warning':
-      return <div className="print-warning">⚠️ {c.text}</div>;
+      return <div className="print-signal print-warning"><span className="print-signal-label">⚠️ Upozorenje / česta greška</span>{c.text}</div>;
     case 'summary':
       return (
-        <div className="print-summary">
-          <p className="print-summary-label">📋 Sažetak</p>
+        <div className="print-signal print-summary">
+          <span className="print-signal-label">📋 Sažetak</span>
           <ul>{(c.items || []).filter(Boolean).map((item, i) => <li key={i}>{item}</li>)}</ul>
+        </div>
+      );
+    case 'list': {
+      const items = (c.items || []).filter(Boolean);
+      const Tag = c.ordered ? 'ol' : 'ul';
+      return <Tag className="print-list">{items.map((it, i) => <li key={i}>{it}</li>)}</Tag>;
+    }
+    case 'checklist':
+      return (
+        <ul className="print-checklist">
+          {(c.items || []).map((it, i) => <li key={i}>{it.checked ? '☑' : '☐'} {it.text}</li>)}
+        </ul>
+      );
+    case 'toggle':
+      return (
+        <div className="print-toggle">
+          <p className="print-toggle-title">▸ {c.title || ''}</p>
+          <div className="print-text" dangerouslySetInnerHTML={{ __html: hydrateChemHtml(c.html || '') }} />
+        </div>
+      );
+    case 'columns':
+      return (
+        <div className="print-columns" style={{ gridTemplateColumns: `repeat(${(c.cols || []).length || 2}, 1fr)` }}>
+          {(c.cols || []).map((col, i) => <div key={i} className="print-text" dangerouslySetInnerHTML={{ __html: hydrateChemHtml(col?.html || '') }} />)}
+        </div>
+      );
+    case 'toc': {
+      const headings = allBlocks.filter(b => b.type === 'heading' && (b.content?.text || '').trim());
+      if (!headings.length) return null;
+      return (
+        <div className="print-toc">
+          <p className="print-summary-label">☰ Sadržaj</p>
+          <ul>{headings.map((h, i) => <li key={i} style={{ marginLeft: ((h.content.level || 2) - 1) * 14 }}>{h.content.text}</li>)}</ul>
+        </div>
+      );
+    }
+    case 'embed':
+      return (
+        <div className="print-media-placeholder">
+          🔌 Ugradnja: <a href={c.url}>{c.caption || c.url}</a>
         </div>
       );
     case 'divider':
@@ -111,11 +154,11 @@ function PrintBlock({ block }) {
         </div>
       );
     }
-    case 'python':
+    case 'python': case 'graph':
       return (
         <div className="print-code">
           {c.caption && <p className="print-caption">{c.caption}</p>}
-          <pre><code>{c.code}</code></pre>
+          {c.code ? <pre><code>{c.code}</code></pre> : <p className="print-caption">[{block.type === 'graph' ? 'Graf' : 'Kod'}]</p>}
         </div>
       );
     case 'link':
@@ -175,14 +218,19 @@ export default function LessonPrintPage() {
         /* Screen-only controls */
         .print-controls { padding: 16px 0 24px; display: flex; gap: 12px; align-items: center; }
         .print-controls button { padding: 8px 18px; border-radius: 7px; border: 1px solid #ccc; background: #f9f9f9; cursor: pointer; font-size: 14px; font-weight: 600; }
-        .print-controls button.primary { background: #6366f1; color: #fff; border-color: #6366f1; }
+        .print-controls button.primary { background: #0f8f86; color: #fff; border-color: #0f8f86; }
         @media print { .print-controls { display: none; } }
 
+        /* Branded masthead */
+        .print-masthead { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+        .print-masthead-mark { width: 22px; height: 22px; flex-shrink: 0; }
+        .print-masthead-name { font-family: 'Helvetica', sans-serif; font-weight: 700; font-size: 11pt; color: #0b343c; letter-spacing: .2px; }
+
         /* Title */
-        .print-title { font-size: 26pt; font-weight: 800; margin: 0 0 8px; color: #111; }
+        .print-title { font-size: 26pt; font-weight: 800; margin: 0 0 8px; color: #0b343c; }
         .print-subtitle { font-size: 12pt; color: #555; font-style: italic; margin: 0 0 8px; }
         .print-meta { font-size: 9pt; color: #888; margin: 0 0 20px; }
-        .print-rule { border: none; border-top: 2px solid #111; margin: 0 0 24px; }
+        .print-rule { border: none; border-top: 2px solid #0b343c; margin: 0 0 24px; }
 
         /* Headings */
         .print-heading { color: #111; margin: 20px 0 8px; }
@@ -196,18 +244,43 @@ export default function LessonPrintPage() {
         .print-text p { margin: 0 0 8px; }
 
         /* Quote */
-        .print-quote { border-left: 4px solid #6366f1; margin: 14px 0; padding: 6px 16px; font-style: italic; color: #333; }
+        .print-quote { border-left: 4px solid #0f8f86; margin: 14px 0; padding: 6px 16px; font-style: italic; color: #333; }
         .print-quote footer { font-size: 9pt; color: #666; margin-top: 4px; }
 
-        /* Callout / Warning */
-        .print-callout { background: #eef2ff; border-left: 4px solid #6366f1; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; font-weight: 600; }
-        .print-warning { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; font-weight: 600; color: #78350f; }
+        /* Signal blocks (callout / exam tip / warning / summary) — brand palette */
+        .print-signal { padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; page-break-inside: avoid; }
+        .print-signal-label { display: block; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 4px; }
+        .print-callout { background: #e7f4f0; border-left: 4px solid #0f8f86; color: #0b343c; }
+        .print-callout .print-signal-label { color: #0f6e56; }
+        .print-examtip { background: #faeeda; border-left: 4px solid #ba7517; color: #412402; }
+        .print-examtip .print-signal-label { color: #854f0b; }
+        .print-warning { background: #faece7; border-left: 4px solid #d85a30; color: #4a1b0c; }
+        .print-warning .print-signal-label { color: #993c1d; }
 
         /* Summary */
-        .print-summary { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; margin: 12px 0; }
+        .print-summary { background: #eaf3de; border-left: 4px solid #639922; color: #173404; }
+        .print-summary .print-signal-label { color: #3b6d11; }
         .print-summary-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin: 0 0 8px; }
         .print-summary ul { margin: 0; padding-left: 20px; }
         .print-summary li { margin-bottom: 4px; }
+
+        /* Lists / checklist */
+        .print-list { margin: 10px 0; padding-left: 24px; line-height: 1.6; }
+        .print-list li { margin-bottom: 3px; }
+        .print-checklist { margin: 10px 0; padding-left: 6px; list-style: none; line-height: 1.7; }
+        .print-checklist li { margin-bottom: 3px; }
+
+        /* Toggle (always expanded in print) */
+        .print-toggle { border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 14px; margin: 12px 0; page-break-inside: avoid; }
+        .print-toggle-title { font-weight: 700; margin: 0 0 6px; color: #0b343c; }
+
+        /* Columns */
+        .print-columns { display: grid; gap: 18px; margin: 12px 0; }
+
+        /* Table of contents */
+        .print-toc { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; margin: 12px 0; background: #f8fafc; page-break-inside: avoid; }
+        .print-toc ul { margin: 0; padding-left: 18px; }
+        .print-toc li { margin-bottom: 3px; }
 
         /* Divider */
         .print-divider { border: none; border-top: 1px solid #d1d5db; margin: 16px 0; }
@@ -253,6 +326,12 @@ export default function LessonPrintPage() {
           <button onClick={() => window.close()}>Zatvori</button>
         </div>
 
+        {/* Branded masthead */}
+        <div className="print-masthead">
+          <MolekulaMark variant="light" size={22} className="print-masthead-mark" />
+          <span className="print-masthead-name">Molekula Academy</span>
+        </div>
+
         {/* Lesson header */}
         <h1 className="print-title">{lesson.title}</h1>
         {lesson.summary && <p className="print-subtitle">{lesson.summary}</p>}
@@ -268,7 +347,7 @@ export default function LessonPrintPage() {
         {/* Blocks */}
         {blocks.map(block => (
           <div key={block.id} style={{ marginBottom: 6 }}>
-            <PrintBlock block={block} />
+            <PrintBlock block={block} allBlocks={blocks} />
           </div>
         ))}
 

@@ -7,6 +7,17 @@ import {
 } from '../api/client';
 import { hydrateChemHtml } from '../components/extensions/chem';
 import { Watermark, useContentGuards } from '../components/ContentProtection';
+import MolekulaMark from '../components/MolekulaMark';
+import './admin/LessonEditorCanvas.css';
+
+// Signal-block palette — kept in sync with the editor (LessonEditorPage SIGNAL),
+// so what the teacher authors is what the student reads. Colour as signal, not decoration.
+const SIGNAL = {
+  callout:  { accent: '#0f8f86', wash: '#e7f4f0', label: '#0f6e56', body: '#0b343c', icon: '💡', title: 'Ključna točka' },
+  exam_tip: { accent: '#ba7517', wash: '#faeeda', label: '#854f0b', body: '#412402', icon: '🎓', title: 'Savjet za ispit' },
+  warning:  { accent: '#d85a30', wash: '#faece7', label: '#993c1d', body: '#4a1b0c', icon: '⚠️', title: 'Upozorenje / česta greška' },
+  summary:  { accent: '#639922', wash: '#eaf3de', label: '#3b6d11', body: '#173404', icon: '📋', title: 'Sažetak' },
+};
 
 // Render saved text-block HTML, hydrating inline chem/math (data-chem spans) with
 // KaTeX. KaTeX loads deferred, so re-hydrate once it's available.
@@ -74,72 +85,209 @@ function BlockEquation({ content }) {
   }, [content]);
 
   return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1.5px solid var(--line)',
-        borderRadius: 'var(--radius-sm)',
-        padding: '20px 28px',
-        overflowX: 'auto',
-        fontFamily: 'var(--mono)',
-        fontSize: 18,
-        textAlign: 'center',
-        margin: '4px 0',
-      }}
-    >
-      <div ref={ref} />
+    <figure style={{ margin: '4px 0' }}>
+      <div
+        style={{
+          background: 'var(--surface)',
+          border: '1.5px solid var(--line)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '20px 28px',
+          overflowX: 'auto',
+          fontFamily: 'var(--mono)',
+          fontSize: 18,
+          textAlign: 'center',
+        }}
+      >
+        <div ref={ref} />
+      </div>
+      {content?.caption && (
+        <figcaption style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-faint)', fontStyle: 'italic', textAlign: 'center' }}>{content.caption}</figcaption>
+      )}
+    </figure>
+  );
+}
+
+function BlockHeading({ content }) {
+  const level = Math.min(Math.max(content?.level || 2, 1), 5);
+  const Tag = `h${level}`;
+  const sizes = { 1: 30, 2: 25, 3: 21, 4: 18, 5: 16 };
+  return (
+    <Tag style={{
+      fontFamily: 'var(--display)', fontWeight: 800, color: '#0b343c',
+      fontSize: sizes[level], lineHeight: 1.25, margin: '8px 0',
+    }}>
+      {content?.text || ''}
+    </Tag>
+  );
+}
+
+// Callout / exam tip / warning — shared signal-block renderer (left accent bar + wash).
+function BlockSignal({ type, content }) {
+  const s = SIGNAL[type] || SIGNAL.callout;
+  const html = useChemHtml(content?.html || (content?.text ? `<p>${content.text}</p>` : ''));
+  return (
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '14px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
+      <div style={{ color: s.body, fontSize: 16, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   );
 }
 
-function BlockKeypoint({ content }) {
+function BlockQuote({ content }) {
   return (
-    <div style={{
-      background: 'var(--accent-wash)',
-      borderLeft: '4px solid var(--accent)',
-      borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
-      padding: '16px 20px',
-      display: 'flex',
-      gap: 12,
-      alignItems: 'flex-start',
-    }}>
-      <span style={{ fontSize: 20, lineHeight: 1.4 }}>💡</span>
-      <p style={{ margin: 0, color: 'var(--accent-ink)', fontWeight: 600, fontSize: 15, lineHeight: 1.6 }}>
+    <blockquote style={{ borderLeft: '4px solid var(--accent)', margin: 0, paddingLeft: 20, paddingTop: 4, paddingBottom: 4 }}>
+      <p style={{ margin: 0, fontSize: 19, fontStyle: 'italic', color: 'var(--ink)', fontFamily: 'var(--display)', lineHeight: 1.6 }}>
         {content?.text || ''}
       </p>
+      {content?.attribution && (
+        <footer style={{ marginTop: 6, fontSize: 14, color: 'var(--ink-soft)' }}>— {content.attribution}</footer>
+      )}
+    </blockquote>
+  );
+}
+
+function BlockDivider() {
+  return <hr style={{ border: 'none', borderTop: '2px solid var(--line)', margin: '4px 0' }} />;
+}
+
+function BlockList({ content }) {
+  const items = Array.isArray(content?.items) ? content.items.filter(Boolean) : [];
+  if (!items.length) return null;
+  const Tag = content?.ordered ? 'ol' : 'ul';
+  return (
+    <Tag style={{ margin: '4px 0', paddingLeft: 26, lineHeight: 1.8, fontSize: 17, color: 'var(--ink)' }}>
+      {items.map((it, i) => <li key={i} style={{ marginBottom: 2 }}>{it}</li>)}
+    </Tag>
+  );
+}
+
+function BlockChecklist({ content }) {
+  const items = Array.isArray(content?.items) ? content.items : [];
+  if (!items.length) return null;
+  return (
+    <div>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '3px 0', fontSize: 17, lineHeight: 1.6, color: it.checked ? 'var(--ink-faint)' : 'var(--ink)' }}>
+          <span style={{ fontSize: 18, lineHeight: 1.4, color: it.checked ? 'var(--accent)' : 'var(--ink-faint)' }}>{it.checked ? '☑' : '☐'}</span>
+          <span style={{ textDecoration: it.checked ? 'line-through' : 'none' }}>{it.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BlockToggle({ content }) {
+  const html = useChemHtml(content?.html || '');
+  return (
+    <details style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '4px 16px', background: 'var(--surface)' }}>
+      <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 17, color: 'var(--ink)', fontFamily: 'var(--display)', padding: '8px 0' }}>
+        {content?.title || 'Više…'}
+      </summary>
+      <div className="lesson-prose" style={{ paddingBottom: 10, lineHeight: 1.75, fontSize: 16 }} dangerouslySetInnerHTML={{ __html: html }} />
+    </details>
+  );
+}
+
+function BlockColumn({ html }) {
+  const hydrated = useChemHtml(html || '');
+  return <div className="lesson-prose" style={{ minWidth: 0, lineHeight: 1.75, fontSize: 16 }} dangerouslySetInnerHTML={{ __html: hydrated }} />;
+}
+
+function BlockColumns({ content }) {
+  const cols = Array.isArray(content?.cols) && content.cols.length ? content.cols : [];
+  if (!cols.length) return null;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols.length}, 1fr)`, gap: 24 }} className="lesson-columns">
+      {cols.map((c, i) => <BlockColumn key={i} html={c?.html} />)}
+    </div>
+  );
+}
+
+function BlockToc({ allBlocks = [] }) {
+  const headings = allBlocks
+    .filter(b => b.type === 'heading' && (b.content?.text || '').trim())
+    .map(b => ({ level: b.content.level || 2, text: b.content.text }));
+  if (!headings.length) return null;
+  return (
+    <nav style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '16px 20px', background: 'var(--surface)' }}>
+      <p style={{ margin: '0 0 10px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-faint)', fontWeight: 700 }}>
+        ☰ Sadržaj
+      </p>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+        {headings.map((h, i) => (
+          <li key={i} style={{ padding: '3px 0', paddingLeft: (h.level - 1) * 16, fontSize: 15, color: 'var(--ink)' }}>{h.text}</li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+function BlockEmbed({ content }) {
+  const url = content?.url || '';
+  if (!url) return null;
+  return (
+    <figure style={{ margin: 0 }}>
+      <div style={{ position: 'relative', paddingTop: '62%', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1.5px solid var(--line)' }}>
+        <iframe src={url} title={content?.caption || 'Ugrađeni sadržaj'} allowFullScreen
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+      </div>
+      {content?.caption && <figcaption style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-faint)', fontStyle: 'italic', textAlign: 'center' }}>{content.caption}</figcaption>}
+    </figure>
+  );
+}
+
+function BlockQuizLink({ content }) {
+  const id = content?.quiz_id;
+  const inner = (
+    <>
+      <span style={{ fontSize: 24 }}>🧪</span>
+      <div>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{content?.label || 'Kviz'}</p>
+        {content?.description && <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--ink-faint)' }}>{content.description}</p>}
+      </div>
+    </>
+  );
+  const boxStyle = { display: 'flex', alignItems: 'center', gap: 14, background: 'var(--accent-wash)', border: '1.5px solid var(--accent)', borderRadius: 'var(--radius-sm)', padding: '16px 20px', textDecoration: 'none' };
+  return id
+    ? <Link to={`/quizzes/${id}`} style={boxStyle}>{inner}</Link>
+    : <div style={boxStyle}>{inner}</div>;
+}
+
+function BlockCode({ content }) {
+  return (
+    <div style={{ border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+      {content?.caption && <div style={{ padding: '8px 14px', fontSize: 12, color: 'var(--ink-faint)', fontFamily: 'var(--mono)', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>{content.caption}</div>}
+      <pre style={{ margin: 0, padding: '14px 16px', overflowX: 'auto', fontSize: 13, fontFamily: 'var(--mono)', lineHeight: 1.6, color: 'var(--ink)', background: 'var(--bg)' }}>
+        <code>{content?.code || ''}</code>
+      </pre>
     </div>
   );
 }
 
 function BlockSummary({ content }) {
-  const items = Array.isArray(content?.items) ? content.items : (content?.text ? [content.text] : []);
+  const items = Array.isArray(content?.items) ? content.items.filter(Boolean) : (content?.text ? [content.text] : []);
+  const s = SIGNAL.summary;
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: '1.5px solid var(--accent)',
-      borderRadius: 'var(--radius-sm)',
-      padding: '18px 22px',
-    }}>
-      <p style={{ margin: '0 0 10px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 700 }}>
-        Sažetak · Summary
-      </p>
-      {items.length > 0 ? (
-        <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
-          {items.map((item, i) => <li key={i}>{item}</li>)}
-        </ul>
-      ) : (
-        <p style={{ margin: 0, color: 'var(--ink-soft)' }}>{content?.text || ''}</p>
-      )}
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '16px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 22, lineHeight: 1.8, fontSize: 16, color: s.body }}>
+        {items.map((item, i) => <li key={i}>{item}</li>)}
+      </ul>
     </div>
   );
 }
 
 function BlockImage({ content }) {
-  if (!content?.src) return null;
+  const src = content?.url || content?.src || '';
+  if (!src) return null;
   return (
     <figure style={{ margin: '4px 0', textAlign: 'center' }}>
       <img
-        src={content.src}
+        src={src}
         alt={content.alt || ''}
         draggable={false}
         onContextMenu={e => e.preventDefault()}
@@ -309,39 +457,66 @@ function BlockLink({ content }) {
 }
 
 function BlockMolecule3d({ content }) {
+  const svgRef = useRef(null);
+  const smiles = (content?.smiles || '').trim();
+
+  useEffect(() => {
+    if (!smiles || !svgRef.current || !window.SmilesDrawer) return;
+    try {
+      const drawer = new window.SmilesDrawer.SvgDrawer({ width: 320, height: 240 });
+      window.SmilesDrawer.parse(
+        smiles,
+        tree => drawer.draw(tree, svgRef.current, 'light'),
+        () => { if (svgRef.current) svgRef.current.innerHTML = ''; }
+      );
+    } catch (_) { /* keep placeholder below */ }
+  }, [smiles]);
+
+  if (!smiles && !content?.name) return null;
+
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: '1.5px dashed var(--line-strong)',
-      borderRadius: 'var(--radius-sm)',
-      padding: '32px 24px',
-      textAlign: 'center',
-      color: 'var(--ink-faint)',
-    }}>
-      <div style={{ fontSize: 40, marginBottom: 8 }}>⚗️</div>
-      <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 13 }}>
-        Molekula 3D: {content?.smiles || content?.name || '(SMILES nije definiran)'}
-      </p>
-      <p style={{ margin: '8px 0 0', fontSize: 12 }}>3D prikaz dostupan u sljedećoj verziji</p>
-    </div>
+    <figure style={{ margin: '4px 0', textAlign: 'center', background: 'var(--surface)', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '20px 16px' }}>
+      {smiles && window.SmilesDrawer
+        ? <svg ref={svgRef} width={320} height={240} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
+        : <div style={{ color: 'var(--ink-faint)' }}><div style={{ fontSize: 40, marginBottom: 8 }}>⚗️</div><p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 13 }}>{smiles || '(SMILES nije definiran)'}</p></div>}
+      {content?.name && <figcaption style={{ marginTop: 8, fontSize: 14, color: 'var(--ink-soft)' }}>{content.name}</figcaption>}
+    </figure>
   );
 }
 
-function LessonBlock({ block }) {
+function LessonBlock({ block, allBlocks }) {
   const { type, content } = block;
-  const wrapStyle = { margin: '20px 0' };
+  // Headings hug the following block; dividers need less vertical air.
+  const gap = type === 'heading' ? '24px 0 4px' : type === 'divider' ? '12px 0' : '20px 0';
+  const wrapStyle = { margin: gap };
 
   switch (type) {
     case 'text':       return <div style={wrapStyle}><BlockText content={content} /></div>;
+    case 'heading':    return <div style={wrapStyle}><BlockHeading content={content} /></div>;
     case 'equation':   return <div style={wrapStyle}><BlockEquation content={content} /></div>;
-    case 'keypoint':   return <div style={wrapStyle}><BlockKeypoint content={content} /></div>;
+    case 'callout':
+    case 'keypoint':   return <div style={wrapStyle}><BlockSignal type="callout" content={content} /></div>;
+    case 'exam_tip':   return <div style={wrapStyle}><BlockSignal type="exam_tip" content={content} /></div>;
+    case 'warning':    return <div style={wrapStyle}><BlockSignal type="warning" content={content} /></div>;
     case 'summary':    return <div style={wrapStyle}><BlockSummary content={content} /></div>;
-    case 'image':      return <div style={wrapStyle}><BlockImage content={content} /></div>;
+    case 'quote':      return <div style={wrapStyle}><BlockQuote content={content} /></div>;
+    case 'divider':    return <div style={wrapStyle}><BlockDivider /></div>;
+    case 'list':       return <div style={wrapStyle}><BlockList content={content} /></div>;
+    case 'checklist':  return <div style={wrapStyle}><BlockChecklist content={content} /></div>;
+    case 'toggle':     return <div style={wrapStyle}><BlockToggle content={content} /></div>;
+    case 'columns':    return <div style={wrapStyle}><BlockColumns content={content} /></div>;
+    case 'toc':        return <div style={wrapStyle}><BlockToc allBlocks={allBlocks} /></div>;
+    case 'embed':      return <div style={wrapStyle}><BlockEmbed content={content} /></div>;
+    case 'image':
+    case 'gif':        return <div style={wrapStyle}><BlockImage content={content} /></div>;
     case 'video':      return <div style={wrapStyle}><BlockVideo content={content} /></div>;
     case 'table':      return <div style={wrapStyle}><BlockTable content={content} /></div>;
     case 'flashcard':  return <div style={wrapStyle}><BlockFlashcard content={content} /></div>;
     case 'pdf':        return <div style={wrapStyle}><BlockPdf content={content} /></div>;
     case 'link':       return <div style={wrapStyle}><BlockLink content={content} /></div>;
+    case 'quiz_link':  return <div style={wrapStyle}><BlockQuizLink content={content} /></div>;
+    case 'python':
+    case 'graph':      return <div style={wrapStyle}><BlockCode content={content} /></div>;
     case 'molecule3d': return <div style={wrapStyle}><BlockMolecule3d content={content} /></div>;
     default:
       return (
@@ -590,52 +765,72 @@ export default function LessonPage() {
         {/* ── Main content ── */}
         <main style={{ flex: 1, minWidth: 0 }}>
 
-          {/* Lesson header */}
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              <DiffBadge difficulty={lesson?.difficulty} />
-              {lesson?.duration_minutes && (
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-faint)', padding: '2px 10px', border: '1.5px solid var(--line)', borderRadius: 20 }}>
-                  ⏱ {lesson.duration_minutes} min
-                </span>
-              )}
-              {isCompleted && (
-                <span style={{ background: '#d4f5f0', color: '#064843', padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-                  ✓ Završeno
-                </span>
-              )}
-            </div>
-            <h1 style={{ margin: '0 0 10px', fontFamily: 'var(--display)', fontSize: 'clamp(22px, 4vw, 34px)', color: 'var(--ink)', lineHeight: 1.2 }}>
-              {lesson?.title}
-            </h1>
-            {lesson?.summary && (
-              <p style={{ margin: 0, fontSize: 17, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-                {lesson.summary}
-              </p>
-            )}
-            {Array.isArray(lesson?.learning_objectives) && lesson.learning_objectives.length > 0 && (
-              <div style={{ marginTop: 16, padding: '14px 18px', background: 'var(--bg)', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
-                <p style={{ margin: '0 0 8px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 700 }}>
-                  Ciljevi učenja · Learning objectives
-                </p>
-                <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8, fontSize: 15, color: 'var(--ink-soft)' }}>
-                  {lesson.learning_objectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                </ul>
+          {/* Branded reading canvas — mirrors the editor's WYSIWYG output */}
+          <article className="mol-canvas" style={{ margin: '0 0 32px' }}>
+            <div className="mol-canvas__header">
+              <div className="mol-canvas__brand">
+                <MolekulaMark variant="dark" size={28} />
+                <span className="mol-canvas__wordmark">Molekula Academy</span>
               </div>
-            )}
-          </div>
-
-          {/* Divider */}
-          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0 0 24px' }} />
-
-          {/* Blocks */}
-          {blocks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-faint)' }}>
-              <p style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>Ova lekcija još nema sadržaja.</p>
+              {topicTitle && <span className="mol-canvas__crumb">{topicTitle}</span>}
             </div>
-          ) : (
-            blocks.map(block => <LessonBlock key={block.id} block={block} />)
-          )}
+
+            <div className="mol-canvas__body">
+              <MolekulaMark variant="watermark" size={380} className="mol-canvas__watermark" />
+              <div className="mol-canvas__content">
+
+                {/* Lesson header */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  <DiffBadge difficulty={lesson?.difficulty} />
+                  {lesson?.duration_minutes && (
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-faint)', padding: '2px 10px', border: '1.5px solid var(--line)', borderRadius: 20 }}>
+                      ⏱ {lesson.duration_minutes} min
+                    </span>
+                  )}
+                  {isCompleted && (
+                    <span style={{ background: '#d4f5f0', color: '#064843', padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                      ✓ Završeno
+                    </span>
+                  )}
+                </div>
+                <h1 style={{ margin: '0 0 10px', fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'clamp(24px, 4vw, 34px)', color: '#0b343c', lineHeight: 1.2 }}>
+                  {lesson?.title}
+                </h1>
+                {lesson?.summary && (
+                  <p style={{ margin: 0, fontSize: 17, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+                    {lesson.summary}
+                  </p>
+                )}
+                {Array.isArray(lesson?.learning_objectives) && lesson.learning_objectives.length > 0 && (
+                  <div style={{ marginTop: 16, padding: '14px 18px', background: 'var(--bg)', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
+                    <p style={{ margin: '0 0 8px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 700 }}>
+                      Ciljevi učenja · Learning objectives
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8, fontSize: 15, color: 'var(--ink-soft)' }}>
+                      {lesson.learning_objectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Divider */}
+                <hr style={{ border: 'none', borderTop: '1px solid #e7e3d7', margin: '24px 0' }} />
+
+                {/* Blocks */}
+                {blocks.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-faint)' }}>
+                    <p style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>Ova lekcija još nema sadržaja.</p>
+                  </div>
+                ) : (
+                  blocks.map(block => <LessonBlock key={block.id} block={block} allBlocks={blocks} />)
+                )}
+              </div>
+            </div>
+
+            <div className="mol-canvas__footer">
+              <span>molekula.academy</span>
+              <span>© Molekula Academy{topicTitle ? ` · ${topicTitle}` : ''}</span>
+            </div>
+          </article>
 
           {/* Mark complete + nav */}
           <div style={{ marginTop: 48, paddingTop: 28, borderTop: '1px solid var(--line)' }}>
