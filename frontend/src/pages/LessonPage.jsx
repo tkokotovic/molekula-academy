@@ -3,9 +3,10 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getStudentLesson, getStudentLessonsByTopic, getStudentLessonBlocks,
   getStudentCourse, getStudentTopic,
-  getLessonProgress, markLessonProgress,
+  getLessonProgress, markLessonProgress, getMe,
 } from '../api/client';
 import { hydrateChemHtml } from '../components/extensions/chem';
+import { Watermark, useContentGuards } from '../components/ContentProtection';
 
 // Render saved text-block HTML, hydrating inline chem/math (data-chem spans) with
 // KaTeX. KaTeX loads deferred, so re-hydrate once it's available.
@@ -140,7 +141,9 @@ function BlockImage({ content }) {
       <img
         src={content.src}
         alt={content.alt || ''}
-        style={{ maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--line)' }}
+        draggable={false}
+        onContextMenu={e => e.preventDefault()}
+        style={{ maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--line)', WebkitUserDrag: 'none' }}
       />
       {content.caption && (
         <figcaption style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-faint)', fontStyle: 'italic' }}>
@@ -442,10 +445,20 @@ export default function LessonPage() {
   const [marking,     setMarking]   = useState(false);
   const [completedIds, setCompletedIds] = useState(new Set());
   const [showQuizPrompt, setShowQuizPrompt] = useState(false);
+  const [user, setUser] = useState(null);
   const [mobileNudgeDismissed, setMobileNudgeDismissed] = useState(
     () => Boolean(localStorage.getItem(MOBILE_NUDGE_KEY))
   );
   const isMobile = window.innerWidth < 768;
+
+  // Content protection: per-student watermark + copy/right-click/print guards.
+  useContentGuards(true);
+  useEffect(() => { getMe().then(setUser).catch(() => {}); }, []);
+  useEffect(() => {
+    document.body.classList.add('printing-blocked');
+    return () => document.body.classList.remove('printing-blocked');
+  }, []);
+  const watermarkLabel = user ? `${user.name} · ${user.email}` : '';
 
   const startTime = useRef(Date.now());
 
@@ -535,7 +548,11 @@ export default function LessonPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+    <div
+      className="lesson-protected"
+      style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px', userSelect: 'none' }}
+    >
+      <Watermark label={watermarkLabel} />
 
       {/* Mobile desktop nudge */}
       {isMobile && !mobileNudgeDismissed && (

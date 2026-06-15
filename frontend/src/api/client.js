@@ -2,10 +2,26 @@
 
 const TOKEN_KEY = 'molekula_token';
 
+// Mirror the JWT into a same-origin cookie. Bare <img src="/uploads/…"> tags in
+// lesson content can't send the Authorization header, but the browser attaches
+// this cookie automatically, so the auth-gated /uploads route still resolves.
+function syncTokenCookie(token) {
+  if (typeof document === 'undefined') return;
+  if (token) {
+    // 7-day max-age mirrors a typical session; Lax so same-site navigations work.
+    document.cookie = `${TOKEN_KEY}=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax`;
+  } else {
+    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
+  }
+}
+
 export function getToken()        { return localStorage.getItem(TOKEN_KEY); }
-export function setToken(t)       { localStorage.setItem(TOKEN_KEY, t); }
-export function clearToken()      { localStorage.removeItem(TOKEN_KEY); }
+export function setToken(t)       { localStorage.setItem(TOKEN_KEY, t); syncTokenCookie(t); }
+export function clearToken()      { localStorage.removeItem(TOKEN_KEY); syncTokenCookie(null); }
 export function isAuthenticated() { return Boolean(getToken()); }
+
+// Re-sync on load for sessions that authenticated before the cookie existed.
+syncTokenCookie(getToken());
 
 // ─── Base fetch wrapper ───────────────────────────────────────────────────────
 

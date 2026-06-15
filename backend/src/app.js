@@ -4,9 +4,11 @@ const app = express();
 
 app.use(express.json());
 
-// Serve uploaded files (message attachments, lesson media, etc.)
+// Serve uploaded files (message attachments, lesson media, etc.) — auth-gated so
+// lesson images can't be hot-linked or shared as bare URLs (student protection).
+const { requireUploadsAuth } = require('./middleware/uploadsAuth');
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/uploads', requireUploadsAuth, express.static(UPLOAD_DIR));
 
 // Auth & admin
 app.use('/api/auth', require('./routes/auth'));
