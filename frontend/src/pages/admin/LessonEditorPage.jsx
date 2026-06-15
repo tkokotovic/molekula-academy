@@ -27,14 +27,21 @@ const BLOCK_TYPES = [
   { type: 'text',       label: 'Tekst',         icon: '¶',  group: 'Tekst' },
   { type: 'quote',      label: 'Citat',         icon: '❝',  group: 'Tekst' },
   { type: 'callout',    label: 'Ključna točka', icon: '💡', group: 'Tekst' },
+  { type: 'exam_tip',   label: 'Savjet za ispit', icon: '🎓', group: 'Tekst' },
   { type: 'warning',    label: 'Upozorenje',    icon: '⚠️', group: 'Tekst' },
   { type: 'summary',    label: 'Sažetak',       icon: '📋', group: 'Tekst' },
+  { type: 'list',       label: 'Popis',         icon: '•',  group: 'Tekst' },
+  { type: 'checklist',  label: 'Lista zadataka', icon: '☑',  group: 'Tekst' },
+  { type: 'toggle',     label: 'Sklopivi blok', icon: '▸',  group: 'Tekst' },
   { type: 'divider',    label: 'Razdjelnik',    icon: '—',  group: 'Tekst' },
+  { type: 'columns',    label: 'Stupci',        icon: '▮▮', group: 'Raspored' },
+  { type: 'toc',        label: 'Sadržaj',       icon: '☰',  group: 'Raspored' },
   { type: 'equation',   label: 'Jednadžba',     icon: '∑',  group: 'Kemija' },
   { type: 'molecule3d', label: 'Molekula 3D',   icon: '⚗️', group: 'Kemija' },
   { type: 'image',      label: 'Slika',         icon: '🖼️', group: 'Mediji' },
   { type: 'gif',        label: 'GIF',           icon: '🎞️', group: 'Mediji' },
   { type: 'video',      label: 'Video',         icon: '🎬', group: 'Mediji' },
+  { type: 'embed',      label: 'Ugradnja',      icon: '🔌', group: 'Mediji' },
   { type: 'table',      label: 'Tablica',       icon: '⊞',  group: 'Podaci' },
   { type: 'graph',      label: 'Graf',          icon: '📈', group: 'Podaci' },
   { type: 'python',     label: 'Python / Kod',  icon: '🐍', group: 'Podaci' },
@@ -78,8 +85,15 @@ const DEFAULT_CONTENT = {
   text:       { html: '' },
   quote:      { text: '', attribution: '' },
   callout:    { text: '' },
+  exam_tip:   { text: '' },
   warning:    { text: '' },
   summary:    { items: [''] },
+  list:       { ordered: false, items: [''] },
+  checklist:  { items: [{ text: '', checked: false }] },
+  toggle:     { title: '', html: '', open: true },
+  columns:    { cols: [{ html: '' }, { html: '' }] },
+  toc:        {},
+  embed:      { url: '', caption: '' },
   divider:    {},
   equation:   { latex: '', caption: '' },
   molecule3d: { smiles: '', name: '' },
@@ -102,8 +116,12 @@ function extractText(type, content = {}) {
     case 'heading':
     case 'quote':
     case 'callout':
+    case 'exam_tip':
     case 'warning': return (content.text || '').trim();
-    case 'summary': return (Array.isArray(content.items) ? content.items : []).filter(Boolean).join('\n');
+    case 'summary':
+    case 'list':    return (Array.isArray(content.items) ? content.items : []).filter(Boolean).join('\n');
+    case 'checklist': return (Array.isArray(content.items) ? content.items : []).map(i => i?.text).filter(Boolean).join('\n');
+    case 'toggle':  return [(content.title || '').trim(), (content.html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()].filter(Boolean).join('\n');
     case 'equation':return (content.latex || '').trim();
     default:        return '';
   }
@@ -119,8 +137,12 @@ function convertedContent(fromType, toType, content) {
     case 'heading':
     case 'quote':
     case 'callout':
+    case 'exam_tip':
     case 'warning': base.text = text.replace(/\n+/g, ' '); break;
-    case 'summary': base.items = text.split('\n').filter(Boolean); break;
+    case 'summary':
+    case 'list':    base.items = text.split('\n').filter(Boolean); break;
+    case 'checklist': base.items = text.split('\n').filter(Boolean).map(t => ({ text: t, checked: false })); break;
+    case 'toggle': { const [first, ...rest] = text.split('\n'); base.title = first || ''; base.html = rest.length ? `<p>${rest.join('</p><p>')}</p>` : ''; break; }
     case 'equation':base.latex = text; break;
     default: break; // media/link/etc — keep defaults, text doesn't map
   }
@@ -293,6 +315,218 @@ function WarningBlock({ content, onChange }) {
         rows={2}
         style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: s.body, fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden', boxSizing: 'border-box' }}
       />
+    </div>
+  );
+}
+
+function ExamTipBlock({ content, onChange }) {
+  const taRef = useRef(null);
+  useEffect(() => {
+    if (taRef.current) { taRef.current.style.height = 'auto'; taRef.current.style.height = taRef.current.scrollHeight + 'px'; }
+  }, [content.text]);
+  const s = SIGNAL.exam_tip;
+  return (
+    <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 10px 10px 0', padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: s.label, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>
+        <span>{s.icon}</span> {s.title}
+      </div>
+      <textarea
+        ref={taRef}
+        value={content.text || ''}
+        onChange={e => onChange({ ...content, text: e.target.value })}
+        placeholder="Savjet za ispit…"
+        rows={2}
+        style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', resize: 'none', fontSize: 15, color: s.body, fontFamily: 'inherit', lineHeight: 1.6, overflow: 'hidden', boxSizing: 'border-box' }}
+      />
+    </div>
+  );
+}
+
+// ─── List block (bulleted / numbered) ──────────────────────────────────────────
+function ListBlock({ content, onChange }) {
+  const items = Array.isArray(content.items) ? content.items : [''];
+  const ordered = !!content.ordered;
+  const inputRefs = useRef([]);
+
+  function setItem(i, v) { onChange({ ...content, items: items.map((x, j) => j === i ? v : x) }); }
+  function handleKey(e, i) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const next = [...items.slice(0, i + 1), '', ...items.slice(i + 1)];
+      onChange({ ...content, items: next });
+      setTimeout(() => inputRefs.current[i + 1]?.focus(), 0);
+    }
+    if (e.key === 'Backspace' && !items[i] && items.length > 1) {
+      e.preventDefault();
+      onChange({ ...content, items: items.filter((_, j) => j !== i) });
+      setTimeout(() => inputRefs.current[Math.max(0, i - 1)]?.focus(), 0);
+    }
+  }
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {[['Popis', false], ['Numerirano', true]].map(([lbl, ord]) => (
+          <button key={lbl} type="button" onClick={() => onChange({ ...content, ordered: ord })}
+            style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer',
+              border: `1px solid ${ordered === ord ? 'var(--accent)' : 'var(--line)'}`,
+              background: ordered === ord ? 'var(--accent-wash)' : 'transparent',
+              color: ordered === ord ? 'var(--accent-ink)' : 'var(--ink-soft)' }}>
+            {ord ? '1.' : '•'} {lbl}
+          </button>
+        ))}
+      </div>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ color: 'var(--ink-soft)', fontWeight: 700, fontSize: 15, flexShrink: 0, minWidth: 18, textAlign: 'right' }}>{ordered ? `${i + 1}.` : '•'}</span>
+          <input
+            ref={el => inputRefs.current[i] = el}
+            value={item}
+            onChange={e => setItem(i, e.target.value)}
+            onKeyDown={e => handleKey(e, i)}
+            placeholder={`Stavka ${i + 1}…`}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 15, color: 'var(--ink)', fontFamily: 'inherit' }}
+          />
+          {items.length > 1 && (
+            <button type="button" onClick={() => onChange({ ...content, items: items.filter((_, j) => j !== i) })}
+              style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', opacity: 0.5, lineHeight: 1 }}>✕</button>
+          )}
+        </div>
+      ))}
+      <button type="button" onClick={() => { onChange({ ...content, items: [...items, ''] }); setTimeout(() => inputRefs.current[items.length]?.focus(), 0); }}
+        style={{ marginTop: 4, background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 13, padding: '2px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+        + Dodaj stavku
+      </button>
+    </div>
+  );
+}
+
+// ─── Checklist block ────────────────────────────────────────────────────────────
+function ChecklistBlock({ content, onChange }) {
+  const items = Array.isArray(content.items) ? content.items : [{ text: '', checked: false }];
+  const inputRefs = useRef([]);
+
+  function setText(i, v) { onChange({ ...content, items: items.map((x, j) => j === i ? { ...x, text: v } : x) }); }
+  function toggle(i) { onChange({ ...content, items: items.map((x, j) => j === i ? { ...x, checked: !x.checked } : x) }); }
+  function handleKey(e, i) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const next = [...items.slice(0, i + 1), { text: '', checked: false }, ...items.slice(i + 1)];
+      onChange({ ...content, items: next });
+      setTimeout(() => inputRefs.current[i + 1]?.focus(), 0);
+    }
+    if (e.key === 'Backspace' && !items[i]?.text && items.length > 1) {
+      e.preventDefault();
+      onChange({ ...content, items: items.filter((_, j) => j !== i) });
+      setTimeout(() => inputRefs.current[Math.max(0, i - 1)]?.focus(), 0);
+    }
+  }
+  return (
+    <div>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+          <input type="checkbox" checked={!!item.checked} onChange={() => toggle(i)}
+            style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer', flexShrink: 0 }} />
+          <input
+            ref={el => inputRefs.current[i] = el}
+            value={item.text || ''}
+            onChange={e => setText(i, e.target.value)}
+            onKeyDown={e => handleKey(e, i)}
+            placeholder={`Zadatak ${i + 1}…`}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: 'inherit',
+              color: item.checked ? 'var(--ink-faint)' : 'var(--ink)', textDecoration: item.checked ? 'line-through' : 'none' }}
+          />
+          {items.length > 1 && (
+            <button type="button" onClick={() => onChange({ ...content, items: items.filter((_, j) => j !== i) })}
+              style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', opacity: 0.5, lineHeight: 1 }}>✕</button>
+          )}
+        </div>
+      ))}
+      <button type="button" onClick={() => { onChange({ ...content, items: [...items, { text: '', checked: false }] }); setTimeout(() => inputRefs.current[items.length]?.focus(), 0); }}
+        style={{ marginTop: 4, background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 13, padding: '2px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+        + Dodaj zadatak
+      </button>
+    </div>
+  );
+}
+
+// ─── Toggle (collapsible) block ─────────────────────────────────────────────────
+function ToggleBlock({ content, onChange }) {
+  const open = content.open !== false;
+  return (
+    <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--surface)' }}>
+        <button type="button" onClick={() => onChange({ ...content, open: !open })}
+          title={open ? 'Sklopi' : 'Rasklopi'}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-soft)', fontSize: 14, padding: 0, lineHeight: 1, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }}>▸</button>
+        <input
+          value={content.title || ''}
+          onChange={e => onChange({ ...content, title: e.target.value })}
+          placeholder="Naslov sklopivog bloka…"
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 15, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}
+        />
+      </div>
+      {open && (
+        <div style={{ padding: '8px 12px 10px 32px' }}>
+          <TiptapEditor
+            value={content.html || ''}
+            onChange={html => onChange({ ...content, html })}
+            placeholder="Skriveni sadržaj…"
+            minHeight={48}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Columns block (side-by-side rich text) ─────────────────────────────────────
+function ColumnsBlock({ content, onChange }) {
+  const cols = Array.isArray(content.cols) && content.cols.length ? content.cols : [{ html: '' }, { html: '' }];
+  function setCol(i, html) { onChange({ ...content, cols: cols.map((c, j) => j === i ? { ...c, html } : c) }); }
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols.length}, 1fr)`, gap: 14 }}>
+        {cols.map((c, i) => (
+          <div key={i} style={{ border: '1px dashed var(--line)', borderRadius: 8, padding: '6px 10px', position: 'relative', minWidth: 0 }}>
+            <TiptapEditor
+              value={c.html || ''}
+              onChange={html => setCol(i, html)}
+              placeholder={`Stupac ${i + 1}…`}
+              minHeight={60}
+            />
+            {cols.length > 2 && (
+              <button type="button" onClick={() => onChange({ ...content, cols: cols.filter((_, j) => j !== i) })}
+                title="Ukloni stupac"
+                style={{ position: 'absolute', top: 2, right: 2, background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 13, opacity: 0.6 }}>✕</button>
+            )}
+          </div>
+        ))}
+      </div>
+      {cols.length < 4 && (
+        <button type="button" onClick={() => onChange({ ...content, cols: [...cols, { html: '' }] })}
+          style={{ marginTop: 8, background: 'none', border: '1px dashed var(--line)', borderRadius: 7, color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 13, padding: '5px 12px' }}>
+          + Dodaj stupac
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Table-of-contents block (auto from headings) ───────────────────────────────
+function TocBlock({ allBlocks = [] }) {
+  const headings = allBlocks
+    .filter(b => b.type === 'heading' && (b.content?.text || '').trim())
+    .map(b => ({ level: b.content.level || 2, text: b.content.text }));
+  return (
+    <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px', background: 'var(--surface)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: headings.length ? 8 : 0 }}>☰ Sadržaj — automatski iz naslova</div>
+      {headings.length === 0
+        ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Dodaj naslove (Naslov blok) i pojavit će se ovdje.</div>
+        : <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            {headings.map((h, i) => (
+              <li key={i} style={{ fontSize: 14, color: 'var(--ink)', padding: '2px 0', paddingLeft: (h.level - 1) * 16 }}>{h.text}</li>
+            ))}
+          </ul>}
     </div>
   );
 }
@@ -637,6 +871,18 @@ function MediaSettings({ type, content, onChange }) {
         </>
       );
 
+    case 'embed':
+      return (
+        <>
+          <Field label="URL za ugradnju" hint="iframe izvor — npr. PhET simulacija, Desmos, GeoGebra">
+            <input style={inp} value={content.url || ''} onChange={e => onChange({ ...content, url: e.target.value })} placeholder="https://phet.colorado.edu/sims/html/…" />
+          </Field>
+          <Field label="Opis (neobavezno)">
+            <input style={inp} value={content.caption || ''} onChange={e => onChange({ ...content, caption: e.target.value })} placeholder="npr. Interaktivna simulacija pH skale" />
+          </Field>
+        </>
+      );
+
     default:
       return null;
   }
@@ -778,6 +1024,25 @@ function MediaPreview({ type, content, onOpenSettings }) {
           </div>
           {content.datasets?.[0]?.label && <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 4 }}>{content.datasets[0].label}</div>}
         </div>
+      );
+
+    case 'embed':
+      if (content.url) {
+        return (
+          <div>
+            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 10, overflow: 'hidden', border: '1.5px solid var(--line)' }}>
+              <iframe src={content.url} title={content.caption || 'Ugrađeni sadržaj'} allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} />
+            </div>
+            {content.caption && <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 8, fontStyle: 'italic' }}>{content.caption}</div>}
+          </div>
+        );
+      }
+      return (
+        <button type="button" onClick={onOpenSettings} style={{ width: '100%', padding: '40px 20px', border: '2px dashed var(--line)', borderRadius: 10, background: 'var(--surface)', cursor: 'pointer', color: 'var(--ink-faint)', textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>🔌</div>
+          <div style={{ fontSize: 14 }}>Klikni za dodavanje ugrađenog sadržaja</div>
+        </button>
       );
 
     default:
@@ -964,11 +1229,11 @@ function BlockHandleMenu({ block, onChangeType, onDuplicate, onMove, onSetVisibi
 // ─── Notion-style block wrapper ────────────────────────────────────────────────
 
 // Blocks that render a visual preview and need a settings panel
-const MEDIA_TYPES = new Set(['molecule3d', 'image', 'gif', 'video', 'graph', 'python', 'link', 'quiz_link', 'pdf', 'graph']);
+const MEDIA_TYPES = new Set(['molecule3d', 'image', 'gif', 'video', 'graph', 'python', 'link', 'quiz_link', 'pdf', 'embed']);
 // Blocks that are always directly editable (no settings needed)
 const INLINE_TYPES = new Set(['heading', 'text', 'quote', 'callout', 'warning', 'summary', 'equation', 'divider', 'table']);
 
-function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, onChangeType, onDuplicate, onMove, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
+function NotionBlock({ block, allBlocks = [], onUpdate, onDelete, onSetVisibility, onChangeType, onDuplicate, onMove, dragAttributes, dragListeners, isDragging, nodeRef, dndStyle }) {
   const [draft, setDraft]               = useState(block.content || {});
   const [showSettings, setShowSettings] = useState(false);
   const [isHovered, setIsHovered]       = useState(false);
@@ -1068,10 +1333,22 @@ function NotionBlock({ block, onUpdate, onDelete, onSetVisibility, onChangeType,
           <QuoteBlock content={draft} onChange={handleChange} />
         ) : block.type === 'callout' ? (
           <CalloutBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'exam_tip' ? (
+          <ExamTipBlock content={draft} onChange={handleChange} />
         ) : block.type === 'warning' ? (
           <WarningBlock content={draft} onChange={handleChange} />
         ) : block.type === 'summary' ? (
           <SummaryBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'list' ? (
+          <ListBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'checklist' ? (
+          <ChecklistBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'toggle' ? (
+          <ToggleBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'columns' ? (
+          <ColumnsBlock content={draft} onChange={handleChange} />
+        ) : block.type === 'toc' ? (
+          <TocBlock allBlocks={allBlocks} />
         ) : block.type === 'equation' ? (
           <EquationBlock content={draft} onChange={handleChange} />
         ) : block.type === 'divider' ? (
@@ -1229,7 +1506,7 @@ function EquationPreview({ latex }) {
 }
 
 // Compact read-only rendering of a single block for the preview columns
-function PreviewBlock({ block }) {
+function PreviewBlock({ block, allBlocks = [] }) {
   const { type, content = {} } = block;
   const cap = content.caption || content.title || content.label;
   const mediaBox = (icon, primary) => (
@@ -1247,12 +1524,44 @@ function PreviewBlock({ block }) {
       return <div style={{ color: 'var(--ink)', lineHeight: 1.6, fontSize: 14 }} dangerouslySetInnerHTML={{ __html: hydrateChemHtml(content.html || '') }} />;
     case 'quote':
       return <blockquote style={{ borderLeft: '3px solid var(--accent)', margin: 0, padding: '4px 14px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>{content.text}{content.attribution && <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ink-faint)' }}>— {content.attribution}</div>}</blockquote>;
-    case 'callout':
-      return <div style={{ background: 'var(--accent-wash)', borderRadius: 8, padding: '10px 14px', color: 'var(--accent-ink)', fontSize: 14 }}>💡 {content.text}</div>;
-    case 'warning':
-      return <div style={{ background: 'color-mix(in srgb,#f59e0b 12%,transparent)', borderRadius: 8, padding: '10px 14px', color: '#92400e', fontSize: 14 }}>⚠️ {content.text}</div>;
+    case 'callout': case 'exam_tip': case 'warning': {
+      const s = SIGNAL[type];
+      return <div style={{ borderLeft: `3px solid ${s.accent}`, background: s.wash, borderRadius: '0 8px 8px 0', padding: '10px 14px', color: s.body, fontSize: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: s.label, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{s.icon} {s.title}</div>
+        {content.text}
+      </div>;
+    }
     case 'summary':
       return <ul style={{ margin: '4px 0', paddingLeft: 20, color: 'var(--ink)', fontSize: 14 }}>{(content.items || []).filter(Boolean).map((it, i) => <li key={i}>{it}</li>)}</ul>;
+    case 'list': {
+      const Tag = content.ordered ? 'ol' : 'ul';
+      return <Tag style={{ margin: '4px 0', paddingLeft: 22, color: 'var(--ink)', fontSize: 14 }}>{(content.items || []).filter(Boolean).map((it, i) => <li key={i}>{it}</li>)}</Tag>;
+    }
+    case 'checklist':
+      return <div style={{ fontSize: 14 }}>{(content.items || []).map((it, i) => (
+        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '1px 0', color: it.checked ? 'var(--ink-faint)' : 'var(--ink)' }}>
+          <span>{it.checked ? '☑' : '☐'}</span><span style={{ textDecoration: it.checked ? 'line-through' : 'none' }}>{it.text}</span>
+        </div>
+      ))}</div>;
+    case 'toggle':
+      return <details style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', fontSize: 14 }}>
+        <summary style={{ fontWeight: 700, cursor: 'pointer', color: 'var(--ink)' }}>{content.title || 'Sklopivi blok'}</summary>
+        <div style={{ marginTop: 6, color: 'var(--ink)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: hydrateChemHtml(content.html || '') }} />
+      </details>;
+    case 'columns':
+      return <div style={{ display: 'grid', gridTemplateColumns: `repeat(${(content.cols || []).length || 2}, 1fr)`, gap: 12, fontSize: 14 }}>
+        {(content.cols || []).map((c, i) => <div key={i} style={{ minWidth: 0, color: 'var(--ink)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: hydrateChemHtml(c.html || '') }} />)}
+      </div>;
+    case 'toc': {
+      const headings = allBlocks.filter(b => b.type === 'heading' && (b.content?.text || '').trim());
+      return <div style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '10px 14px', background: 'var(--surface)', fontSize: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>☰ Sadržaj</div>
+        {headings.length === 0 ? <span style={{ color: 'var(--ink-faint)', fontSize: 13 }}>—</span>
+          : <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>{headings.map((h, i) => <li key={i} style={{ padding: '1px 0', paddingLeft: ((h.content.level || 2) - 1) * 14, color: 'var(--ink)' }}>{h.content.text}</li>)}</ul>}
+      </div>;
+    }
+    case 'embed':
+      return mediaBox('🔌', content.url || 'Ugrađeni sadržaj');
     case 'equation':
       return <EquationPreview latex={content.latex} />;
     case 'divider':
@@ -1292,7 +1601,7 @@ function PreviewColumn({ plan, blocks }) {
       <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '64vh', overflowY: 'auto' }}>
         {blocks.length === 0 && <div style={{ color: 'var(--ink-faint)', fontSize: 13, textAlign: 'center', padding: 24 }}>Nema blokova.</div>}
         {blocks.map(b => planSees(b.visibility || 'public', plan)
-          ? <div key={b.id}><PreviewBlock block={b} /></div>
+          ? <div key={b.id}><PreviewBlock block={b} allBlocks={blocks} /></div>
           : <div key={b.id} style={{ border: '1px dashed var(--line)', borderRadius: 8, padding: '10px 14px', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)' }}>
               🔒 {VIS_META[b.visibility].label} sadržaj — skriveno
             </div>
@@ -1857,6 +2166,7 @@ export default function LessonEditorPage() {
                   <div key={block.id} style={{ marginBottom: 16 }}>
                     <SortableNotionBlock
                       block={block}
+                      allBlocks={blocks}
                       onUpdate={content => handleUpdate(block, content)}
                       onDelete={() => handleDelete(block)}
                       onSetVisibility={vis => handleSetVisibility(block, vis)}
