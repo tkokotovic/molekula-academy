@@ -308,6 +308,22 @@ export async function deleteChemCompound(id) {
   return apiFetch(`/api/teacher/chem-compounds/${id}`, { method: 'DELETE' });
 }
 
+// ─── File / image upload ───────────────────────────────────────────────────────
+// Uploads a File/Blob, returns the public URL (server resizes images → WebP).
+export async function uploadImage(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/teacher/upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) throw new Error('Upload failed');
+  const data = await res.json();
+  const p = data.upload?.path || '';
+  return p ? `/${p.replace(/^\/+/, '')}` : '';
+}
+
 // Set a block's access level: 'public' | 'basic' | 'premium'
 export async function setBlockVisibility(blockId, visibility) {
   const data = await apiFetch(`/api/teacher/blocks/${blockId}`, {

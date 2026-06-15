@@ -16,7 +16,51 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import { TableKit } from '@tiptap/extension-table';
+import { uploadImage } from '../api/client';
 import './TiptapEditor.css';
+
+// ─── Smart-paste helpers ────────────────────────────────────────────────────────
+
+// Tags we can't represent in a text block — used for the "what dropped" notice.
+const UNSUPPORTED_PASTE = ['iframe', 'video', 'audio', 'object', 'embed', 'form'];
+
+function describeDropped(html) {
+  if (!html) return null;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const found = new Set();
+  UNSUPPORTED_PASTE.forEach(tag => { if (doc.querySelector(tag)) found.add(tag); });
+  if (found.size === 0) return null;
+  const labels = { iframe: 'ugrađeni okviri', video: 'video', audio: 'audio', object: 'objekti', embed: 'ugrađeni mediji', form: 'obrasci' };
+  return [...found].map(t => labels[t] || t).join(', ');
+}
+
+// Upload any base64/blob images that landed in the doc after a paste, swapping
+// their src for the server URL. Matches nodes by src so positions can shift.
+async function uploadPastedImages(editor, onBusy) {
+  const srcs = [];
+  editor.state.doc.descendants(node => {
+    if (node.type.name === 'image' && /^(data:|blob:)/.test(node.attrs.src || '')) srcs.push(node.attrs.src);
+  });
+  if (srcs.length === 0) return;
+  onBusy?.(true);
+  for (const src of srcs) {
+    try {
+      const blob = await (await fetch(src)).blob();
+      const file = new File([blob], 'pasted.png', { type: blob.type || 'image/png' });
+      const url = await uploadImage(file);
+      if (url) {
+        editor.state.doc.descendants((n, p) => {
+          if (n.type.name === 'image' && n.attrs.src === src) {
+            editor.chain().setNodeSelection(p).updateAttributes('image', { src: url }).run();
+            return false;
+          }
+        });
+      }
+    } catch { /* leave the original src on failure */ }
+  }
+  onBusy?.(false);
+}
 
 // ─── Link dialog ──────────────────────────────────────────────────────────────
 
@@ -244,12 +288,21 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
   const [slash, setSlash]       = useState(null);  // { query, from, coords }
   const [activeIdx, setActiveIdx] = useState(0);
   const [picker, setPicker]     = useState(null);  // { mode, latex, tab, math }
+  const [pasteNote, setPasteNote] = useState(null); // transient toast
+  const [uploading, setUploading] = useState(false);
 
-  // refs for keyboard handling inside editorProps (created once)
+  function flashNote(msg) {
+    setPasteNote(msg);
+    clearTimeout(flashNote._t);
+    flashNote._t = setTimeout(() => setPasteNote(null), 6000);
+  }
+
+  // refs for keyboard/paste handling inside editorProps (created once)
   const openRef   = useRef(false);
   const itemsRef  = useRef([]);
   const idxRef    = useRef(0);
   const chooseRef = useRef(() => {});
+  const editorRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
@@ -273,9 +326,12 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder }),
       Link.configure({ openOnClick: false, autolink: true }),
-      Image.configure({ inline: false, allowBase64: false }),
+      // allowBase64 so pasted inline images survive into the doc; uploadPastedImages
+      // then swaps each data:/blob: src for a server URL.
+      Image.configure({ inline: false, allowBase64: true }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      TableKit.configure({ table: { resizable: false } }),
       ChemNode,
     ],
     content: value || '',
@@ -284,6 +340,50 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
     },
     editorProps: {
       attributes: { style: `min-height:${minHeight}px` },
+      handlePaste(view, event) {
+        const cd = event.clipboardData;
+        if (!cd) return false;
+        const html = cd.getData('text/html');
+        const imageFiles = Array.from(cd.files || []).filter(f => f.type.startsWith('image/'));
+        // Pure image paste (screenshot / copied image, no rich text): upload + insert.
+        if (imageFiles.length && !html) {
+          event.preventDefault();
+          setUploading(true);
+          (async () => {
+            for (const f of imageFiles) {
+              try { const url = await uploadImage(f); if (url) editorRef.current?.chain().focus().setImage({ src: url }).run(); }
+              catch { /* skip */ }
+            }
+            setUploading(false);
+          })();
+          return true;
+        }
+        // Rich paste: let ProseMirror map the HTML, then upload embedded images
+        // and surface a notice for anything we couldn't keep.
+        if (html) {
+          const dropped = describeDropped(html);
+          setTimeout(() => {
+            const ed = editorRef.current;
+            if (ed) uploadPastedImages(ed, setUploading);
+            if (dropped) flashNote(`Zalijepljeno uz formatiranje. Izostavljeno (nije podržano): ${dropped}.`);
+          }, 0);
+        }
+        return false;
+      },
+      handleDrop(view, event) {
+        const files = Array.from(event.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+        if (!files.length) return false;
+        event.preventDefault();
+        setUploading(true);
+        (async () => {
+          for (const f of files) {
+            try { const url = await uploadImage(f); if (url) editorRef.current?.chain().focus().setImage({ src: url }).run(); }
+            catch { /* skip */ }
+          }
+          setUploading(false);
+        })();
+        return true;
+      },
       handleKeyDown(view, event) {
         if (!openRef.current) return false;
         const items = itemsRef.current;
@@ -343,11 +443,12 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
     else item.run?.(editor);
   }
 
-  // keep refs current for the static handleKeyDown
+  // keep refs current for the static handleKeyDown / paste handlers
   openRef.current   = !!slash;
   itemsRef.current  = items;
   idxRef.current    = activeIdx;
   chooseRef.current = chooseItem;
+  editorRef.current = editor;
 
   if (!editor) return null;
 
@@ -375,6 +476,17 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
           ))}
         </div>,
         document.body
+      )}
+
+      {/* ── Paste feedback ── */}
+      {(uploading || pasteNote) && (
+        <div style={{ position: 'sticky', bottom: 8, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 50 }}>
+          <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, maxWidth: '90%', background: '#0b343c', color: '#eaf3f1', borderRadius: 10, padding: '8px 14px', fontSize: 13, boxShadow: '0 10px 30px rgba(11,52,60,.3)' }}>
+            {uploading
+              ? <>⏳ Učitavam slike…</>
+              : <><span>ℹ️ {pasteNote}</span><button type="button" onClick={() => setPasteNote(null)} style={{ background: 'none', border: 'none', color: '#9fd5cd', cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>×</button></>}
+          </div>
+        </div>
       )}
 
       {/* ── Dialogs ── */}

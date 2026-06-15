@@ -70,16 +70,39 @@ router.post(
       next();
     });
   },
-  (req, res) => {
+  async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
     }
 
-    const { originalname, mimetype, size, filename: diskFilename, buffer } = req.file;
+    let { originalname, mimetype, size, filename: diskFilename, buffer } = req.file;
 
     // In test mode we use memory storage — generate a uuid filename ourselves
     const ext = path.extname(originalname);
-    const filename = diskFilename || `${randomUUID()}${ext}`;
+    let filename = diskFilename || `${randomUUID()}${ext}`;
+
+    // Image optimisation: resize (max 1600px) + convert to WebP. Keep animated
+    // GIFs and SVGs untouched. Disk mode only (tests use memory storage).
+    const isOptimisable = /^image\/(jpeg|png|webp)$/.test(mimetype);
+    if (isOptimisable && diskFilename && process.env.NODE_ENV !== 'test') {
+      try {
+        const sharp = require('sharp');
+        const srcPath = path.join(UPLOAD_DIR, diskFilename);
+        const webpName = `${randomUUID()}.webp`;
+        const info = await sharp(srcPath)
+          .rotate() // honour EXIF orientation
+          .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toFile(path.join(UPLOAD_DIR, webpName));
+        fs.unlink(srcPath, () => {});
+        filename = webpName;
+        mimetype = 'image/webp';
+        size = info.size;
+      } catch (e) {
+        // sharp unavailable or processing failed — keep the original upload
+      }
+    }
+
     const filePath = process.env.NODE_ENV === 'test'
       ? `uploads/${filename}`
       : path.relative(path.join(__dirname, '../..'), path.join(UPLOAD_DIR, filename));

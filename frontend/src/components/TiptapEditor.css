@@ -170,6 +170,34 @@
 /* Highlight */
 .tiptap-shell .ProseMirror mark { border-radius: 3px; padding: 0 2px; }
 
+/* Tables (pasted or inserted) */
+.tiptap-shell .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+  table-layout: fixed;
+  overflow: hidden;
+}
+.tiptap-shell .ProseMirror th,
+.tiptap-shell .ProseMirror td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+.tiptap-shell .ProseMirror th {
+  background: var(--surface);
+  font-weight: 700;
+}
+.tiptap-shell .ProseMirror .selectedCell:after {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tiptap-shell .ProseMirror td, .tiptap-shell .ProseMirror th { position: relative; }
+
 /* Inline chemistry / math node */
 .mol-chem {
   display: inline-block;
