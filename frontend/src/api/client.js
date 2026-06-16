@@ -650,8 +650,9 @@ export async function getStudentSessions() {
   return data.sessions;
 }
 
-export async function getTeacherSessions() {
-  const data = await apiFetch('/api/teacher/sessions');
+export async function getTeacherSessions(studentId = null) {
+  const qs = studentId ? `?student_id=${studentId}` : '';
+  const data = await apiFetch(`/api/teacher/sessions${qs}`);
   return data.sessions;
 }
 

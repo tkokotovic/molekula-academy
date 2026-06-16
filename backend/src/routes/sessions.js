@@ -26,12 +26,16 @@ student.get('/sessions', requireAuth, (req, res) => {
 // ─── Teacher: GET all sessions ────────────────────────────────────────────────
 
 teacher.get('/sessions', requireAuth, requireTeacher, (req, res) => {
+  const { student_id } = req.query;
+  const where = student_id ? 'WHERE s.student_id = ?' : '';
+  const params = student_id ? [Number(student_id)] : [];
   const sessions = db.prepare(`
     SELECT s.*, u.name AS student_name, u.email AS student_email
     FROM sessions s
     JOIN users u ON u.id = s.student_id
+    ${where}
     ORDER BY s.scheduled_at DESC
-  `).all();
+  `).all(...params);
 
   return res.json({ sessions });
 });

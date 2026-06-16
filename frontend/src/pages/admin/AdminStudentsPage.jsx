@@ -15,8 +15,20 @@ function timeAgo(iso) {
   const days = Math.floor(diff / 86400000);
   if (days === 0) return 'Danas';
   if (days === 1) return 'Jučer';
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `${days}d`;
   return formatDate(iso);
+}
+
+function examCountdown(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((d - today) / 86400000);
+  if (diff < 0)  return { label: formatDate(dateStr), color: 'var(--ink-soft)' };
+  if (diff === 0) return { label: 'Danas!', color: '#dc2626' };
+  if (diff <= 7)  return { label: `Za ${diff}d`, color: '#dc2626' };
+  if (diff <= 30) return { label: `Za ${diff}d`, color: '#d97706' };
+  return { label: formatDate(dateStr), color: 'var(--ink-soft)' };
 }
 
 function PlanBadge({ tier, studentId, onChanged }) {
@@ -63,10 +75,11 @@ export default function AdminStudentsPage() {
   const lang = localStorage.getItem('mol_lang') || 'hr';
   const t = (hr, en) => lang === 'en' ? en : hr;
 
-  const [students,   setStudents]   = useState([]);
-  const [hwInbox,    setHwInbox]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState('');
+  const [students, setStudents] = useState([]);
+  const [hwInbox,  setHwInbox]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState('');
+  const [planFilter, setPlanFilter] = useState('all');
 
   function load() {
     setLoading(true);
@@ -81,24 +94,44 @@ export default function AdminStudentsPage() {
   function hwDot(studentId) {
     const mine = hwInbox.filter(a => a.student_id === studentId);
     if (!mine.length) return null;
-    const hasOverdue  = mine.some(a => a.status !== 'corrected' && a.deadline && new Date(a.deadline.replace(' ', 'T') + 'Z') < new Date());
+    const hasOverdue   = mine.some(a => a.status !== 'corrected' && a.deadline && new Date(a.deadline.replace(' ', 'T') + 'Z') < new Date());
     const hasSubmitted = mine.some(a => a.status === 'submitted');
-    const allDone     = mine.every(a => a.status === 'corrected');
+    const allDone      = mine.every(a => a.status === 'corrected');
     if (hasOverdue)   return { color: '#dc2626', title: 'Kasni sa zadaćom' };
     if (hasSubmitted) return { color: '#d97706', title: 'Čeka ispravljanje' };
-    if (allDone)      return { color: '#16a34a', title: 'Sve zadaće ispravljene' };
+    if (allDone)      return { color: '#16a34a', title: 'Sve ispravljeno' };
     return null;
   }
 
-  const filtered = students.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.email.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter
+  let filtered = students.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase());
+    const matchPlan = planFilter === 'all' || s.subscription_tier === planFilter;
+    return matchSearch && matchPlan;
+  });
 
-  // Summary stats
+  // Sort: exam date ascending (nulls last), then last_active desc
+  filtered = [...filtered].sort((a, b) => {
+    const aDate = a.exam_date ? new Date(a.exam_date) : null;
+    const bDate = b.exam_date ? new Date(b.exam_date) : null;
+    if (aDate && bDate) return aDate - bDate;
+    if (aDate) return -1;
+    if (bDate) return 1;
+    const aAct = a.last_active ? new Date(a.last_active) : new Date(0);
+    const bAct = b.last_active ? new Date(b.last_active) : new Date(0);
+    return bAct - aAct;
+  });
+
   const total   = students.length;
   const premium = students.filter(s => s.subscription_tier === 'premium').length;
   const basic   = total - premium;
+
+  const filterOpts = [
+    { key: 'all',     label: t('Svi', 'All'),         count: total   },
+    { key: 'premium', label: 'Premium',                count: premium },
+    { key: 'basic',   label: 'Basic',                  count: basic   },
+  ];
 
   return (
     <div style={{ padding: '28px 28px 48px' }}>
@@ -113,40 +146,44 @@ export default function AdminStudentsPage() {
         </h1>
       </div>
 
-      {/* Summary chips */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        {[
-          { label: t('Ukupno', 'Total'),   value: total,   colour: 'var(--ink)' },
-          { label: 'Premium',              value: premium, colour: 'var(--accent)' },
-          { label: 'Basic',               value: basic,   colour: 'var(--ink-soft)' },
-        ].map(({ label, value, colour }) => (
-          <div key={label} style={{
-            background: 'var(--surface)', border: '1px solid var(--line)',
-            borderRadius: 10, padding: '10px 18px', textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 22, color: colour }}>{value}</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>{label}</div>
-          </div>
+      {/* Filter chips + search row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+        {filterOpts.map(o => (
+          <button
+            key={o.key}
+            onClick={() => setPlanFilter(o.key)}
+            style={{
+              padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+              fontSize: 12.5, fontWeight: 600, fontFamily: 'var(--mono)',
+              border: planFilter === o.key ? '1.5px solid var(--accent)' : '1px solid var(--line)',
+              background: planFilter === o.key ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--surface)',
+              color: planFilter === o.key ? 'var(--accent)' : 'var(--ink-soft)',
+            }}
+          >
+            {o.label} <span style={{ opacity: .6 }}>({o.count})</span>
+          </button>
         ))}
-      </div>
 
-      {/* Search */}
-      <div style={{ position: 'relative', maxWidth: 360, marginBottom: 20 }}>
-        <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-soft)' }}
-          width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>
-        </svg>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={t('Pretraži ime ili email…', 'Search name or email…')}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '9px 14px 9px 36px', borderRadius: 9,
-            border: '1px solid var(--line)', background: 'var(--surface)',
-            color: 'var(--ink)', fontFamily: 'var(--sans)', fontSize: 13.5, outline: 'none',
-          }}
-        />
+        <div style={{ flex: 1, minWidth: 200 }} />
+
+        {/* Search */}
+        <div style={{ position: 'relative', width: 280 }}>
+          <svg style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-soft)' }}
+            width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>
+          </svg>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('Pretraži…', 'Search…')}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '8px 12px 8px 32px', borderRadius: 9,
+              border: '1px solid var(--line)', background: 'var(--surface)',
+              color: 'var(--ink)', fontFamily: 'var(--sans)', fontSize: 13, outline: 'none',
+            }}
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -158,10 +195,10 @@ export default function AdminStudentsPage() {
         </div>
       ) : (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-          {/* Table header */}
+          {/* Header row */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px 36px',
+            gridTemplateColumns: '1.6fr 1.4fr 160px 100px 110px 100px 80px 28px 28px',
             padding: '10px 16px',
             borderBottom: '1px solid var(--line)',
             fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em',
@@ -171,61 +208,67 @@ export default function AdminStudentsPage() {
             <span>Email</span>
             <span>{t('Kolegij', 'Course')}</span>
             <span>{t('Plan', 'Plan')}</span>
-            <span>{t('Lekcije', 'Lessons')}</span>
-            <span>{t('Kvizovi', 'Quizzes')}</span>
-            <span>{t('Prosjek', 'Avg score')}</span>
-            <span>{t('Aktivan', 'Last active')}</span>
+            <span>{t('Ispit', 'Exam')}</span>
+            <span>{t('Aktivan', 'Active')}</span>
+            <span>{t('Prosjek', 'Avg')}</span>
             <span title="Zadaće">ZD</span>
+            <span title="Poruke">✉</span>
           </div>
 
-          {filtered.map((s, i) => (
-            <div
-              key={s.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 140px 100px 80px 80px 90px 100px 36px',
-                padding: '12px 16px',
-                borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
-                alignItems: 'center',
-              }}
-            >
-              <Link
-                to={`/admin/students/${s.id}`}
-                style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none' }}
+          {filtered.map((s, i) => {
+            const dot  = hwDot(s.id);
+            const exam = examCountdown(s.exam_date);
+            const hasMsg = (s.unread_messages || 0) > 0;
+            return (
+              <div
+                key={s.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.6fr 1.4fr 160px 100px 110px 100px 80px 28px 28px',
+                  padding: '11px 16px',
+                  borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
+                  alignItems: 'center',
+                }}
               >
-                {s.name}
-              </Link>
-              <span style={{ fontSize: 13, color: 'var(--ink-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {s.email}
-              </span>
-              <div style={{ overflow: 'hidden' }}>
-                {s.enrolled_course ? (
-                  <>
-                    <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.enrollment_count > 1 ? `${s.enrolled_course} +${s.enrollment_count - 1}` : s.enrolled_course}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 1 }}>
-                      {t('od', 'since')} {formatDate(s.enrolled_since)}
-                    </div>
-                  </>
-                ) : (
-                  <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>—</span>
-                )}
+                <Link
+                  to={`/admin/students/${s.id}`}
+                  style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', textDecoration: 'none' }}
+                >
+                  {s.name}
+                </Link>
+                <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {s.email}
+                </span>
+                <div style={{ overflow: 'hidden' }}>
+                  {s.enrolled_course ? (
+                    <>
+                      <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.enrollment_count > 1 ? `${s.enrolled_course} +${s.enrollment_count - 1}` : s.enrolled_course}
+                      </div>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>—</span>
+                  )}
+                </div>
+                <span>
+                  <PlanBadge tier={s.subscription_tier} studentId={s.id} onChanged={load} />
+                </span>
+                <span style={{ fontSize: 12.5, color: exam?.color || 'var(--ink-soft)', fontFamily: 'var(--mono)' }}>
+                  {exam ? exam.label : '—'}
+                </span>
+                <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{timeAgo(s.last_active)}</span>
+                <span style={{ fontSize: 13, color: s.avg_score >= 80 ? '#1ec8b6' : s.avg_score >= 60 ? '#f59e0b' : s.avg_score ? '#d6492f' : 'var(--ink-soft)', fontFamily: 'var(--mono)' }}>
+                  {s.avg_score != null ? `${s.avg_score}%` : '—'}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  {dot ? <span title={dot.title} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: dot.color }} /> : null}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  {hasMsg ? <span title="Nepročitane poruke" style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#2563eb' }} /> : null}
+                </span>
               </div>
-              <span>
-                <PlanBadge tier={s.subscription_tier} studentId={s.id} onChanged={load} />
-              </span>
-              <span style={{ fontSize: 13.5, color: 'var(--ink)' }}>{s.lessons_completed ?? 0}</span>
-              <span style={{ fontSize: 13.5, color: 'var(--ink)' }}>{s.quizzes_taken ?? 0}</span>
-              <span style={{ fontSize: 13.5, color: s.avg_score >= 80 ? '#1ec8b6' : s.avg_score >= 60 ? '#f59e0b' : s.avg_score ? '#d6492f' : 'var(--ink-soft)' }}>
-                {s.avg_score != null ? `${s.avg_score}%` : '—'}
-              </span>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{timeAgo(s.last_active)}</span>
-              <span style={{ display: 'flex', alignItems: 'center' }}>
-                {(() => { const dot = hwDot(s.id); return dot ? <span title={dot.title} style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: dot.color }} /> : null; })()}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

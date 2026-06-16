@@ -16,6 +16,7 @@ router.get('/students', requireTeacher, (req, res) => {
   const students = db.prepare(`
     SELECT
       u.id, u.name, u.email, u.subscription_tier, u.created_at,
+      u.exam_date,
       MAX(lp.completed_at) AS last_active,
       COUNT(DISTINCT CASE WHEN lp.status = 'completed' THEN lp.lesson_id END) AS lessons_completed,
       COUNT(DISTINCT qa.id) AS quizzes_taken,
@@ -23,7 +24,11 @@ router.get('/students', requireTeacher, (req, res) => {
       COUNT(DISTINCT c.id) AS certificates_earned,
       (SELECT co.title FROM enrollments e JOIN courses co ON co.id = e.course_id WHERE e.student_id = u.id ORDER BY e.enrolled_at ASC LIMIT 1) AS enrolled_course,
       (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = u.id) AS enrollment_count,
-      (SELECT e.enrolled_at FROM enrollments e WHERE e.student_id = u.id ORDER BY e.enrolled_at ASC LIMIT 1) AS enrolled_since
+      (SELECT e.enrolled_at FROM enrollments e WHERE e.student_id = u.id ORDER BY e.enrolled_at ASC LIMIT 1) AS enrolled_since,
+      (
+        SELECT COUNT(*) FROM messages m
+        WHERE m.student_id = u.id AND m.sender_role = 'student' AND m.read_at IS NULL
+      ) AS unread_messages
     FROM users u
     LEFT JOIN lesson_progress lp ON lp.student_id = u.id
     LEFT JOIN quiz_attempts qa ON qa.student_id = u.id AND qa.submitted_at IS NOT NULL
@@ -39,7 +44,7 @@ router.get('/students', requireTeacher, (req, res) => {
 // GET /api/admin/students/:id — full profile for one student
 router.get('/students/:id', requireTeacher, (req, res) => {
   const student = db.prepare(
-    "SELECT id, name, email, subscription_tier, created_at FROM users WHERE id = ? AND role = 'student'"
+    "SELECT id, name, email, subscription_tier, created_at, exam_date, admin_notes FROM users WHERE id = ? AND role = 'student'"
   ).get(req.params.id);
   if (!student) return res.status(404).json({ error: 'Student nije pronađen.' });
 
