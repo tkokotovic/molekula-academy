@@ -723,6 +723,74 @@ export async function markAllNotificationsRead() {
   return apiFetch('/api/student/notifications/read-all', { method: 'PATCH' });
 }
 
+// ─── Broadcasts ───────────────────────────────────────────────────────────────
+
+export async function getBroadcasts() {
+  const data = await apiFetch('/api/teacher/broadcasts');
+  return data.broadcasts;
+}
+
+export async function getBroadcast(id) {
+  const data = await apiFetch(`/api/teacher/broadcasts/${id}`);
+  return data.broadcast;
+}
+
+export async function sendBroadcast(fields) {
+  const data = await apiFetch('/api/teacher/broadcasts', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.broadcast;
+}
+
+export async function previewBroadcastAudience(audience_filter) {
+  const data = await apiFetch('/api/teacher/broadcasts/preview', {
+    method: 'POST',
+    body: JSON.stringify({ audience_filter }),
+  });
+  return data.recipient_count;
+}
+
+// ─── Tutoring packages ────────────────────────────────────────────────────────
+
+export async function getTutoringPackages() {
+  const data = await apiFetch('/api/teacher/tutoring/packages');
+  return data.packages;
+}
+
+export async function createTutoringPackage(fields) {
+  const data = await apiFetch('/api/teacher/tutoring/packages', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.package;
+}
+
+export async function updateTutoringPackage(id, fields) {
+  const data = await apiFetch(`/api/teacher/tutoring/packages/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+  return data.package;
+}
+
+export async function deleteTutoringPackage(id) {
+  return apiFetch(`/api/teacher/tutoring/packages/${id}`, { method: 'DELETE' });
+}
+
+export async function getStudentHours(studentId) {
+  const data = await apiFetch(`/api/teacher/students/${studentId}/hours`);
+  return data;
+}
+
+export async function updateStudentHours(studentId, fields) {
+  const data = await apiFetch(`/api/teacher/students/${studentId}/hours`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
+  return data.hours;
+}
+
 export async function getSyllabusCodes(courseType) {
   const qs = courseType ? `?course_type=${courseType}` : '';
   return apiFetch(`/api/teacher/syllabus-codes${qs}`);
