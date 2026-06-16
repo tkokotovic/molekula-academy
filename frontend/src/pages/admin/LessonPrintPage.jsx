@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { getLesson, getLessonBlocks } from '../../api/client';
+import { getLesson, getLessonBlocks, getMe } from '../../api/client';
 import { hydrateChemHtml } from '../../components/extensions/chem';
 import MolekulaMark from '../../components/MolekulaMark';
+import './LessonEditorCanvas.css';
 import SmilesDrawer from 'smiles-drawer';
 
 // ─── KaTeX helper ──────────────────────────────────────────────────────────────
@@ -189,17 +190,20 @@ export default function LessonPrintPage() {
   const { lessonId } = useParams();
   const [lesson, setLesson] = useState(null);
   const [blocks, setBlocks] = useState([]);
+  const [teacher, setTeacher] = useState(null);
   const [ready,  setReady]  = useState(false);
 
   useEffect(() => {
-    Promise.all([getLesson(lessonId), getLessonBlocks(lessonId)])
-      .then(([l, b]) => { setLesson(l); setBlocks(b); })
+    Promise.all([getLesson(lessonId), getLessonBlocks(lessonId), getMe().catch(() => null)])
+      .then(([l, b, me]) => { setLesson(l); setBlocks(b); setTeacher(me); })
       .finally(() => setReady(true));
   }, [lessonId]);
 
-  // Trigger print once content and KaTeX are ready
+  // Trigger print once content and KaTeX are ready.
+  // ?print=0 opens the branded preview without the print dialog.
   useEffect(() => {
     if (!ready || !lesson) return;
+    if (new URLSearchParams(window.location.search).get('print') === '0') return;
     const delay = setTimeout(() => window.print(), 800);
     return () => clearTimeout(delay);
   }, [ready, lesson]);
@@ -211,20 +215,28 @@ export default function LessonPrintPage() {
     <>
       <style>{`
         /* ── Print layout ── */
-        @page { margin: 20mm 18mm; }
-        body { font-family: 'Georgia', serif; font-size: 11pt; color: #111; background: #fff; margin: 0; }
-        .print-doc { max-width: 700px; margin: 0 auto; padding: 0 0 40px; }
+        @page { margin: 12mm; }
+        body { font-family: 'Georgia', serif; font-size: 11pt; color: #25302f; background: #fff; margin: 0;
+               -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-doc { max-width: 820px; margin: 0 auto; padding: 0 16px 40px; }
+
+        /* Force the branded canvas to print its colours; flatten the card for paper */
+        .print-doc .mol-canvas { margin: 16px 0 0; box-shadow: none; }
+        .print-doc .mol-canvas__header,
+        .print-doc .mol-canvas__footer,
+        .print-doc .print-signal,
+        .print-doc .print-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-doc .mol-canvas__body { padding: 36px 44px 44px; }
+        @media print {
+          .print-doc { max-width: none; padding: 0; }
+          .print-doc .mol-canvas { border: none; border-radius: 0; margin: 0; }
+        }
 
         /* Screen-only controls */
         .print-controls { padding: 16px 0 24px; display: flex; gap: 12px; align-items: center; }
         .print-controls button { padding: 8px 18px; border-radius: 7px; border: 1px solid #ccc; background: #f9f9f9; cursor: pointer; font-size: 14px; font-weight: 600; }
         .print-controls button.primary { background: #0f8f86; color: #fff; border-color: #0f8f86; }
         @media print { .print-controls { display: none; } }
-
-        /* Branded masthead */
-        .print-masthead { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
-        .print-masthead-mark { width: 22px; height: 22px; flex-shrink: 0; }
-        .print-masthead-name { font-family: 'Helvetica', sans-serif; font-weight: 700; font-size: 11pt; color: #0b343c; letter-spacing: .2px; }
 
         /* Title */
         .print-title { font-size: 26pt; font-weight: 800; margin: 0 0 8px; color: #0b343c; }
@@ -326,34 +338,48 @@ export default function LessonPrintPage() {
           <button onClick={() => window.close()}>Zatvori</button>
         </div>
 
-        {/* Branded masthead */}
-        <div className="print-masthead">
-          <MolekulaMark variant="light" size={22} className="print-masthead-mark" />
-          <span className="print-masthead-name">Molekula Academy</span>
-        </div>
-
-        {/* Lesson header */}
-        <h1 className="print-title">{lesson.title}</h1>
-        {lesson.summary && <p className="print-subtitle">{lesson.summary}</p>}
-        <p className="print-meta">
-          {lesson.difficulty && `Razina: ${lesson.difficulty === 'easy' ? 'Lagano' : lesson.difficulty === 'medium' ? 'Srednje' : 'Teško'}`}
-          {lesson.difficulty && lesson.duration_minutes && ' · '}
-          {lesson.duration_minutes && `Trajanje: ${lesson.duration_minutes} min`}
-          {(lesson.difficulty || lesson.duration_minutes) && ' · '}
-          Molekula Academy
-        </p>
-        <hr className="print-rule" />
-
-        {/* Blocks */}
-        {blocks.map(block => (
-          <div key={block.id} style={{ marginBottom: 6 }}>
-            <PrintBlock block={block} allBlocks={blocks} />
+        {/* Branded canvas — mirrors the on-screen lesson */}
+        <article className="mol-canvas">
+          <div className="mol-canvas__header">
+            <div className="mol-canvas__brand">
+              <MolekulaMark variant="dark" size={26} />
+              <span className="mol-canvas__wordmark">Molekula Academy</span>
+            </div>
+            {lesson.topic_title && <span className="mol-canvas__crumb">{lesson.topic_title}</span>}
           </div>
-        ))}
 
-        {blocks.length === 0 && (
-          <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Lekcija nema sadržaja.</p>
-        )}
+          <div className="mol-canvas__body">
+            <MolekulaMark variant="watermark" size={380} className="mol-canvas__watermark" />
+            <div className="mol-canvas__content">
+
+              {/* Lesson header */}
+              <h1 className="print-title">{lesson.title}</h1>
+              {lesson.summary && <p className="print-subtitle">{lesson.summary}</p>}
+              <p className="print-meta">
+                {lesson.difficulty && `Razina: ${lesson.difficulty === 'easy' ? 'Lagano' : lesson.difficulty === 'medium' ? 'Srednje' : 'Teško'}`}
+                {lesson.difficulty && lesson.duration_minutes && ' · '}
+                {lesson.duration_minutes && `Trajanje: ${lesson.duration_minutes} min`}
+              </p>
+              <hr className="print-rule" />
+
+              {/* Blocks */}
+              {blocks.map(block => (
+                <div key={block.id} style={{ marginBottom: 6 }}>
+                  <PrintBlock block={block} allBlocks={blocks} />
+                </div>
+              ))}
+
+              {blocks.length === 0 && (
+                <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Lekcija nema sadržaja.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mol-canvas__footer">
+            <span>molekula.academy</span>
+            <span>© Molekula Academy{lesson.topic_title ? ` · ${lesson.topic_title}` : ''}{teacher?.name ? ` · ${teacher.name}` : ''}</span>
+          </div>
+        </article>
       </div>
     </>
   );
