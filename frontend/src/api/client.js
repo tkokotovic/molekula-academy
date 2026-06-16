@@ -533,6 +533,39 @@ export async function getAdminGroups() {
   return data.groups;
 }
 
+export async function createGroup(name) {
+  const data = await apiFetch('/api/teacher/groups', { method: 'POST', body: JSON.stringify({ name }) });
+  return data.group;
+}
+
+export async function getGroup(id) {
+  const data = await apiFetch(`/api/teacher/groups/${id}`);
+  return data.group;
+}
+
+export async function updateGroup(id, name) {
+  const data = await apiFetch(`/api/teacher/groups/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
+  return data.group;
+}
+
+export async function deleteGroup(id) {
+  return apiFetch(`/api/teacher/groups/${id}`, { method: 'DELETE' });
+}
+
+export async function addGroupMembers(id, student_ids) {
+  const data = await apiFetch(`/api/teacher/groups/${id}/members`, { method: 'POST', body: JSON.stringify({ student_ids }) });
+  return data.members;
+}
+
+export async function removeGroupMember(id, studentId) {
+  return apiFetch(`/api/teacher/groups/${id}/members/${studentId}`, { method: 'DELETE' });
+}
+
+export async function getGroupProgress(id) {
+  const data = await apiFetch(`/api/teacher/groups/${id}/progress`);
+  return data.stats;
+}
+
 // ─── Homework (student) ───────────────────────────────────────────────────────
 
 export async function getStudentHomework() {
