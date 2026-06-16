@@ -92,6 +92,9 @@ student.post('/messages', requireAuth, handleUpload, (req, res) => {
 
   const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid);
 
+  // Unarchive the thread when the student sends a new message
+  db.prepare(`UPDATE users SET messages_thread_archived = 0 WHERE id = ?`).run(studentId);
+
   const studentUser = db.prepare('SELECT name, email FROM users WHERE id = ?').get(studentId);
   notifyTeacherNewMessage({ studentName: studentUser.name, studentEmail: studentUser.email, messageText: text || '[prilog]' });
 
@@ -107,13 +110,18 @@ teacher.get('/messages', requireAuth, requireTeacher, (req, res) => {
       u.name,
       u.email,
       u.subscription_tier,
+      u.exam_date,
+      u.messages_thread_archived AS thread_archived,
       m.text          AS last_message,
       m.file_name     AS last_file_name,
       m.sender_role   AS last_sender_role,
       m.created_at    AS last_message_at,
       (SELECT COUNT(*) FROM messages
        WHERE student_id = u.id AND sender_role = 'student' AND read_at IS NULL
-      ) AS unread_count
+      ) AS unread_count,
+      (SELECT COUNT(*) FROM homework_assignments
+       WHERE student_id = u.id AND status = 'submitted'
+      ) AS pending_homeworks
     FROM users u
     JOIN messages m ON m.id = (
       SELECT id FROM messages WHERE student_id = u.id ORDER BY created_at DESC LIMIT 1
@@ -131,7 +139,8 @@ teacher.get('/messages/:studentId', requireAuth, requireTeacher, (req, res) => {
   const { studentId } = req.params;
 
   const studentUser = db.prepare(
-    `SELECT id, name, email, subscription_tier FROM users WHERE id = ? AND role = 'student'`
+    `SELECT id, name, email, subscription_tier, exam_date, admin_notes, messages_thread_archived
+     FROM users WHERE id = ? AND role = 'student'`
   ).get(studentId);
   if (!studentUser) return res.status(404).json({ error: 'Student not found' });
 
@@ -145,7 +154,40 @@ teacher.get('/messages/:studentId', requireAuth, requireTeacher, (req, res) => {
     SELECT * FROM messages WHERE student_id = ? ORDER BY created_at ASC
   `).all(studentId);
 
-  return res.json({ student: studentUser, messages });
+  // Pending homeworks count
+  const pending = db.prepare(`
+    SELECT COUNT(*) AS cnt FROM homework_assignments WHERE student_id = ? AND status = 'submitted'
+  `).get(studentId);
+
+  // Last quiz attempt
+  const lastQuiz = db.prepare(`
+    SELECT qa.id, qa.score, qa.max_score, qa.submitted_at, q.title AS quiz_title
+    FROM quiz_attempts qa
+    JOIN quizzes q ON q.id = qa.quiz_id
+    WHERE qa.student_id = ?
+    ORDER BY qa.submitted_at DESC LIMIT 1
+  `).get(studentId);
+
+  // Enrolled courses
+  const courses = db.prepare(`
+    SELECT c.title FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    WHERE e.student_id = ? AND e.status = 'active' AND c.is_library = 0
+    ORDER BY e.enrolled_at ASC
+  `).all(studentId);
+
+  return res.json({
+    student: {
+      ...studentUser,
+      thread_archived: !!studentUser.messages_thread_archived,
+    },
+    messages,
+    context: {
+      pending_homeworks: pending?.cnt || 0,
+      last_quiz: lastQuiz || null,
+      courses: courses.map(c => c.title),
+    },
+  });
 });
 
 // ─── Teacher: POST reply ──────────────────────────────────────────────────────
@@ -174,6 +216,24 @@ teacher.post('/messages/:studentId', requireAuth, requireTeacher, handleUpload, 
   notifyStudentTeacherReplied({ studentName: studentUser.name, studentEmail: studentUser.email, replyText: text || '[prilog]' });
 
   return res.status(201).json({ message });
+});
+
+// ─── Teacher: Archive / unarchive a thread ────────────────────────────────────
+
+teacher.post('/messages/:studentId/archive', requireAuth, requireTeacher, (req, res) => {
+  const { studentId } = req.params;
+  const exists = db.prepare(`SELECT id FROM users WHERE id = ? AND role = 'student'`).get(studentId);
+  if (!exists) return res.status(404).json({ error: 'Student not found' });
+  db.prepare(`UPDATE users SET messages_thread_archived = 1 WHERE id = ?`).run(studentId);
+  return res.json({ ok: true });
+});
+
+teacher.post('/messages/:studentId/unarchive', requireAuth, requireTeacher, (req, res) => {
+  const { studentId } = req.params;
+  const exists = db.prepare(`SELECT id FROM users WHERE id = ? AND role = 'student'`).get(studentId);
+  if (!exists) return res.status(404).json({ error: 'Student not found' });
+  db.prepare(`UPDATE users SET messages_thread_archived = 0 WHERE id = ?`).run(studentId);
+  return res.json({ ok: true });
 });
 
 module.exports = { studentRouter: student, teacherRouter: teacher };

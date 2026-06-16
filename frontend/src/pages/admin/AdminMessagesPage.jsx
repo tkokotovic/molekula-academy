@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getMessageThreads, getMessageThread, replyToStudent } from '../../api/client';
+import { useNavigate } from 'react-router-dom';
+import {
+  getMessageThreads, getMessageThread, replyToStudent,
+  archiveMessageThread, unarchiveMessageThread,
+} from '../../api/client';
 import { ChemText } from '../../utils/chemText';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -46,27 +50,41 @@ function isImage(url) {
   return /\.(jpe?g|png|gif|webp)$/i.test(url || '');
 }
 
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  return diff;
+}
+
+function examLabel(dateStr) {
+  const d = daysUntil(dateStr);
+  if (d === null) return null;
+  if (d < 0) return `${Math.abs(d)}d ago`;
+  if (d === 0) return 'Danas!';
+  return `za ${d}d`;
+}
+
 // ─── Thread list item ─────────────────────────────────────────────────────────
 
 function ThreadItem({ thread, isSelected, onClick }) {
-  const [hovered, setHovered] = useState(false);
+  const [hov, setHov] = useState(false);
   return (
     <div
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
       style={{
-        padding: '12px 14px', cursor: 'pointer',
+        padding: '11px 14px', cursor: 'pointer',
         borderBottom: '1px solid var(--line)',
         background: isSelected
           ? 'color-mix(in srgb, var(--accent) 8%, transparent)'
-          : hovered ? 'var(--surface)' : 'transparent',
+          : hov ? 'var(--surface)' : 'transparent',
         borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
         transition: 'background .12s',
+        opacity: thread.thread_archived ? 0.55 : 1,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Avatar */}
         <div style={{
           width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
           background: 'color-mix(in srgb, var(--accent) 20%, var(--surface))',
@@ -86,9 +104,10 @@ function ThreadItem({ thread, isSelected, onClick }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{
-              fontSize: 12.5, color: 'var(--ink-soft)',
+              fontSize: 12, color: 'var(--ink-soft)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              flex: 1, fontStyle: thread.last_sender_role === 'teacher' ? 'italic' : 'normal',
+              flex: 1,
+              fontStyle: thread.last_sender_role === 'teacher' ? 'italic' : 'normal',
             }}>
               {thread.last_sender_role === 'teacher' ? 'Ti: ' : ''}
               {thread.last_message || (thread.last_file_name ? `📎 ${thread.last_file_name}` : '—')}
@@ -118,28 +137,19 @@ function AttachmentPreview({ fileUrl, fileName }) {
         <img
           src={fileUrl}
           alt={fileName || 'prilog'}
-          style={{
-            maxWidth: 220, maxHeight: 180,
-            borderRadius: 8, display: 'block',
-            border: '1px solid rgba(0,0,0,.1)', objectFit: 'cover',
-          }}
+          style={{ maxWidth: 220, maxHeight: 180, borderRadius: 8, display: 'block', border: '1px solid rgba(0,0,0,.1)', objectFit: 'cover' }}
         />
       </a>
     );
   }
   return (
-    <a
-      href={fileUrl}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 6,
-        padding: '6px 10px', borderRadius: 7,
-        background: 'rgba(0,0,0,.07)', color: 'inherit',
-        fontSize: 12.5, textDecoration: 'none', fontWeight: 600,
-        border: '1px solid rgba(0,0,0,.1)',
-      }}
-    >
+    <a href={fileUrl} target="_blank" rel="noreferrer" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 6,
+      padding: '6px 10px', borderRadius: 7,
+      background: 'rgba(0,0,0,.07)', color: 'inherit',
+      fontSize: 12.5, textDecoration: 'none', fontWeight: 600,
+      border: '1px solid rgba(0,0,0,.1)',
+    }}>
       <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
@@ -162,11 +172,7 @@ function Bubble({ msg }) {
   const typeLabel = MSG_TYPE_LABEL[msg.message_type];
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: isTeacher ? 'row-reverse' : 'row',
-      alignItems: 'flex-end', gap: 10,
-    }}>
+    <div style={{ display: 'flex', flexDirection: isTeacher ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 10 }}>
       {!isTeacher && (
         <div style={{
           width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
@@ -266,10 +272,7 @@ function ComposeBar({ onSend }) {
             )}
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
           </div>
-          <button
-            onClick={() => setFile(null)}
-            style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ink-soft)', padding: 2 }}
-          >✕</button>
+          <button onClick={() => setFile(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ink-soft)', padding: 2 }}>✕</button>
         </div>
       )}
       <div style={{ padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
@@ -333,14 +336,105 @@ function ComposeBar({ onSend }) {
   );
 }
 
+// ─── Student context strip ────────────────────────────────────────────────────
+
+function ContextStrip({ student, context }) {
+  if (!student) return null;
+  const examDays = daysUntil(student.exam_date);
+  const examLbl = examLabel(student.exam_date);
+  const examColor = examDays !== null && examDays <= 14 ? '#e74c3c' : examDays !== null && examDays <= 60 ? '#e67e22' : 'var(--ink-soft)';
+
+  const lastQuiz = context?.last_quiz;
+  const pct = lastQuiz && lastQuiz.max_score ? Math.round((lastQuiz.score / lastQuiz.max_score) * 100) : null;
+  const pending = context?.pending_homeworks || 0;
+  const courses = context?.courses || [];
+
+  return (
+    <div style={{
+      display: 'flex', gap: 20, flexWrap: 'wrap',
+      padding: '8px 20px', borderBottom: '1px solid var(--line)',
+      background: 'var(--surface)', fontSize: 12,
+    }}>
+      {/* Plan */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ color: 'var(--ink-soft)' }}>Plan</span>
+        <span style={{
+          fontWeight: 700, fontSize: 11,
+          color: student.subscription_tier === 'premium' ? 'var(--accent)' : 'var(--ink)',
+          background: student.subscription_tier === 'premium'
+            ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
+            : 'var(--line)',
+          padding: '2px 7px', borderRadius: 20,
+        }}>
+          {student.subscription_tier === 'premium' ? 'Premium' : 'Basic'}
+        </span>
+      </div>
+
+      {/* Exam date */}
+      {examLbl && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ color: 'var(--ink-soft)' }}>Ispit</span>
+          <span style={{ fontWeight: 700, color: examColor }}>{examLbl}</span>
+          <span style={{ color: 'var(--ink-soft)', fontSize: 11 }}>
+            ({new Date(student.exam_date).toLocaleDateString('hr-HR', { day: '2-digit', month: 'short', year: 'numeric' })})
+          </span>
+        </div>
+      )}
+
+      {/* Courses */}
+      {courses.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ color: 'var(--ink-soft)' }}>Kolegij</span>
+          <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{courses.join(', ')}</span>
+        </div>
+      )}
+
+      {/* Last quiz */}
+      {lastQuiz && pct !== null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ color: 'var(--ink-soft)' }}>Zadnji kviz</span>
+          <span style={{ fontWeight: 700, color: pct >= 70 ? '#27ae60' : pct >= 40 ? '#e67e22' : '#e74c3c' }}>
+            {pct}%
+          </span>
+          <span style={{ color: 'var(--ink-soft)', fontSize: 11, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {lastQuiz.quiz_title}
+          </span>
+        </div>
+      )}
+
+      {/* Pending homeworks */}
+      {pending > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ color: 'var(--ink-soft)' }}>Čeka ispravak</span>
+          <span style={{
+            fontWeight: 700, fontSize: 11, color: '#e67e22',
+            background: 'color-mix(in srgb, #e67e22 12%, transparent)',
+            padding: '2px 7px', borderRadius: 20,
+          }}>{pending}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── AdminMessagesPage ────────────────────────────────────────────────────────
 
+const FILTER_CHIPS = [
+  { key: 'active',   label: 'Aktivni' },
+  { key: 'unread',   label: 'Nepročitano' },
+  { key: 'archived', label: 'Arhivirano' },
+];
+
 export default function AdminMessagesPage() {
-  const [threads,      setThreads]      = useState([]);
-  const [selThread,    setSelThread]    = useState(null);  // { student, messages }
-  const [selStudentId, setSelStudentId] = useState(null);
-  const [loadingList,  setLoadingList]  = useState(true);
-  const [loadingThread,setLoadingThread]= useState(false);
+  const navigate = useNavigate();
+  const [threads,       setThreads]       = useState([]);
+  const [selThread,     setSelThread]     = useState(null);
+  const [selStudentId,  setSelStudentId]  = useState(null);
+  const [loadingList,   setLoadingList]   = useState(true);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [filter,        setFilter]        = useState('active');
+  const [search,        setSearch]        = useState('');
+  const [archiving,     setArchiving]     = useState(false);
   const bottomRef = useRef(null);
   const pollRef   = useRef(null);
 
@@ -356,7 +450,6 @@ export default function AdminMessagesPage() {
     try {
       const data = await getMessageThread(studentId);
       setSelThread(data);
-      // refresh thread list (clears unread badge)
       getMessageThreads().then(setThreads).catch(() => {});
     } catch {
       // ignore
@@ -417,37 +510,127 @@ export default function AdminMessagesPage() {
     }
   }
 
-  const totalUnread = threads.reduce((s, t) => s + (t.unread_count || 0), 0);
+  async function handleArchiveToggle() {
+    if (!selStudentId || archiving) return;
+    const isArchived = selThread?.student?.thread_archived;
+    setArchiving(true);
+    try {
+      if (isArchived) {
+        await unarchiveMessageThread(selStudentId);
+      } else {
+        await archiveMessageThread(selStudentId);
+      }
+      await loadThread(selStudentId);
+      loadThreads();
+    } catch {
+      // ignore
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  // Filtering
+  const visibleThreads = threads.filter(t => {
+    const nameMatch = t.name.toLowerCase().includes(search.toLowerCase());
+    if (!nameMatch) return false;
+    if (filter === 'active')   return !t.thread_archived;
+    if (filter === 'unread')   return !t.thread_archived && t.unread_count > 0;
+    if (filter === 'archived') return !!t.thread_archived;
+    return true;
+  });
+
+  const totalUnread = threads.filter(t => !t.thread_archived).reduce((s, t) => s + (t.unread_count || 0), 0);
+  const unreadCount = threads.filter(t => !t.thread_archived && t.unread_count > 0).length;
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
 
       {/* ── Thread list ── */}
       <div style={{
-        width: 280, flexShrink: 0,
+        width: 288, flexShrink: 0,
         borderRight: '1px solid var(--line)',
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
       }}>
+        {/* Header */}
         <div style={{
-          padding: '16px 16px 12px', borderBottom: '1px solid var(--line)',
-          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '14px 14px 10px', borderBottom: '1px solid var(--line)',
+          display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Poruke</span>
-          {totalUnread > 0 && (
-            <span style={{
-              background: 'var(--accent)', color: '#fff',
-              borderRadius: 10, padding: '1px 7px', fontSize: 11.5, fontWeight: 700,
-            }}>{totalUnread}</span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Poruke</span>
+            {totalUnread > 0 && (
+              <span style={{
+                background: 'var(--accent)', color: '#fff',
+                borderRadius: 10, padding: '1px 7px', fontSize: 11.5, fontWeight: 700,
+              }}>{totalUnread}</span>
+            )}
+          </div>
+
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <svg style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+              width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Pretraži studente…"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '7px 10px 7px 28px',
+                border: '1px solid var(--line)', borderRadius: 8,
+                background: 'var(--surface)', color: 'var(--ink)',
+                fontFamily: 'var(--sans)', fontSize: 13,
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Filter chips */}
+          <div style={{ display: 'flex', gap: 5 }}>
+            {FILTER_CHIPS.map(chip => (
+              <button
+                key={chip.key}
+                onClick={() => setFilter(chip.key)}
+                style={{
+                  padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  fontSize: 11.5, fontWeight: 600,
+                  background: filter === chip.key
+                    ? 'var(--accent)'
+                    : 'var(--surface)',
+                  color: filter === chip.key ? '#fff' : 'var(--ink-soft)',
+                  border: `1px solid ${filter === chip.key ? 'var(--accent)' : 'var(--line)'}`,
+                  transition: 'all .12s',
+                  position: 'relative',
+                }}
+              >
+                {chip.label}
+                {chip.key === 'unread' && unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -5, right: -4,
+                    background: '#e74c3c', color: '#fff',
+                    borderRadius: '50%', width: 14, height: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 700,
+                  }}>{unreadCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* Thread list */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {loadingList
             ? <p style={{ padding: 20, color: 'var(--ink-soft)', fontSize: 13 }}>Učitavam…</p>
-            : threads.length === 0
-              ? <p style={{ padding: 20, color: 'var(--ink-soft)', fontSize: 13, fontStyle: 'italic' }}>Nema poruka</p>
-              : threads.map(th => (
+            : visibleThreads.length === 0
+              ? <p style={{ padding: 20, color: 'var(--ink-soft)', fontSize: 13, fontStyle: 'italic' }}>
+                  {search ? 'Nema rezultata' : filter === 'unread' ? 'Nema novih poruka' : filter === 'archived' ? 'Arhiva je prazna' : 'Nema poruka'}
+                </p>
+              : visibleThreads.map(th => (
                   <ThreadItem
                     key={th.student_id}
                     thread={th}
@@ -469,7 +652,7 @@ export default function AdminMessagesPage() {
           <>
             {/* Thread header */}
             <div style={{
-              padding: '14px 20px', borderBottom: '1px solid var(--line)',
+              padding: '12px 20px', borderBottom: '1px solid var(--line)',
               display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
             }}>
               <div style={{
@@ -479,22 +662,69 @@ export default function AdminMessagesPage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 700, fontSize: 13, fontFamily: 'var(--mono)',
               }}>{initials(selThread.student?.name)}</div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
                   {selThread.student?.name}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
                   {selThread.student?.email}
-                  {' · '}
-                  <span style={{
-                    color: selThread.student?.subscription_tier === 'premium' ? 'var(--accent)' : 'var(--ink-soft)',
-                    fontWeight: 600,
-                  }}>
-                    {selThread.student?.subscription_tier === 'premium' ? 'Premium' : 'Basic'}
-                  </span>
                 </div>
               </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                {/* Link to student profile */}
+                <button
+                  onClick={() => navigate(`/admin/students/${selStudentId}`)}
+                  title="Profil studenta"
+                  style={{
+                    height: 34, padding: '0 12px', borderRadius: 8,
+                    border: '1px solid var(--line)', background: 'var(--surface)',
+                    cursor: 'pointer', color: 'var(--ink-soft)',
+                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600,
+                  }}
+                >
+                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Profil
+                </button>
+
+                {/* Archive / Unarchive */}
+                <button
+                  onClick={handleArchiveToggle}
+                  disabled={archiving}
+                  title={selThread.student?.thread_archived ? 'Vrati iz arhive' : 'Arhiviraj razgovor'}
+                  style={{
+                    height: 34, padding: '0 12px', borderRadius: 8,
+                    border: '1px solid var(--line)', background: 'var(--surface)',
+                    cursor: archiving ? 'default' : 'pointer', color: 'var(--ink-soft)',
+                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600,
+                    opacity: archiving ? 0.5 : 1,
+                  }}
+                >
+                  {selThread.student?.thread_archived ? (
+                    <>
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                      </svg>
+                      Vrati
+                    </>
+                  ) : (
+                    <>
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+                      </svg>
+                      Arhiviraj
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Context strip */}
+            <ContextStrip student={selThread.student} context={selThread.context} />
 
             {/* Messages */}
             {loadingThread

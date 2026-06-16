@@ -641,6 +641,14 @@ export async function replyToStudent(studentId, text, file = null) {
   return data.message;
 }
 
+export async function archiveMessageThread(studentId) {
+  return apiFetch(`/api/teacher/messages/${studentId}/archive`, { method: 'POST' });
+}
+
+export async function unarchiveMessageThread(studentId) {
+  return apiFetch(`/api/teacher/messages/${studentId}/unarchive`, { method: 'POST' });
+}
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
 export async function getAdminStudents() {

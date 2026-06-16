@@ -623,6 +623,8 @@ const migrations = [
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
     FOREIGN KEY (syllabus_code_id) REFERENCES syllabus_codes(id) ON DELETE CASCADE
   )`,
+  // R28 — Message thread archive flag per student (stored on the user row)
+  `ALTER TABLE users ADD COLUMN messages_thread_archived INTEGER NOT NULL DEFAULT 0`,
   // R11b — Rich stem blocks stored as JSON
   `ALTER TABLE questions ADD COLUMN stem_blocks TEXT`,
   // Inline-chemistry compound library (searchable by HR/EN name → mhchem formula).
