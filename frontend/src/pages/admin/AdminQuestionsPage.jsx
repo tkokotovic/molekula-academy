@@ -3,7 +3,7 @@ import {
   getQuestions, createQuestion, updateQuestion,
   deleteQuestion, setQuestionStatus, getCourses,
   getTeacherQuizzes, createTeacherQuiz, updateTeacherQuiz, deleteTeacherQuiz,
-  getSyllabusCodes,
+  getSyllabusCodes, importQuestions,
 } from '../../api/client';
 
 // ─── Category system ───────────────────────────────────────────────────────────
@@ -982,6 +982,374 @@ function QuizBuilderPanel({ questions, allTopics, onSaved }) {
   );
 }
 
+// ─── Bulk paste parser ─────────────────────────────────────────────────────────
+
+const OPTION_LABEL_RE = /^([A-Da-d])[.)]\s*/;
+const QUESTION_NUM_RE = /^(\d+)[.)]\s+/;
+const ANSWER_RE = /^(?:answer|correct|točan\s+odgovor|odgovor)\s*[:=]\s*([A-Da-d])/i;
+
+function parsePastedText(raw) {
+  const lines = raw.split('\n').map(l => l.trimEnd());
+  const blocks = [];
+  let cur = null;
+
+  function flush() {
+    if (!cur) return;
+    const stem = cur.stemLines.join(' ').trim();
+    if (stem.length < 2) { cur = null; return; }
+    blocks.push(cur);
+    cur = null;
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // New numbered question
+    const numMatch = trimmed.match(QUESTION_NUM_RE);
+    if (numMatch) {
+      flush();
+      cur = { stemLines: [trimmed.slice(numMatch[0].length)], options: [], answerLetter: '' };
+      continue;
+    }
+
+    if (!cur) {
+      // First un-numbered block is treated as a question
+      if (trimmed.length > 8) {
+        cur = { stemLines: [trimmed], options: [], answerLetter: '' };
+      }
+      continue;
+    }
+
+    // Option line A) B) C) D)
+    const optMatch = trimmed.match(OPTION_LABEL_RE);
+    if (optMatch) {
+      cur.options.push({ letter: optMatch[1].toUpperCase(), text: trimmed.slice(optMatch[0].length), is_correct: false });
+      continue;
+    }
+
+    // Answer marker
+    const ansMatch = trimmed.match(ANSWER_RE);
+    if (ansMatch) {
+      cur.answerLetter = ansMatch[1].toUpperCase();
+      continue;
+    }
+
+    // Empty line = potential question boundary (only if we have stem + some options)
+    if (trimmed === '') {
+      if (cur.options.length > 0) {
+        flush();
+      }
+      continue;
+    }
+
+    // Otherwise continuation of stem
+    if (cur.options.length === 0) {
+      cur.stemLines.push(trimmed);
+    }
+  }
+  flush();
+
+  // Apply correct answer, convert to question objects
+  return blocks.map((b, i) => {
+    const isMCQ = b.options.length >= 2;
+    const opts = isMCQ
+      ? b.options.map(o => ({
+          text: o.text,
+          is_correct: b.answerLetter ? o.letter === b.answerLetter : false,
+          equation: null,
+        }))
+      : [];
+    // Pad MCQ to 4 options if needed
+    while (isMCQ && opts.length < 4) opts.push({ text: '', is_correct: false, equation: null });
+
+    return {
+      _id: i,
+      stem: b.stemLines.join(' ').trim(),
+      type: isMCQ ? 'mcq' : 'short_answer',
+      options: opts,
+      difficulty: 'medium',
+      categories: [],
+      syllabus_codes: [],
+      source_type: 'teacher',
+      skip: false,
+      _noCorrect: isMCQ && !b.answerLetter,
+    };
+  });
+}
+
+// ─── Bulk import panel ─────────────────────────────────────────────────────────
+
+function BulkImportPanel({ onImported }) {
+  const [step, setStep] = useState('paste'); // paste | review | done
+  const [raw, setRaw] = useState('');
+  const [parsed, setParsed] = useState([]);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState(null);
+  const [err, setErr] = useState('');
+
+  function doParse() {
+    const qs = parsePastedText(raw);
+    if (!qs.length) { setErr('Nije pronađeno nijedno pitanje. Provjeri format.'); return; }
+    setErr('');
+    setParsed(qs);
+    setStep('review');
+  }
+
+  function updateQ(idx, patch) {
+    setParsed(prev => prev.map((q, i) => i === idx ? { ...q, ...patch } : q));
+  }
+
+  function updateOption(qIdx, oIdx, patch) {
+    setParsed(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      return { ...q, options: q.options.map((o, j) => j === oIdx ? { ...o, ...patch } : o) };
+    }));
+  }
+
+  function toggleCorrect(qIdx, oIdx) {
+    setParsed(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      return { ...q, _noCorrect: false, options: q.options.map((o, j) => ({ ...o, is_correct: j === oIdx })) };
+    }));
+  }
+
+  async function doImport() {
+    const toSend = parsed.filter(q => !q.skip && q.stem.length >= 2);
+    if (!toSend.length) { setErr('Nema pitanja za uvoz.'); return; }
+    setImporting(true); setErr('');
+    try {
+      const resp = await importQuestions(toSend.map(q => ({
+        type: q.type,
+        stem: q.stem,
+        difficulty: q.difficulty,
+        source_type: q.source_type,
+        categories: q.categories,
+        syllabus_codes: q.syllabus_codes,
+        options: q.type === 'mcq' ? q.options.filter(o => o.text.trim()) : [],
+        max_points: 1,
+        status: 'pending_approval',
+      })));
+      setResult(resp);
+      setStep('done');
+      if (onImported) onImported();
+    } catch (ex) {
+      setErr(ex.message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function reset() {
+    setStep('paste'); setRaw(''); setParsed([]); setResult(null); setErr('');
+  }
+
+  const toImport = parsed.filter(q => !q.skip).length;
+
+  if (step === 'done') {
+    return (
+      <div style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+        <h2 style={{ margin: '0 0 8px', fontFamily: 'var(--display)', color: 'var(--ink)' }}>Uvoz završen</h2>
+        <p style={{ color: 'var(--ink-soft)', fontSize: 14, margin: '0 0 24px' }}>
+          {result?.imported_count} pitanja uvezeno s oznakom <b>Na čekanju</b> — odobri ih u bazi pitanja.
+        </p>
+        <button onClick={reset} style={{ padding: '10px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          Uvezi više
+        </button>
+      </div>
+    );
+  }
+
+  if (step === 'review') {
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--display)', color: 'var(--ink)' }}>
+            Pregled — {parsed.length} pitanja parsirana
+          </h2>
+          <div style={{ flex: 1 }} />
+          <button onClick={reset} style={{ fontSize: 12, color: 'var(--ink-soft)', background: 'none', border: '1.5px solid var(--line)', borderRadius: 7, padding: '5px 12px', cursor: 'pointer' }}>
+            ← Natrag
+          </button>
+          <button
+            onClick={doImport}
+            disabled={importing || toImport === 0}
+            style={{ padding: '8px 22px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing || toImport === 0 ? .5 : 1 }}>
+            {importing ? 'Uvozim…' : `Uvezi ${toImport} pitanja`}
+          </button>
+        </div>
+        {err && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{err}</p>}
+
+        {parsed.map((q, qi) => (
+          <div key={qi} style={{
+            marginBottom: 12, border: `1.5px solid ${q.skip ? 'var(--line)' : q._noCorrect ? '#f59e0b60' : 'var(--line)'}`,
+            borderRadius: 12, background: q.skip ? 'var(--bg)' : 'var(--surface)',
+            opacity: q.skip ? .45 : 1, transition: 'opacity .12s',
+          }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: 'var(--ink-faint)' }}>#{qi + 1}</span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}>
+                {TYPE_LABELS[q.type] || q.type}
+              </span>
+              {q._noCorrect && (
+                <span style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, color: '#d97706', background: 'color-mix(in srgb,#f59e0b 12%,transparent)', padding: '2px 8px', borderRadius: 6 }}>
+                  ⚠ Označi točan odgovor
+                </span>
+              )}
+              <select
+                style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--line)', background: 'var(--bg)', color: DIFF_COLORS[q.difficulty], fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}
+                value={q.difficulty}
+                onChange={e => updateQ(qi, { difficulty: e.target.value })}
+              >
+                {DIFFICULTIES.map(d => <option key={d} value={d}>{DIFF_LABELS[d]}</option>)}
+              </select>
+              <select
+                style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'inherit', cursor: 'pointer' }}
+                value={q.type}
+                onChange={e => updateQ(qi, { type: e.target.value })}
+              >
+                {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+              </select>
+              <div style={{ flex: 1 }} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: 'var(--ink-soft)', userSelect: 'none' }}>
+                <input type="checkbox" checked={q.skip} onChange={e => updateQ(qi, { skip: e.target.checked })} style={{ cursor: 'pointer' }} />
+                Preskoči
+              </label>
+            </div>
+
+            <div style={{ padding: '12px 14px' }}>
+              {/* Stem */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Tekst pitanja</div>
+                <textarea
+                  style={{ ...inp, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={q.stem}
+                  onChange={e => updateQ(qi, { stem: e.target.value })}
+                />
+              </div>
+
+              {/* MCQ options */}
+              {q.type === 'mcq' && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Opcije — klikni za točan odgovor</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    {q.options.map((o, oi) => (
+                      <div
+                        key={oi}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                          borderRadius: 8, border: `1.5px solid ${o.is_correct ? '#16a34a' : 'var(--line)'}`,
+                          background: o.is_correct ? 'color-mix(in srgb,#22c55e 8%,transparent)' : 'var(--bg)',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => toggleCorrect(qi, oi)}
+                      >
+                        <span style={{ fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 700, color: o.is_correct ? '#16a34a' : 'var(--ink-faint)', flexShrink: 0 }}>
+                          {o.is_correct ? '✓' : String.fromCharCode(65 + oi)}
+                        </span>
+                        <input
+                          style={{ flex: 1, border: 'none', background: 'transparent', color: 'var(--ink)', fontSize: 13, fontFamily: 'inherit', outline: 'none', minWidth: 0 }}
+                          value={o.text}
+                          onChange={e => updateOption(qi, oi, { text: e.target.value })}
+                          onClick={ev => ev.stopPropagation()}
+                          placeholder={`Opcija ${String.fromCharCode(65 + oi)}…`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Categories */}
+              <div>
+                <div style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Kategorije</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {ALL_CATEGORIES.map(cat => {
+                    const active = q.categories.includes(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => updateQ(qi, { categories: active ? q.categories.filter(x => x !== cat.id) : [...q.categories, cat.id] })}
+                        style={{
+                          padding: '3px 10px', borderRadius: 20, cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                          border: `1.5px solid ${active ? cat.color : 'var(--line)'}`,
+                          background: active ? cat.color + '18' : 'var(--bg)',
+                          color: active ? cat.color : 'var(--ink-faint)',
+                        }}
+                      >
+                        {active ? '✓ ' : ''}{cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {err && <p style={{ color: '#ef4444', fontSize: 13, marginTop: 8 }}>{err}</p>}
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={doImport}
+            disabled={importing || toImport === 0}
+            style={{ padding: '10px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer', opacity: importing || toImport === 0 ? .5 : 1 }}>
+            {importing ? 'Uvozim…' : `Uvezi ${toImport} pitanja →`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // step === 'paste'
+  return (
+    <div style={{ maxWidth: 760 }}>
+      <h2 style={{ margin: '0 0 6px', fontSize: 18, fontFamily: 'var(--display)', color: 'var(--ink)' }}>Masovni uvoz pitanja</h2>
+      <p style={{ margin: '0 0 20px', color: 'var(--ink-soft)', fontSize: 14, lineHeight: 1.6 }}>
+        Zalijepi tekst s pitanjima ispod. Sustav prepoznaje numerirane upitnike i odgovore A/B/C/D.
+        Nakon parsiranja možeš pregledati i ispraviti svako pitanje prije uvoza.
+      </p>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
+        <b style={{ color: 'var(--ink)', fontFamily: 'var(--mono)', fontSize: 12 }}>Primjer formata:</b>
+        <pre style={{ margin: '8px 0 0', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink)', background: 'var(--bg)', padding: '10px 12px', borderRadius: 7, overflowX: 'auto' }}>{
+`1. Koja je molekularna formula vode?
+A) H2O2
+B) H2O
+C) HO
+D) H3O
+Answer: B
+
+2. Što je pH čiste vode pri 25°C?
+A) 5
+B) 6
+C) 7
+D) 8
+Answer: C`
+        }</pre>
+      </div>
+
+      <textarea
+        style={{ ...inp, minHeight: 320, resize: 'vertical', fontFamily: 'var(--mono)', fontSize: 13, lineHeight: 1.65, marginBottom: 14 }}
+        value={raw}
+        onChange={e => { setRaw(e.target.value); setErr(''); }}
+        placeholder="Zalijepi pitanja ovdje…"
+        spellCheck={false}
+      />
+
+      {err && <p style={{ color: '#ef4444', fontSize: 13, margin: '0 0 10px' }}>{err}</p>}
+
+      <button
+        onClick={doParse}
+        disabled={raw.trim().length < 10}
+        style={{ padding: '10px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: raw.trim().length < 10 ? 'not-allowed' : 'pointer', opacity: raw.trim().length < 10 ? .5 : 1 }}>
+        Parsiraj pitanja →
+      </button>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminQuestionsPage() {
@@ -1083,6 +1451,9 @@ export default function AdminQuestionsPage() {
           <button onClick={() => setTab('builder')} style={{ padding: '8px 18px', borderRadius: 9, border: '1.5px solid var(--line)', background: tab === 'builder' ? 'var(--accent)' : 'var(--surface)', color: tab === 'builder' ? '#fff' : 'var(--ink-soft)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             🧪 Graditelj kviza
           </button>
+          <button onClick={() => setTab('import')} style={{ padding: '8px 18px', borderRadius: 9, border: '1.5px solid var(--line)', background: tab === 'import' ? 'var(--accent)' : 'var(--surface)', color: tab === 'import' ? '#fff' : 'var(--ink-soft)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            📋 Uvoz
+          </button>
           {tab === 'bank' && (
             <button onClick={() => setModal('new')} style={{ marginLeft: 4, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               + Novo pitanje
@@ -1179,6 +1550,11 @@ export default function AdminQuestionsPage() {
       {/* ── Quiz builder tab ── */}
       {tab === 'builder' && (
         <QuizBuilderPanel questions={questions} allTopics={allTopics} />
+      )}
+
+      {/* ── Import tab ── */}
+      {tab === 'import' && (
+        <BulkImportPanel onImported={() => { load(); setTab('bank'); }} />
       )}
 
       {/* ── Modal ── */}

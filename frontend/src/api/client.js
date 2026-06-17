@@ -395,6 +395,14 @@ export async function deleteQuestion(id) {
   return apiFetch(`/api/teacher/questions/${id}`, { method: 'DELETE' });
 }
 
+export async function importQuestions(questions) {
+  const data = await apiFetch('/api/teacher/questions/import', {
+    method: 'POST',
+    body: JSON.stringify({ questions }),
+  });
+  return data;
+}
+
 // ─── Teacher quizzes ──────────────────────────────────────────────────────────
 
 export async function getTeacherQuizzes(params = {}) {

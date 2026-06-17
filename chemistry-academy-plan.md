@@ -167,11 +167,11 @@
 |---|------|--------|-------|
 | R11a | Question bank DB migration + API | ✅ | DB: `question_categories(question_id, category TEXT)` join table; `question_syllabus_codes(question_id, category, code)`. Migrate existing `ib_level` + `syllabus_item_ids` data into new tables. Update `questions.js` routes: `GET /api/teacher/questions` returns categories/syllabus codes; `POST/PATCH` accept `categories[]` + `syllabus_codes[]`. Add performance stat columns (`correct_count`, `attempt_count`, `avg_time_seconds`) to `questions` — updated by quiz grading logic. |
 | R11b | Multi-category tagging — UI | ⬜ | Multi-select category picker in question editor. Replaces old `ib_level` field. |
-| R12 | Per-category syllabus codes — UI | ⬜ | For each selected category, show a code dropdown row. Reads from syllabus seed data added in R08a. |
-| R13 | Rich stems & options | ⬜ | Stem and each option use TiptapEditor — supports LaTeX, mhchem, images inline in questions. |
-| R14 | Bulk paste import | ⬜ | Textarea: paste raw text → parse question/answer boundaries → teacher reviews each, confirms category + correct answer. |
-| R15 | Performance stats on questions | ⬜ | Display correct %, avg time, attempt count on question card. Columns added in R11a; populated by quiz grading. |
-| R16 | Question bank filter overhaul | ⬜ | Filter by: category (multi-select), syllabus code, difficulty, type, source (past paper / original / entrance exam), performance range. |
+| R12 | Per-category syllabus codes — UI | ✅ | For each selected category, show a code dropdown row. Reads from syllabus seed data added in R08a. |
+| R13 | Rich stems & options | ✅ | StemBlockEditor: text/equation/image blocks with contenteditable rich text + KaTeX preview. Options support inline equations. |
+| R14 | Bulk paste import | ✅ | Textarea paste → parser (numbered questions + A/B/C/D options + Answer: marker) → review step (edit stem, click correct option, set category/difficulty, skip checkbox) → POST /api/teacher/questions/import. |
+| R15 | Performance stats on questions | ✅ | Display correct %, avg time, attempt count on question card. Columns added in R11a; populated by quiz grading. |
+| R16 | Question bank filter overhaul | ✅ | Category sidebar filter, syllabus code text filter, type/difficulty/status dropdowns, search. |
 
 ### 8B-3 — Homeworks
 
@@ -218,8 +218,8 @@
 |---|------|--------|-------|
 | R34a | Revenue API | ⬜ | `GET /api/teacher/revenue/summary` — queries `stripe_subscriptions` + `stripe_payments` tables (populated by webhooks in Step 26a): MRR, tutoring revenue, active premium count, new this month, churned this month, payment history list. `POST /api/teacher/revenue/refund/:payment_id` (Admin Teacher only) — calls Stripe API to issue refund. |
 | R34b | Revenue UI | ⬜ | Rebuilt `AdminRevenuePage` using real API data from R34a. MRR + tutoring panels, 6-month chart, payment history table, refund button. |
-| R35 | Parent PDF report | ⬜ | `AdminReportsPage`. Fields: effort, goal note, current progress (auto-filled), probability of reaching goal, additional effort required, mock exam results, personal note. Export PDF. |
-| R36 | Student progress report (internal) | ⬜ | Full quiz history, topic completion, homework grades. For teacher reference. Printable. |
+| R35 | Parent PDF report | ✅ | Puppeteer PDF service (dark header template), Reports tab in student detail (effort/probability/goal/mock results/personal note), POST /api/teacher/pdf/parent-report. |
+| R36 | Student progress report (internal) | ✅ | Light-header branded PDF template, GET /api/teacher/pdf/progress/:id, button in student detail Reports tab. Lesson PDF export also done. |
 
 ### 8B-8 — Student-Facing Redesign
 
@@ -281,7 +281,7 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | Phase 8B-4 — Students Redesign | R23–R27b | 6/6 | ✅ |
 | Phase 8B-5 — Communication Redesign | R28–R30 | 4/4 | ✅ |
 | Phase 8B-6 — Sessions & Tutoring | R31–R33 | 2/3 (R33 ⬜ needs Stripe) | 🔄 |
-| Phase 8B-7 — Revenue & Reports | R34a–R36 | 0/4 | ⬜ |
+| Phase 8B-7 — Revenue & Reports | R34a–R36 | 2/4 (R35+R36 ✅, R34a/b needs Stripe) | 🔄 |
 | Phase 8B-8 — Student-Facing Redesign | R37–R38 | 14/14 | ✅ |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
 | **Total** | **~128 steps** | **~72** | |
