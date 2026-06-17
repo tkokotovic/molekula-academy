@@ -138,6 +138,8 @@ router.post('/import', (req, res) => {
         batchId, req.user.id
       );
       insertOptions(lastInsertRowid, q.options ?? []);
+      setCategories(lastInsertRowid, q.categories ?? []);
+      setSyllabusCodes(lastInsertRowid, q.syllabus_codes ?? []);
       inserted.push(lastInsertRowid);
     }
     return inserted;
