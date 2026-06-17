@@ -2,7 +2,7 @@
 
 **Academy:** Molekula Academy  
 **Teacher:** Tomislav  
-**Last updated:** June 2026  
+**Last updated:** 17 June 2026  
 **Version:** 4.0
 
 ---
@@ -166,7 +166,7 @@
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | R11a | Question bank DB migration + API | ✅ | DB: `question_categories(question_id, category TEXT)` join table; `question_syllabus_codes(question_id, category, code)`. Migrate existing `ib_level` + `syllabus_item_ids` data into new tables. Update `questions.js` routes: `GET /api/teacher/questions` returns categories/syllabus codes; `POST/PATCH` accept `categories[]` + `syllabus_codes[]`. Add performance stat columns (`correct_count`, `attempt_count`, `avg_time_seconds`) to `questions` — updated by quiz grading logic. |
-| R11b | Multi-category tagging — UI | ⬜ | Multi-select category picker in question editor. Replaces old `ib_level` field. |
+| R11b | Multi-category tagging — UI | ✅ | Multi-select category picker in question editor (CATEGORY_GROUPS with grouped toggle buttons). Replaces old `ib_level` field. CategoryPill component on question cards. |
 | R12 | Per-category syllabus codes — UI | ✅ | For each selected category, show a code dropdown row. Reads from syllabus seed data added in R08a. |
 | R13 | Rich stems & options | ✅ | StemBlockEditor: text/equation/image blocks with contenteditable rich text + KaTeX preview. Options support inline equations. |
 | R14 | Bulk paste import | ✅ | Textarea paste → parser (numbered questions + A/B/C/D options + Answer: marker) → review step (edit stem, click correct option, set category/difficulty, skip checkbox) → POST /api/teacher/questions/import. |
@@ -288,61 +288,42 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 
 ---
 
-## Recommended next build order
+## Current status & next steps
 
-> **Revised June 2026.** R37+R38 complete. Database is now up — backend work (DB migrations + API routes) can proceed independently of hosting/Stripe decisions. External blockers (domain, Stripe account) only block deployment and billing; they do not block backend or admin panel development.
+> **Updated 17 June 2026.** All admin panel phases (R01–R38) are complete. No unblocked code work remains — everything outstanding requires either Stripe/business registration or physical prerequisites (hosting, photos, domain).
 
-### Now unblocked — backend work (no external dependencies)
+### ✅ All done — nothing left to build without external dependencies
 
-These can be built immediately. All are pure DB + API work, no Stripe needed.
+Every phase R01–R38 is shipped. The codebase is feature-complete for launch.
 
-1. **R08a** — Syllabus tags DB + API (`lesson_syllabus_tags` table, seed data, `syllabus.js` route)
-2. **R11a** — Question bank DB migration (`question_categories`, `question_syllabus_codes` tables + updated API)
-3. **R17** — Homeworks DB + API (5 new tables, full CRUD + submission + correction endpoints, `homeworks.js` route)
-4. **R27a** — Groups DB + API (`groups`, `group_members` tables, CRUD endpoints, `groups.js` route)
-5. **R29a** — Broadcasts DB + API (`broadcasts`, `broadcast_recipients` tables, delivery into `notifications`, `broadcasts.js` route)
-6. **R31** — Tutoring packages DB + API (`tutoring_packages`, `student_hours` tables, extend `sessions`, `tutoring.js` route)
+### Blocked on Tomislav (external prerequisites)
 
-### Blocked on external steps (domain, hosting, Stripe)
+| # | What | Blocks |
+|---|------|--------|
+| Step 12 | Real photos (portrait + hero image) | Phase 1 fully done |
+| Step 24 | Register domain (molekula-academy.hr?) | Hosting + launch |
+| Step 25 | Hetzner VPS — provision + deploy | Beta launch |
+| Step 26a | Croatian business reg + Stripe account | All billing |
 
-7. **Step 24** — Register domain (Tomislav)
-8. **Step 25** — Hetzner VPS: provision, deploy, SSL
-9. **Step 12** — Real photos (Tomislav)
-10. **Step 26a** — Stripe backend webhook + subscription sync (needs Stripe account + business reg)
-11. **Step 26b** — Stripe checkout frontend
-12. **Steps 27–29** — Subscription management, content locking, invoice PDF
+### Blocked on Stripe (after Step 26a)
 
-### Frontend (after backend steps above)
+1. **Step 26a/b** — Stripe webhook + subscription sync + checkout flow
+2. **Steps 27–29** — Subscription management, cancellation lock, invoice PDF
+3. **R33** — Student purchase tutoring package (Stripe checkout → hours credited)
+4. **R34a** — Revenue API (queries `stripe_subscriptions` + `stripe_payments`)
+5. **R34b** — Revenue UI (MRR panel, payment history, refund button)
 
-13. **R08b** — Syllabus tags UI (after R08a)
-14. **R09** — Lesson PDF/DOCX export ✅
-15. **R10** — Scheduled publish UI
-16. **R11b–R16** — Question bank UI redesign ✅
-17. **R18–R22** — Homeworks UI ✅
-18. **R23–R26** — Students redesign ✅
-19. **R27b** — Groups UI ✅
-20. **R28** — Messages admin UI ✅
-21. **R29b** — Broadcasts UI ✅
-22. **R32** — Sessions admin UI ✅
-23. **R33** — Student purchase tutoring (needs Stripe)
+### After hosting + Stripe: launch sequence
 
-### Revenue + reports (after Stripe)
+1. **L02** — Full end-to-end test (land → sign up → pay → lesson → quiz → message → cancel)
+2. **L03** — Beta: 5–10 known students, free/discounted first month
+3. **Step 60** — Calendly webhook automation (Zoom link → email on booking)
+4. **L04** — Replace sample testimonials with real beta quotes
+5. **L05** — Public launch (social media, IB Croatia FB groups, medical applicant groups)
 
-23. **R34a** — Revenue API (after Step 26a)
-24. **R34b** — Revenue UI
-25. **R35** — Parent PDF report
-26. **R36** — Student progress report
+### Deferred
 
-### Final
-
-27. **L02** — Full end-to-end test (after hosting + Stripe)
-28. **L03** — Beta: 5–10 known students
-29. **Step 60** — Calendly webhook automation
-30. **L04–L05** — Replace testimonials → public launch
-
-### Deferred / reconsidered
-
-- **R28** (Messages redesign to quiz-context-only threads) — original spec dropped. Implemented instead as admin messages UI enhancements (search, filters, archive, student context strip) on top of the existing general thread model. ✅ Done.
+- **R28** (Messages redesign to quiz-context-only threads) — original spec dropped. Implemented as admin messages UI enhancements instead. ✅ Done.
 
 ---
 
