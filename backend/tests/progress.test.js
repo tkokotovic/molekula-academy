@@ -307,7 +307,12 @@ describe('GET /api/student/progress/courses', () => {
       .set('Authorization', `Bearer ${teacher}`)
       .send({ status: 'published' });
 
-    // Complete first lesson only
+    // Enroll student then complete first lesson only
+    await request(app)
+      .post('/api/student/enrollment')
+      .set('Authorization', `Bearer ${student}`)
+      .send({ course_id: courseId });
+
     await request(app)
       .post(`/api/student/lessons/${lessonId}/progress`)
       .set('Authorization', `Bearer ${student}`)
@@ -330,7 +335,12 @@ describe('GET /api/student/progress/courses', () => {
   test('returns 0% when no lessons completed', async () => {
     const teacher = await teacherToken();
     const student = await studentToken();
-    await createContent(teacher);
+    const { courseId } = await createContent(teacher);
+
+    await request(app)
+      .post('/api/student/enrollment')
+      .set('Authorization', `Bearer ${student}`)
+      .send({ course_id: courseId });
 
     const res = await request(app)
       .get('/api/student/progress/courses')
@@ -457,7 +467,12 @@ describe('Teacher student progress view', () => {
     const teacher = await teacherToken();
     const student = await studentToken();
     const studentUser = db.prepare("SELECT * FROM users WHERE email = 'ana@student.hr'").get();
-    const { lessonId } = await createContent(teacher);
+    const { courseId, lessonId } = await createContent(teacher);
+
+    await request(app)
+      .post('/api/student/enrollment')
+      .set('Authorization', `Bearer ${student}`)
+      .send({ course_id: courseId });
 
     await request(app)
       .post(`/api/student/lessons/${lessonId}/progress`)

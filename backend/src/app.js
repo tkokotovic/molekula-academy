@@ -138,6 +138,54 @@ app.use('/api/teacher', require('./routes/pdf'));
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// ─── Frontend serving (production) ───────────────────────────────────────────
+// In production the Express server also serves the Vite build. Public marketing
+// pages get meta-tag injection for SEO; all other routes get the SPA fallback.
+if (process.env.NODE_ENV === 'production') {
+  const fs = require('fs');
+  const DIST = path.join(__dirname, '..', '..', 'frontend', 'dist');
+  const BASE_HTML = path.join(DIST, 'index.html');
+
+  const META = {
+    '/': {
+      title: 'Molekula Academy — Online kemija za IB, medicinare i stomatologe',
+      description: 'Personalizirana online nastava kemije za IB učenike, pristupnike na medicinu i stomatologiju te studente. Lekcije, kvizovi i 1-na-1 tutoring.',
+      og_image: 'https://molekula-academy.hr/og-home.png',
+    },
+    '/privacy': {
+      title: 'Politika privatnosti — Molekula Academy',
+      description: 'Saznajte kako Molekula Academy prikuplja, koristi i štiti vaše osobne podatke.',
+    },
+    '/terms': {
+      title: 'Uvjeti korištenja — Molekula Academy',
+      description: 'Uvjeti i odredbe korištenja platforme Molekula Academy.',
+    },
+  };
+
+  app.use(express.static(DIST));
+
+  app.get('*', (req, res) => {
+    const meta = META[req.path];
+    if (!meta || !fs.existsSync(BASE_HTML)) {
+      return res.sendFile(BASE_HTML);
+    }
+    let html = fs.readFileSync(BASE_HTML, 'utf8');
+    const ogImage = meta.og_image || 'https://molekula-academy.hr/og-home.png';
+    const injection = [
+      `<title>${meta.title}</title>`,
+      `<meta name="description" content="${meta.description}" />`,
+      `<meta property="og:title" content="${meta.title}" />`,
+      `<meta property="og:description" content="${meta.description}" />`,
+      `<meta property="og:image" content="${ogImage}" />`,
+      `<meta property="og:type" content="website" />`,
+      `<meta name="twitter:card" content="summary_large_image" />`,
+    ].join('\n    ');
+    html = html.replace('<title>Molekula Academy</title>', injection);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
+}
+
 // ─── Global error handler ─────────────────────────────────────────────────────
 // Last-resort catch so an unhandled throw returns JSON instead of crashing the
 // process or leaking a stack trace to the client.

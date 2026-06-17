@@ -292,6 +292,11 @@ export async function getStudentLesson(lessonId) {
   return data.lesson;
 }
 
+export async function searchStudentContent(q) {
+  const data = await apiFetch(`/api/student/search?q=${encodeURIComponent(q)}`);
+  return data.results;
+}
+
 export async function createLessonBlock(lessonId, type, content) {
   const data = await apiFetch(`/api/teacher/lessons/${lessonId}/blocks`, {
     method: 'POST',

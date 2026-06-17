@@ -500,6 +500,8 @@ const migrations = [
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
   )`,
   `ALTER TABLE sessions ADD COLUMN hours_deducted INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE sessions ADD COLUMN reminder_24h_sent INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE sessions ADD COLUMN reminder_1h_sent INTEGER NOT NULL DEFAULT 0`,
   // R29a — Broadcasts
   `CREATE TABLE IF NOT EXISTS broadcasts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

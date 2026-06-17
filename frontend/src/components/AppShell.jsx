@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logout, getMe, getStudentSessions, getNotifications, markNotificationRead, markAllNotificationsRead } from '../api/client';
+import { logout, getMe, getStudentSessions, getNotifications, markNotificationRead, markAllNotificationsRead, searchStudentContent } from '../api/client';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -305,6 +305,63 @@ function NotifDropdown({ lang }) {
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
+function SearchBox({ lang }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef(null);
+  const wrapRef  = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    if (query.length < 2) { setResults([]); setOpen(false); return; }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const r = await searchStudentContent(query);
+        setResults(r);
+        setOpen(r.length > 0);
+      } catch { /* ignore */ }
+    }, 300);
+  }, [query]);
+
+  // Close on outside click
+  useEffect(() => {
+    function handler(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function pick(r) {
+    setQuery(''); setResults([]); setOpen(false);
+    navigate(`/lessons/${r.id}`);
+  }
+
+  return (
+    <div className="topbar-search" ref={wrapRef} style={{ position: 'relative' }}>
+      <Icon.search width={18} height={18} />
+      <input
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onFocus={() => results.length && setOpen(true)}
+        placeholder={lang === 'en' ? 'Search lessons…' : 'Pretraži lekcije…'}
+      />
+      {open && (
+        <div className="search-dropdown">
+          {results.map(r => (
+            <button key={r.id} className="search-item" onMouseDown={() => pick(r)}>
+              <span className="search-item-title">{r.title}</span>
+              <span className="search-item-sub">{r.subtitle}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Topbar({ user, lang, setLang, theme, setTheme, onMenu }) {
   const navigate  = useNavigate();
   const initials  = user
@@ -325,10 +382,7 @@ function Topbar({ user, lang, setLang, theme, setTheme, onMenu }) {
       </button>
 
       {/* Search */}
-      <div className="topbar-search">
-        <Icon.search width={18} height={18} />
-        <input placeholder={lang === 'en' ? 'Search lessons, quizzes…' : 'Pretraži lekcije, kvizove…'} />
-      </div>
+      <SearchBox lang={lang} />
 
       <div style={{ flex: 1 }} />
 

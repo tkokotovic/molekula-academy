@@ -261,6 +261,33 @@ async function sendSessionScheduledEmail({ studentName, studentEmail, title, sch
   await send({ to: studentEmail, subject, html, text });
 }
 
+async function sendSessionReminderEmail({ studentName, studentEmail, title, scheduledAt, zoomUrl, hoursUntil }) {
+  const timeLabel = hoursUntil <= 1 ? 'za sat vremena' : 'sutra';
+  const subject = `Podsjetnik: termin ${timeLabel} — ${title}`;
+
+  const zoomBlock = zoomUrl
+    ? `<a class="btn" href="${zoomUrl}">Pridruži se Zoom pozivu</a>`
+    : `<a class="btn" href="https://molekula-academy.hr/sessions">Pogledaj termine</a>`;
+
+  const html = wrapHtml(`
+    <h2>Termin ${timeLabel}</h2>
+    <p>Bok ${escapeHtml(studentName)}, podsjećamo te na nadolazeći termin.</p>
+    <p>Predmet: <span class="highlight">${escapeHtml(title)}</span></p>
+    <p>Vrijeme: <span class="highlight">${escapeHtml(formatDateTimeHr(scheduledAt))}</span></p>
+    ${zoomBlock}
+    <div class="footer">Molekula Academy</div>
+  `);
+
+  const text =
+    `Bok ${studentName},\n\n` +
+    `Podsjetnik: termin "${title}" je ${timeLabel}.\n` +
+    `Vrijeme: ${formatDateTimeHr(scheduledAt)}\n` +
+    (zoomUrl ? `Zoom: ${zoomUrl}\n` : '') +
+    `\nPogledaj na: https://molekula-academy.hr/sessions`;
+
+  await send({ to: studentEmail, subject, html, text });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDateTimeHr(value) {
@@ -289,4 +316,5 @@ module.exports = {
   sendPasswordResetEmail,
   sendHomeworkGradedEmail,
   sendSessionScheduledEmail,
+  sendSessionReminderEmail,
 };

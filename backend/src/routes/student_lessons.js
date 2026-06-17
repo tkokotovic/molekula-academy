@@ -170,6 +170,41 @@ router.get('/topics/:topicId/lessons', requireAuth, (req, res) => {
   return res.json({ lessons: rows.map(parseStudentLesson) });
 });
 
+// ─── GET /api/student/search?q= ───────────────────────────────────────────────
+// Full-text keyword search across published lessons and topics (max 20 results).
+router.get('/search', requireAuth, (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (q.length < 2) return res.json({ results: [] });
+  const like = `%${q}%`;
+
+  const lessons = db.prepare(`
+    SELECT l.id, l.title, l.topic_id,
+           t.title AS topic_title, t.course_id,
+           c.title AS course_title
+      FROM lessons l
+      JOIN topics t ON t.id = l.topic_id
+      JOIN courses c ON c.id = t.course_id
+     WHERE l.status = 'published'
+       AND t.status = 'published'
+       AND c.status = 'published'
+       AND c.is_library = 0
+       AND l.title LIKE ? COLLATE NOCASE
+     ORDER BY l.title
+     LIMIT 20
+  `).all(like);
+
+  const results = lessons.map(r => ({
+    type: 'lesson',
+    id: r.id,
+    title: r.title,
+    subtitle: `${r.course_title} › ${r.topic_title}`,
+    topic_id: r.topic_id,
+    course_id: r.course_id,
+  }));
+
+  return res.json({ results });
+});
+
 // ─── GET /api/student/lessons/:id ─────────────────────────────────────────────
 // Single published lesson. teacher_notes never serialized.
 router.get('/lessons/:id', requireAuth, (req, res) => {

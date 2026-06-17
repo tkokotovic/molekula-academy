@@ -1,41 +1,44 @@
-import { Component } from 'react';
+import { Component, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import TeacherShell from './components/TeacherShell';
-import CoursesPage from './pages/CoursesPage';
-import CourseDetailPage from './pages/CourseDetailPage';
-import LessonPage from './pages/LessonPage';
-import QuizPage from './pages/QuizPage';
-import QuizzesPage from './pages/QuizzesPage';
-import DashboardPage from './pages/DashboardPage';
-import ProgressPage from './pages/ProgressPage';
-import MessagesPage from './pages/MessagesPage';
-import SchedulePage from './pages/SchedulePage';
-import SettingsPage from './pages/SettingsPage';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import AdminStudentsPage from './pages/admin/AdminStudentsPage';
-import AdminStudentDetailPage from './pages/admin/AdminStudentDetailPage';
-import AdminGroupsPage from './pages/admin/AdminGroupsPage';
-import AdminCoursesPage from './pages/admin/AdminCoursesPage';
-import AdminContentPage from './pages/admin/AdminContentPage';
-import AdminHomeworksPage from './pages/admin/AdminHomeworksPage';
-import AdminMessagesPage from './pages/admin/AdminMessagesPage';
-import AdminBroadcastsPage from './pages/admin/AdminBroadcastsPage';
-import AdminSessionsPage from './pages/admin/AdminSessionsPage';
-import AdminRevenuePage from './pages/admin/AdminRevenuePage';
-import AdminReportsPage from './pages/admin/AdminReportsPage';
-import AdminQuestionsPage from './pages/admin/AdminQuestionsPage';
-import LessonEditorPage from './pages/admin/LessonEditorPage';
-import LessonPrintPage from './pages/admin/LessonPrintPage';
-import StudentHomeworksPage from './pages/StudentHomeworksPage';
-import LoginPage from './pages/LoginPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import PrivacyPage from './pages/PrivacyPage';
-import TermsPage from './pages/TermsPage';
-import LandingPage from './pages/LandingPage';
-import OnboardingPage from './pages/OnboardingPage';
 import { isAuthenticated, getToken } from './api/client';
+
+// ─── Lazy page imports (route-level code splitting) ───────────────────────────
+
+const CoursesPage            = lazy(() => import('./pages/CoursesPage'));
+const CourseDetailPage       = lazy(() => import('./pages/CourseDetailPage'));
+const LessonPage             = lazy(() => import('./pages/LessonPage'));
+const QuizPage               = lazy(() => import('./pages/QuizPage'));
+const QuizzesPage            = lazy(() => import('./pages/QuizzesPage'));
+const DashboardPage          = lazy(() => import('./pages/DashboardPage'));
+const ProgressPage           = lazy(() => import('./pages/ProgressPage'));
+const MessagesPage           = lazy(() => import('./pages/MessagesPage'));
+const SchedulePage           = lazy(() => import('./pages/SchedulePage'));
+const SettingsPage           = lazy(() => import('./pages/SettingsPage'));
+const StudentHomeworksPage   = lazy(() => import('./pages/StudentHomeworksPage'));
+const LoginPage              = lazy(() => import('./pages/LoginPage'));
+const ForgotPasswordPage     = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage      = lazy(() => import('./pages/ResetPasswordPage'));
+const PrivacyPage            = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage              = lazy(() => import('./pages/TermsPage'));
+const LandingPage            = lazy(() => import('./pages/LandingPage'));
+const OnboardingPage         = lazy(() => import('./pages/OnboardingPage'));
+const AdminDashboardPage     = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminStudentsPage      = lazy(() => import('./pages/admin/AdminStudentsPage'));
+const AdminStudentDetailPage = lazy(() => import('./pages/admin/AdminStudentDetailPage'));
+const AdminGroupsPage        = lazy(() => import('./pages/admin/AdminGroupsPage'));
+const AdminCoursesPage       = lazy(() => import('./pages/admin/AdminCoursesPage'));
+const AdminContentPage       = lazy(() => import('./pages/admin/AdminContentPage'));
+const AdminHomeworksPage     = lazy(() => import('./pages/admin/AdminHomeworksPage'));
+const AdminMessagesPage      = lazy(() => import('./pages/admin/AdminMessagesPage'));
+const AdminBroadcastsPage    = lazy(() => import('./pages/admin/AdminBroadcastsPage'));
+const AdminSessionsPage      = lazy(() => import('./pages/admin/AdminSessionsPage'));
+const AdminRevenuePage       = lazy(() => import('./pages/admin/AdminRevenuePage'));
+const AdminReportsPage       = lazy(() => import('./pages/admin/AdminReportsPage'));
+const AdminQuestionsPage     = lazy(() => import('./pages/admin/AdminQuestionsPage'));
+const LessonEditorPage       = lazy(() => import('./pages/admin/LessonEditorPage'));
+const LessonPrintPage        = lazy(() => import('./pages/admin/LessonPrintPage'));
 
 // ─── Error boundary (dev debugging) ───────────────────────────────────────────
 
@@ -79,6 +82,7 @@ function RequireTeacher({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: 'var(--ink-faint)', fontSize: 14 }}>Učitavanje…</div>}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -119,6 +123,7 @@ export default function App() {
         <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/print" element={<RequireTeacher><LessonPrintPage /></RequireTeacher>} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
