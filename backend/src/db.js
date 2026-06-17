@@ -627,6 +627,8 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN messages_thread_archived INTEGER NOT NULL DEFAULT 0`,
   // R11b — Rich stem blocks stored as JSON
   `ALTER TABLE questions ADD COLUMN stem_blocks TEXT`,
+  // R08b — course_type on courses (ib_sl | ib_hl | drzavna_matura | prijemni | medchem_1 | medchem_2)
+  `ALTER TABLE courses ADD COLUMN course_type TEXT`,
   // Inline-chemistry compound library (searchable by HR/EN name → mhchem formula).
   // owner_id NULL = built-in seed; set = teacher's saved custom compound.
   `CREATE TABLE IF NOT EXISTS chem_compounds (

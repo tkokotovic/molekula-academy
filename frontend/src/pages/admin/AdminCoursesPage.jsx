@@ -243,12 +243,26 @@ function LessonRow({ lesson, topicId, onRefresh }) {
         display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px 7px 36px',
         borderTop: '1px solid var(--line)', background: 'transparent',
       }}>
-        <span style={{ fontSize: 13, color: 'var(--ink)', flex: 1, lineHeight: 1.3 }}>
+        <span style={{ fontSize: 13, color: 'var(--ink)', flex: 1, lineHeight: 1.4 }}>
           {lesson.title}
           {lesson.master_title && (
             <span title={`Forkano iz biblioteke: ${lesson.master_title}`}
               style={{ marginLeft: 8, fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--accent)', background: 'var(--accent)11', padding: '1px 6px', borderRadius: 99, whiteSpace: 'nowrap' }}>
               ⑂ iz biblioteke
+            </span>
+          )}
+          {lesson.syllabus_codes_csv && (
+            <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap', marginLeft: 8 }}>
+              {lesson.syllabus_codes_csv.split(',').map(code => (
+                <span key={code} style={{
+                  fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 600,
+                  padding: '1px 6px', borderRadius: 99,
+                  background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                  color: 'var(--accent-ink)',
+                  border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                  whiteSpace: 'nowrap',
+                }}>{code}</span>
+              ))}
             </span>
           )}
         </span>

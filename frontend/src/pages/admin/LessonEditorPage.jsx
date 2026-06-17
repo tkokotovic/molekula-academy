@@ -1642,13 +1642,14 @@ const COURSE_TYPE_LABELS = {
   medchem_2:      'MedChem II',
 };
 
-function SyllabusTagPicker({ lessonId }) {
-  const [tags,       setTags]       = useState([]);   // currently saved tags
-  const [allCodes,   setAllCodes]   = useState([]);   // all syllabus_codes rows
+function SyllabusTagPicker({ lessonId, courseType }) {
+  const [tags,       setTags]       = useState([]);
+  const [allCodes,   setAllCodes]   = useState([]);
   const [open,       setOpen]       = useState(false);
-  const [tab,        setTab]        = useState('ib_sl');
+  const [tab,        setTab]        = useState(courseType || 'ib_sl');
+  const [search,     setSearch]     = useState('');
   const [saving,     setSaving]     = useState(false);
-  const [pendingIds, setPendingIds] = useState(null); // null = not editing
+  const [pendingIds, setPendingIds] = useState(null);
 
   useEffect(() => {
     Promise.all([getSyllabusCodes(), getLessonSyllabusTags(lessonId)])
@@ -1656,6 +1657,10 @@ function SyllabusTagPicker({ lessonId }) {
   }, [lessonId]);
 
   function openPicker() {
+    // Default tab: courseType > first tab with existing tags > ib_sl
+    const firstTaggedType = tags.length > 0 ? tags[0].course_type : null;
+    setTab(courseType || firstTaggedType || 'ib_sl');
+    setSearch('');
     setPendingIds(new Set(tags.map(t => t.id)));
     setOpen(true);
   }
@@ -1685,8 +1690,13 @@ function SyllabusTagPicker({ lessonId }) {
     setPendingIds(null);
   }
 
-  const codesForTab = allCodes.filter(c => c.course_type === tab);
   const courseTypes = [...new Set(allCodes.map(c => c.course_type))];
+  const q = search.toLowerCase().trim();
+  const codesForTab = allCodes.filter(c => {
+    if (c.course_type !== tab) return false;
+    if (!q) return true;
+    return c.code.toLowerCase().includes(q) || (c.title || '').toLowerCase().includes(q);
+  });
 
   return (
     <div style={{ marginBottom: 28 }}>
@@ -1731,7 +1741,7 @@ function SyllabusTagPicker({ lessonId }) {
               {courseTypes.map(ct => (
                 <button
                   key={ct}
-                  onClick={() => setTab(ct)}
+                  onClick={() => { setTab(ct); setSearch(''); }}
                   style={{
                     fontSize: 12, fontWeight: 700, fontFamily: 'var(--mono)',
                     padding: '4px 12px', borderRadius: 20, border: '1px solid var(--line)',
@@ -1745,6 +1755,21 @@ function SyllabusTagPicker({ lessonId }) {
                 </button>
               ))}
             </div>
+
+            {/* Search */}
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Pretraži kodove…"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '7px 12px', borderRadius: 8,
+                border: '1px solid var(--line)', background: 'var(--bg)',
+                color: 'var(--ink)', fontSize: 13, fontFamily: 'var(--mono)',
+                outline: 'none',
+              }}
+            />
 
             {/* Code grid */}
             <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -2163,7 +2188,7 @@ export default function LessonEditorPage() {
           </div>
         )}
 
-        <SyllabusTagPicker lessonId={lessonId} />
+        <SyllabusTagPicker lessonId={lessonId} courseType={lesson?.course_type} />
 
         {/* Empty state */}
         {blocks.length === 0 ? (

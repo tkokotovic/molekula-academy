@@ -86,7 +86,12 @@ router.get('/topics/:topicId/lessons', requireAuth, requireTeacher, (req, res) =
     WHERE topic_id = ? AND status = 'scheduled' AND publish_at IS NOT NULL AND publish_at <= ?
   `).run(topicId, now);
   const rows = db.prepare(`
-    SELECT l.*, m.title AS master_title
+    SELECT l.*, m.title AS master_title,
+      (SELECT GROUP_CONCAT(sc.code, ',')
+       FROM lesson_syllabus_tags lst
+       JOIN syllabus_codes sc ON sc.id = lst.syllabus_code_id
+       WHERE lst.lesson_id = l.id
+       ORDER BY sc.course_type, sc.position) AS syllabus_codes_csv
     FROM lessons l
     LEFT JOIN lessons m ON m.id = l.master_lesson_id
     WHERE l.topic_id = ? ORDER BY l.position, l.created_at
@@ -228,10 +233,12 @@ router.get('/lessons/:id', requireAuth, requireTeacher, (req, res) => {
   const { id } = req.params;
   maybeAutoPublish(id);
   const row = db.prepare(`
-    SELECT l.*, m.title AS master_title, t.title AS topic_title
+    SELECT l.*, m.title AS master_title, t.title AS topic_title,
+           c.course_type AS course_type
     FROM lessons l
     LEFT JOIN lessons m ON m.id = l.master_lesson_id
     LEFT JOIN topics t ON t.id = l.topic_id
+    LEFT JOIN courses c ON c.id = t.course_id
     WHERE l.id = ?
   `).get(id);
   const lesson = parseLesson(row);
