@@ -58,6 +58,22 @@ export async function logout() {
   clearToken();
 }
 
+export async function requestPasswordReset(email) {
+  return apiFetch('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token, newPassword) {
+  const data = await apiFetch('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  if (data.token) setToken(data.token);
+  return data;
+}
+
 export async function getMe() {
   return apiFetch('/api/auth/me');
 }

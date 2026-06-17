@@ -165,6 +165,31 @@ async function notifyStudentTeacherReplied({ studentName, studentEmail, replyTex
   await send({ to: studentEmail, subject, html, text });
 }
 
+// ─── Password reset ───────────────────────────────────────────────────────────
+
+async function sendPasswordResetEmail({ studentName, studentEmail, resetUrl }) {
+  const subject = 'Zahtjev za promjenu lozinke — Molekula Academy';
+
+  const html = wrapHtml(`
+    <div class="logo">Molekula Academy</div>
+    <h2>Promjena lozinke</h2>
+    <p>Bok ${escapeHtml(studentName)},</p>
+    <p>Zaprimili smo zahtjev za promjenu lozinke na tvom računu. Klikni na gumb ispod
+       kako bi postavio/la novu lozinku. Poveznica vrijedi <span class="highlight">60 minuta</span>.</p>
+    <a class="btn" href="${resetUrl}">Postavi novu lozinku</a>
+    <p style="margin-top:20px;font-size:13px;">Ako nisi ti zatražio/la promjenu, slobodno ignoriraj
+       ovaj email — tvoja lozinka ostaje nepromijenjena.</p>
+    <div class="footer">Molekula Academy</div>
+  `);
+
+  const text =
+    `Bok ${studentName},\n\n` +
+    `Zatražena je promjena lozinke. Postavi novu na sljedećoj poveznici (vrijedi 60 min):\n` +
+    `${resetUrl}\n\nAko nisi ti, ignoriraj ovaj email.`;
+
+  await send({ to: studentEmail, subject, html, text });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function escapeHtml(str) {
@@ -180,4 +205,5 @@ module.exports = {
   sendWelcomeEmail,
   sendCertificateEmail,
   notifyStudentTeacherReplied,
+  sendPasswordResetEmail,
 };

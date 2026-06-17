@@ -1,4 +1,6 @@
-const puppeteer = require('puppeteer');
+// puppeteer 25 is ESM-only; lazy-require it inside the launch path so simply
+// importing this module (e.g. under Jest, which can't transform ESM) doesn't
+// pull it in. Only the actual PDF render needs a browser.
 
 // ── Brand tokens ─────────────────────────────────────────────────────────────
 
@@ -389,6 +391,7 @@ async function getBrowser() {
       _browser = null;
     }
   }
+  const puppeteer = require('puppeteer');
   _browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],

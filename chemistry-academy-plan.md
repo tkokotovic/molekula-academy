@@ -263,6 +263,27 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 
 ---
 
+## PHASE 10 — Hardening & Pre-Launch Polish
+*Goal: production-grade security, performance, and the missing flows surfaced by the 17 Jun whole-project audit. No external dependencies (except AI, deferred). See `memory/hardening-pass.md`.*
+
+| # | Step | Status | Notes |
+|---|------|--------|-------|
+| H01 | Security middleware | ✅ | `helmet` (CORP cross-origin for /uploads), `cors` (env `CORS_ORIGIN`, same-origin default), `express-rate-limit` on `/api/auth/*` (20/15min, skipped in tests), 5MB JSON cap, `trust proxy` in prod, global JSON error handler — `backend/src/app.js` |
+| H02 | JWT fail-fast | ✅ | Refuses to boot in production without `JWT_SECRET` — `backend/src/middleware/auth.js` |
+| H03 | DB indexes | ✅ | 19 indexes for reverse-FK + time-range scans (was zero across 40 tables) — `backend/src/db.js` |
+| H04 | `.env.example` | ✅ | All vars documented (NODE_ENV, JWT_SECRET, APP_URL, CORS_ORIGIN, SMTP_*, ANTHROPIC_*) + secret-gen command |
+| H05 | Password reset flow | ✅ | Was missing entirely (table existed, no route). `forgot-password` (anti-enumeration, sha256 token, 60min TTL) + `reset-password` (single-use). Branded email + `ForgotPasswordPage`/`ResetPasswordPage`/`AuthShell`. Verified end-to-end |
+| H06 | Fix broken test suite | ✅ | `pdfExport.js` top-level `require('puppeteer')` (ESM-only) crashed every Jest suite at import → lazy-required. Suite: 1 → **301/304 passing** |
+| H07 | Reconcile 3 progress tests | ⬜ | Pre-existing `progress.test.js` failures (hidden behind H06 crash): `/progress/courses` returns `[]` for non-enrolled student. Needs product call: should progress show enrolled-only courses? Then update tests/route |
+| H08 | Email rebrand + coverage | ⬜ | Templates use sky-blue `#0ea5e9`+Arial (not Molekula teal/Bricolage); fix "Professor" EN typo in HR subject (`notifyStudentTeacherReplied`). Add missing emails: homework-graded, session-scheduled. `backend/src/services/email.js` |
+| H09 | Session reminders | ⬜ | No cron exists → students no-show Zoom sessions. Scheduled job emails "session in 1h/24h". `idx_sessions_scheduled` already added in H03 |
+| H10 | Student global search | ⬜ | No way to find a lesson/topic by keyword as the library grows. Search across lessons/topics (student-facing) |
+| H11 | Frontend code-splitting | ⬜ | Ships as one 1.5MB / 422KB-gzip bundle, no route splitting. Lazy-load routes via `React.lazy` + dynamic `import()` |
+| H12 | SSR / prerender for SEO | ⬜ | PRE-BETA (see competitor insights). Public marketing/content pages are SPA-only → invisible to Google, which is SaveMyExams' whole growth engine. Decide rendering approach |
+| H13 | Real Claude AI grading | ⏸️ | **DEFERRED by TK (17 Jun)** — unsure how to approach AI integration in the system. `aiGrading.js` + `aiAnswerGeneration.js` remain keyword stubs; `ai_grading_corrections` already captures teacher corrections as a ready few-shot set; env scaffolded. Revisit when AI strategy decided |
+
+---
+
 ## Summary
 
 | Phase | Steps | Done | Status |
@@ -284,17 +305,21 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | Phase 8B-7 — Revenue & Reports | R34a–R36 | 2/4 (R35+R36 ✅, R34a/b needs Stripe) | 🔄 |
 | Phase 8B-8 — Student-Facing Redesign | R37–R38 | 14/14 | ✅ |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
-| **Total** | **~128 steps** | **~72** | |
+| Phase 10 — Hardening & Polish | H01–H13 | 6/13 (H13 deferred) | 🔄 |
+| **Total** | **~141 steps** | **~78** | |
 
 ---
 
 ## Current status & next steps
 
-> **Updated 17 June 2026.** All admin panel phases (R01–R38) are complete. No unblocked code work remains — everything outstanding requires either Stripe/business registration or physical prerequisites (hosting, photos, domain).
+> **Updated 17 June 2026.** All feature phases (R01–R38) are complete. A whole-project audit then opened **Phase 10 (Hardening & Polish)**: Group 1 (security, DB indexes, password reset, test-suite fix — H01–H06) is **done + verified**. Remaining unblocked code work: H07–H12 (progress-test reconcile, email rebrand, session reminders, search, code-splitting, SSR). H13 (AI grading) deferred by TK pending an AI-integration strategy. Stripe/hosting/photos still external-blocked.
 
-### ✅ All done — nothing left to build without external dependencies
+### Unblocked code work remaining (Phase 10)
 
-Every phase R01–R38 is shipped. The codebase is feature-complete for launch.
+- **H07** reconcile 3 pre-existing progress tests (needs enrollment-gating decision)
+- **H08** email rebrand (teal/fonts, fix "Professor" typo) + homework-graded/session-scheduled emails
+- **H09** session reminder cron · **H10** student search · **H11** route code-splitting · **H12** SSR/SEO (pre-beta)
+- **H13** real Claude AI grading — ⏸️ deferred
 
 ### Blocked on Tomislav (external prerequisites)
 

@@ -860,4 +860,30 @@ function getLibraryTopicId() {
 
 db.getLibraryTopicId = getLibraryTopicId;
 
+// ─── Performance indexes ──────────────────────────────────────────────────────
+// SQLite auto-indexes PRIMARY KEY and the leftmost column of UNIQUE/composite
+// keys, so these cover only the missing access paths: reverse foreign-key
+// lookups and time-range scans (e.g. session reminders). Idempotent.
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson    ON lesson_progress(lesson_id);
+  CREATE INDEX IF NOT EXISTS idx_quiz_attempts_quiz        ON quiz_attempts(quiz_id);
+  CREATE INDEX IF NOT EXISTS idx_quiz_attempts_student     ON quiz_attempts(student_id);
+  CREATE INDEX IF NOT EXISTS idx_quiz_attempt_answers_att  ON quiz_attempt_answers(attempt_id);
+  CREATE INDEX IF NOT EXISTS idx_quiz_questions_question   ON quiz_questions(question_id);
+  CREATE INDEX IF NOT EXISTS idx_question_options_question ON question_options(question_id);
+  CREATE INDEX IF NOT EXISTS idx_lesson_blocks_lesson      ON lesson_blocks(lesson_id);
+  CREATE INDEX IF NOT EXISTS idx_messages_student          ON messages(student_id);
+  CREATE INDEX IF NOT EXISTS idx_enrollments_course        ON enrollments(course_id);
+  CREATE INDEX IF NOT EXISTS idx_notifications_user        ON notifications(user_id);
+  CREATE INDEX IF NOT EXISTS idx_hw_assignments_homework   ON homework_assignments(homework_id);
+  CREATE INDEX IF NOT EXISTS idx_hw_assignments_student    ON homework_assignments(student_id);
+  CREATE INDEX IF NOT EXISTS idx_hw_answers_submission     ON homework_answers(submission_id);
+  CREATE INDEX IF NOT EXISTS idx_sessions_student          ON sessions(student_id);
+  CREATE INDEX IF NOT EXISTS idx_sessions_scheduled        ON sessions(scheduled_at);
+  CREATE INDEX IF NOT EXISTS idx_group_members_student     ON group_members(student_id);
+  CREATE INDEX IF NOT EXISTS idx_broadcast_recipients_user ON broadcast_recipients(user_id);
+  CREATE INDEX IF NOT EXISTS idx_lesson_syllabus_tags_code ON lesson_syllabus_tags(syllabus_code_id);
+  CREATE INDEX IF NOT EXISTS idx_password_resets_user      ON password_resets(user_id);
+`);
+
 module.exports = db;

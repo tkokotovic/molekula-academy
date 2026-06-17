@@ -1,8 +1,42 @@
 const express = require('express');
 const path = require('path');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const app = express();
 
-app.use(express.json());
+// Behind a reverse proxy (Nginx/Hetzner) in production — needed so rate-limit
+// and req.ip see the real client address, not the proxy's.
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
+
+// ─── Security headers ──────────────────────────────────────────────────────────
+// crossOriginResourcePolicy relaxed so auth-gated /uploads images load in the SPA.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// ─── CORS ───────────────────────────────────────────────────────────────────────
+// Same-origin in production (frontend served by the same host). CORS_ORIGIN can
+// list extra allowed origins (comma-separated) for staging / separate frontends.
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+if (corsOrigins.length) {
+  app.use(cors({ origin: corsOrigins, credentials: true }));
+}
+
+// Cap JSON body size — lesson blocks can carry pasted HTML + base64 images.
+app.use(express.json({ limit: '5mb' }));
+
+// ─── Auth rate limiting ──────────────────────────────────────────────────────────
+// Throttle credential endpoints to blunt brute-force / credential-stuffing.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,        // 15 min
+  max: 20,                         // 20 attempts / IP / window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Previše pokušaja. Pokušajte ponovno za nekoliko minuta.' },
+});
+// Skip throttling in the test env (suites fire many auth calls from one IP).
+if (process.env.NODE_ENV !== 'test') {
+  app.use(['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'], authLimiter);
+}
 
 // Serve uploaded files (message attachments, lesson media, etc.) — auth-gated so
 // lesson images can't be hot-linked or shared as bare URLs (student protection).
@@ -103,5 +137,15 @@ app.use('/api/teacher', require('./routes/pdf'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// ─── Global error handler ─────────────────────────────────────────────────────
+// Last-resort catch so an unhandled throw returns JSON instead of crashing the
+// process or leaking a stack trace to the client.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[error]', err.stack || err.message || err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: 'Došlo je do greške. Pokušajte ponovno.' });
+});
 
 module.exports = app;

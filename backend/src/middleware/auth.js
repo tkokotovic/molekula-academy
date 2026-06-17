@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
 
+// In production a real secret MUST be supplied — refuse to boot with the dev
+// fallback, otherwise tokens would be signed with a publicly-known key.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production. Set it in the environment before starting.');
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'molekula-dev-secret-change-in-production';
 
 function requireAuth(req, res, next) {
