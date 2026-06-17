@@ -188,20 +188,20 @@
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R23 | Student list sort + filters | ⬜ | Default sort: exam date closest first, then needs-attention. Filters: course, plan, exam proximity. Export CSV. |
-| R24 | Student detail — Homeworks tab | ⬜ | All assigned/submitted/corrected/pending. Click to open correction view. |
-| R25 | Student detail — Sessions tab | ⬜ | Scheduled + past sessions. Meeting code visible. Hours balance shown. |
-| R26 | Student detail — Reports tab | ⬜ | Generate parent PDF report button (triggers R35). |
+| R23 | Student list sort + filters | ✅ | exam_date column + countdown, message dot, plan filter chips, sort by exam date. homework dots (green/amber/red). |
+| R24 | Student detail — Homeworks tab | ✅ | Per-student inbox: all assigned/submitted/corrected/pending. Correction modal with per-answer scoring + notes. |
+| R25 | Student detail — Sessions tab | ✅ | Scheduled + past sessions; schedule modal with meeting link; hours balance shown. |
+| R26 | Student detail — Reports tab | ✅ | Stub tab (PDF generation pending R35). |
 | R27a | Groups DB + API | ✅ | New route `backend/src/routes/groups.js`. Tables: `groups(id, name, created_by, created_at)`, `group_members(group_id, student_id)`. Endpoints: CRUD for groups, add/remove members, `GET /api/teacher/groups/:id/progress` (aggregate stats). Homework assignment endpoints updated to accept `group_id`. |
-| R27b | Groups UI | ⬜ | Groups list + create modal. Add/remove students. Assign homework to group. Group-level progress view. Visible in `AdminStudentsPage` sidebar. |
+| R27b | Groups UI | ✅ | `AdminGroupsPage`. Two-column layout: sidebar list (create/rename/delete) + detail panel. Članovi tab: members table + add-students checkbox modal (excludes existing). Napredak tab: per-member stats (lessons, quizzes, avg score, homework rate) via `/api/teacher/groups/:id/progress`. |
 
 ### 8B-5 — Communication Redesign
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| R28 | Messages redesign — quiz-context threads | ⬜ | Messages attached to quiz results only. 24h student reply window after corrections. Thread locks for student after 24h. Quiz questions shown inline. |
+| R28 | Messages admin UI | ✅ | `AdminMessagesPage` enhanced: search by name, Aktivni/Nepročitano/Arhivirano filter chips. Thread header: Profil link → student detail, Arhiviraj/Vrati button. Context strip: plan badge, exam countdown, enrolled course, last quiz %, pending homework count. Backend: `users.messages_thread_archived` migration; archive/unarchive endpoints; GET thread returns `context` block (last quiz, courses, pending HW). Student sending auto-unarchives thread. |
 | R29a | Broadcasts DB + API | ✅ | New route `backend/src/routes/broadcasts.js`. Tables: `broadcasts(id, title, body_hr, body_en, audience_filter JSON, created_by, sent_at)`, `broadcast_recipients(broadcast_id, user_id, delivered_at)`. `POST /api/teacher/broadcasts` resolves audience filter → inserts rows into `notifications` table for each recipient. `GET /api/teacher/broadcasts` returns log with audience_count, sent_at. |
-| R29b | Broadcasts UI | ⬜ | `AdminBroadcastsPage`. Audience filter UI: all / by course / by plan / by group / individuals. Preview recipient count before sending. Broadcast log table. |
+| R29b | Broadcasts UI | ✅ | `AdminBroadcastsPage`. Sidebar log of sent broadcasts + compose form (title, body HR/EN, audience filter — all/plan/course/group/individuals, preview count, send). Detail panel with recipient table. |
 | R30 | In-platform notification bell (student) | ✅ | Done in R38 S13. `notifications` table created in S01. `GET/PATCH /api/student/notifications*` routes. NotifDropdown in AppShell — unread badge, colour-coded dots, mark-one/all-read, navigate on click. |
 
 ### 8B-6 — Sessions & Tutoring Packages
@@ -209,7 +209,7 @@
 | # | Step | Status | Notes |
 |---|------|--------|-------|
 | R31 | Tutoring packages — DB + API | ✅ | New route `backend/src/routes/tutoring.js`. Tables: `tutoring_packages(id, name, hours, price_eur, is_active)`, `student_hours(student_id, hours_remaining, hours_total, updated_at)`. `sessions` table already exists (S10). Extend sessions with `hours_deducted INTEGER DEFAULT 0`. Endpoints: admin CRUD for packages, `GET/PATCH /api/teacher/students/:id/hours`, `POST /api/teacher/sessions` deducts 1h on creation. |
-| R32 | Sessions admin UI | ⬜ | `AdminSessionsPage`. Schedule session → deducts 1h. Online: paste meeting link → student notified. In-person: mark as in-person. Session history. |
+| R32 | Sessions admin UI | ✅ | `AdminSessionsPage`. Sesije tab: filter chips, table, schedule/edit/delete modal. Paketi tutoringa tab: CRUD for packages with price/h calc + "Stripe coming soon" note. |
 | R33 | Student — purchase tutoring package | ⬜ | Student sees remaining hours. Buy package → Stripe checkout → hours credited. Meeting code sent by email. |
 
 ### 8B-7 — Revenue & Reports
@@ -278,9 +278,9 @@ The student-facing app (Phase 6) was built against teacher-namespaced APIs and p
 | Phase 8B-1 — Courses & Lessons | R01–R10 | 11/11 | ✅ |
 | Phase 8B-2 — Question Bank Redesign | R11a–R16 | 7/7 | ✅ |
 | Phase 8B-3 — Homeworks | R17–R22 | 6/6 | ✅ |
-| Phase 8B-4 — Students Redesign | R23–R27b | 1/6 (R27a ✅) | 🔄 |
-| Phase 8B-5 — Communication Redesign | R28–R30 | 2/4 (R29a ✅, R30 ✅) | 🔄 |
-| Phase 8B-6 — Sessions & Tutoring | R31–R33 | 1/3 (R31 ✅) | 🔄 |
+| Phase 8B-4 — Students Redesign | R23–R27b | 6/6 | ✅ |
+| Phase 8B-5 — Communication Redesign | R28–R30 | 4/4 | ✅ |
+| Phase 8B-6 — Sessions & Tutoring | R31–R33 | 2/3 (R33 ⬜ needs Stripe) | 🔄 |
 | Phase 8B-7 — Revenue & Reports | R34a–R36 | 0/4 | ⬜ |
 | Phase 8B-8 — Student-Facing Redesign | R37–R38 | 14/14 | ✅ |
 | Phase 9 — Launch | L01–L05 | 1/5 | 🔄 |
@@ -315,15 +315,16 @@ These can be built immediately. All are pure DB + API work, no Stripe needed.
 ### Frontend (after backend steps above)
 
 13. **R08b** — Syllabus tags UI (after R08a)
-14. **R09** — Lesson PDF/DOCX export
+14. **R09** — Lesson PDF/DOCX export ✅
 15. **R10** — Scheduled publish UI
-16. **R11b–R16** — Question bank UI redesign (after R11a)
-17. **R18–R22** — Homeworks UI (after R17)
-18. **R23–R26** — Students redesign (list filters, detail tabs)
-19. **R27b** — Groups UI (after R27a)
-20. **R29b** — Broadcasts UI (after R29a)
-21. **R32** — Sessions admin UI (after R31)
-22. **R33** — Student purchase tutoring (needs Stripe)
+16. **R11b–R16** — Question bank UI redesign ✅
+17. **R18–R22** — Homeworks UI ✅
+18. **R23–R26** — Students redesign ✅
+19. **R27b** — Groups UI ✅
+20. **R28** — Messages admin UI ✅
+21. **R29b** — Broadcasts UI ✅
+22. **R32** — Sessions admin UI ✅
+23. **R33** — Student purchase tutoring (needs Stripe)
 
 ### Revenue + reports (after Stripe)
 
@@ -341,7 +342,7 @@ These can be built immediately. All are pure DB + API work, no Stripe needed.
 
 ### Deferred / reconsidered
 
-- **R28** (Messages redesign to quiz-context-only threads) — **REMOVED.** Current general messaging works well. Quiz-specific threads would be a regression. If quiz discussion is wanted later, add it as an _addition_ to existing threads, not a replacement.
+- **R28** (Messages redesign to quiz-context-only threads) — original spec dropped. Implemented instead as admin messages UI enhancements (search, filters, archive, student context strip) on top of the existing general thread model. ✅ Done.
 
 ---
 
