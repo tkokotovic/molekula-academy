@@ -815,3 +815,58 @@ export async function setLessonSyllabusTags(lessonId, ids) {
     body: JSON.stringify({ syllabus_code_ids: ids }),
   });
 }
+
+// ─── PDF exports ──────────────────────────────────────────────────────────────
+
+// Download a blob from an authenticated endpoint and trigger a browser save dialog.
+async function downloadPDF(url, method = 'GET', body = null, filename = 'dokument.pdf') {
+  const opts = {
+    method,
+    headers: { Authorization: `Bearer ${getToken()}` },
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`PDF greška: ${res.status}`);
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(href);
+}
+
+export async function downloadParentReportPDF(studentId, fields, studentName) {
+  const date = new Date().toISOString().slice(0, 10);
+  const safe = (studentName || 'student').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+  return downloadPDF(
+    `/api/teacher/students/${studentId}/pdf/parent-report`,
+    'POST',
+    fields,
+    `izvjestaj_${safe}_${date}.pdf`,
+  );
+}
+
+export async function downloadProgressReportPDF(studentId, studentName) {
+  const date = new Date().toISOString().slice(0, 10);
+  const safe = (studentName || 'student').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+  return downloadPDF(
+    `/api/teacher/students/${studentId}/pdf/progress`,
+    'GET',
+    null,
+    `napredak_${safe}_${date}.pdf`,
+  );
+}
+
+export async function downloadLessonPDF(lessonId, lessonTitle) {
+  const safe = (lessonTitle || 'lekcija').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+  return downloadPDF(
+    `/api/teacher/lessons/${lessonId}/pdf`,
+    'GET',
+    null,
+    `${safe}.pdf`,
+  );
+}

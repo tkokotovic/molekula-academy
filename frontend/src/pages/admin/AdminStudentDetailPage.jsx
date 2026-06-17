@@ -4,6 +4,7 @@ import {
   getAdminStudent, setStudentSubscription, updateStudentProfile,
   getHomeworkInbox, getHomeworkAssignment, correctAssignment,
   getTeacherSessions, createSession, updateSession, deleteSession,
+  downloadParentReportPDF, downloadProgressReportPDF,
 } from '../../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -779,29 +780,142 @@ function TabSessions({ studentId }) {
   );
 }
 
+const PROB_OPTIONS = ['Visoka', 'Srednja', 'Niska'];
+const EFFORT_LABELS = ['', '1 ★', '2 ★★', '3 ★★★', '4 ★★★★', '5 ★★★★★'];
+
+const rInp = {
+  width: '100%', border: '1.5px solid var(--line)', borderRadius: 8,
+  padding: '8px 11px', fontSize: 13.5, color: 'var(--ink)',
+  background: 'var(--surface)', fontFamily: 'var(--body)',
+  outline: 'none', resize: 'vertical',
+};
+
 function TabReports({ student }) {
+  const [fields, setFields] = useState({
+    effort: 4, goal: '', probability: 'Visoka',
+    additional_effort: '', mock_results: '', personal_note: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [progLoading, setProgLoading] = useState(false);
+
+  function set(k, v) { setFields(f => ({ ...f, [k]: v })); }
+
+  async function handleParentReport() {
+    setLoading(true);
+    try {
+      await downloadParentReportPDF(student.id, fields, student.name);
+    } catch (e) {
+      alert(t('Greška pri generiranju PDF-a.', 'Error generating PDF.'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleProgressReport() {
+    setProgLoading(true);
+    try {
+      await downloadProgressReportPDF(student.id, student.name);
+    } catch (e) {
+      alert(t('Greška pri generiranju PDF-a.', 'Error generating PDF.'));
+    } finally {
+      setProgLoading(false);
+    }
+  }
+
+  const cardStyle = {
+    background: 'var(--surface)', border: '1.5px solid var(--line)',
+    borderRadius: 12, padding: '22px 24px', marginBottom: 16,
+  };
+  const labelStyle = {
+    fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.08em',
+    textTransform: 'uppercase', color: 'var(--accent)', display: 'block',
+    marginBottom: 6, fontWeight: 700,
+  };
+  const rowStyle = { marginBottom: 14 };
+
   return (
     <div style={{ padding: '8px 0' }}>
-      <div style={{
-        background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12,
-        padding: '24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12,
-      }}>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>
+
+      {/* Parent report form */}
+      <div style={cardStyle}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 18 }}>
           {t('Izvještaj za roditelje', 'Parent report')}
         </div>
-        <p style={{ fontSize: 14, color: 'var(--ink)', margin: 0, maxWidth: 440 }}>
-          {t(
-            'PDF izvještaj s napretkom, rezultatima kvizova i osobnom porukom. Dostupno uskoro.',
-            'PDF report with progress, quiz results, and a personal note. Coming soon.',
-          )}
-        </p>
-        <button disabled style={{
-          padding: '8px 20px', borderRadius: 8, border: 'none',
-          background: 'var(--line)', color: 'var(--ink-soft)', cursor: 'not-allowed', fontSize: 13.5, fontWeight: 600,
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px' }}>
+          <div style={rowStyle}>
+            <label style={labelStyle}>{t('Zalaganje (1–5)', 'Effort (1–5)')}</label>
+            <select value={fields.effort} onChange={e => set('effort', Number(e.target.value))} style={{ ...rInp, resize: 'none' }}>
+              {EFFORT_LABELS.slice(1).map((l, i) => <option key={i+1} value={i+1}>{l}</option>)}
+            </select>
+          </div>
+          <div style={rowStyle}>
+            <label style={labelStyle}>{t('Procjena uspjeha', 'Probability of success')}</label>
+            <select value={fields.probability} onChange={e => set('probability', e.target.value)} style={{ ...rInp, resize: 'none' }}>
+              {PROB_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={rowStyle}>
+          <label style={labelStyle}>{t('Cilj studenta', "Student's goal")}</label>
+          <input value={fields.goal} onChange={e => set('goal', e.target.value)}
+            placeholder={t('npr. Položiti IB kemiju s ocjenom 6', 'e.g. Pass IB Chemistry with a 6')}
+            style={{ ...rInp, resize: 'none' }} />
+        </div>
+
+        <div style={rowStyle}>
+          <label style={labelStyle}>{t('Preporučeni dodatni trud', 'Additional effort required')}</label>
+          <textarea rows={2} value={fields.additional_effort} onChange={e => set('additional_effort', e.target.value)}
+            placeholder={t('npr. Više vježbe iz elektrokemije', 'e.g. More practice on electrochemistry')}
+            style={rInp} />
+        </div>
+
+        <div style={rowStyle}>
+          <label style={labelStyle}>{t('Rezultati probnih ispita', 'Mock exam results')}</label>
+          <input value={fields.mock_results} onChange={e => set('mock_results', e.target.value)}
+            placeholder={t('npr. Mock 1: 65%, Mock 2: 71%', 'e.g. Mock 1: 65%, Mock 2: 71%')}
+            style={{ ...rInp, resize: 'none' }} />
+        </div>
+
+        <div style={rowStyle}>
+          <label style={labelStyle}>{t('Osobna napomena profesora', "Teacher's personal note")}</label>
+          <textarea rows={3} value={fields.personal_note} onChange={e => set('personal_note', e.target.value)}
+            placeholder={t('Poruka roditeljima…', 'Message to parents…')}
+            style={rInp} />
+        </div>
+
+        <button onClick={handleParentReport} disabled={loading} style={{
+          marginTop: 4, padding: '9px 22px', borderRadius: 8, border: 'none',
+          background: loading ? 'var(--line)' : 'var(--accent)',
+          color: loading ? 'var(--ink-soft)' : '#fff',
+          fontSize: 13.5, fontWeight: 700, cursor: loading ? 'default' : 'pointer',
         }}>
-          {t('Generiraj PDF', 'Generate PDF')} (uskoro)
+          {loading ? t('Generiranje…', 'Generating…') : '⬇ ' + t('Preuzmi PDF — izvještaj za roditelje', 'Download PDF — parent report')}
         </button>
       </div>
+
+      {/* Progress report (auto) */}
+      <div style={cardStyle}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 10 }}>
+          {t('Interni izvještaj o napretku', 'Internal progress report')}
+        </div>
+        <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginBottom: 16, lineHeight: 1.5 }}>
+          {t(
+            'Automatski generiran PDF s napretkom po tečajevima, svim kvizovima i statistikama zadaća.',
+            'Auto-generated PDF with course progress, all quiz results, and homework statistics.',
+          )}
+        </p>
+        <button onClick={handleProgressReport} disabled={progLoading} style={{
+          padding: '9px 22px', borderRadius: 8, border: '1.5px solid var(--accent)',
+          background: 'transparent', color: 'var(--accent)',
+          fontSize: 13.5, fontWeight: 700, cursor: progLoading ? 'default' : 'pointer',
+          opacity: progLoading ? 0.6 : 1,
+        }}>
+          {progLoading ? t('Generiranje…', 'Generating…') : '⬇ ' + t('Preuzmi PDF — napredak', 'Download PDF — progress')}
+        </button>
+      </div>
+
     </div>
   );
 }

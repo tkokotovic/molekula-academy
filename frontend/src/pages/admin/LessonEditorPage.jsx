@@ -12,7 +12,7 @@ import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility, changeLessonBlockType,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
-  setLessonStatus, getToken,
+  setLessonStatus, getToken, downloadLessonPDF,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import { hydrateChemHtml } from '../../components/extensions/chem';
@@ -1896,6 +1896,7 @@ export default function LessonEditorPage() {
   const [showPicker,   setShowPicker]   = useState(false);
   const [showPreview,  setShowPreview]  = useState(false);
   const [exportingDocx, setExportingDocx] = useState(false);
+  const [exportingPDF,  setExportingPDF]  = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [scheduleDate,   setScheduleDate]   = useState('');
   const [statusSaving,   setStatusSaving]   = useState(false);
@@ -2017,6 +2018,17 @@ export default function LessonEditorPage() {
     catch { setBlocks(blocks); }
   }
 
+  async function handleDownloadPDF() {
+    setExportingPDF(true);
+    try {
+      await downloadLessonPDF(lessonId, lesson?.title);
+    } catch (e) {
+      alert('Greška pri izvozu PDF-a: ' + e.message);
+    } finally {
+      setExportingPDF(false);
+    }
+  }
+
   async function handleDownloadDocx() {
     setExportingDocx(true);
     try {
@@ -2096,11 +2108,12 @@ export default function LessonEditorPage() {
         />
 
         <button
-          onClick={() => window.open(`/admin/lessons/${lessonId}/print`, '_blank')}
-          title="Otvara stranicu za ispis u novoj kartici — ispiši ili spremi kao PDF"
-          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+          onClick={handleDownloadPDF}
+          disabled={exportingPDF || blocks.length === 0}
+          title="Preuzmi branded PDF lekcije"
+          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: (exportingPDF || blocks.length === 0) ? 'default' : 'pointer', opacity: (exportingPDF || blocks.length === 0) ? 0.6 : 1 }}
         >
-          📄 PDF
+          {exportingPDF ? '⏳' : '📄'} PDF
         </button>
         <button
           onClick={handleDownloadDocx}

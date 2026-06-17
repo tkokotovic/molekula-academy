@@ -98,6 +98,9 @@ app.use('/api/teacher/upload', require('./routes/upload'));
 // Inline-chemistry compound library
 app.use('/api/teacher', require('./routes/chem_compounds'));
 
+// PDF export (R35 parent report, R36 progress report, lesson export)
+app.use('/api/teacher', require('./routes/pdf'));
+
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
