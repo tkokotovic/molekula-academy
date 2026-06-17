@@ -49,23 +49,34 @@ async function send({ to, subject, html, text }) {
 
 // ─── Templates ───────────────────────────────────────────────────────────────
 
+// Brand palette (see design-decisions): deep teal, accent teal, bright-teal CTAs.
+// Email clients rarely load custom fonts, so we declare the brand faces first
+// then fall back to system stacks that match their character.
 function wrapHtml(content) {
   return `<!DOCTYPE html>
 <html lang="hr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f5; margin: 0; padding: 20px; }
-    .card { background: #fff; border-radius: 8px; max-width: 560px; margin: 0 auto; padding: 32px; }
-    .logo { font-size: 20px; font-weight: bold; color: #0ea5e9; margin-bottom: 24px; }
-    h2 { margin: 0 0 12px; color: #1e293b; }
+    @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500&display=swap');
+    body { font-family: 'DM Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; background: #eef3f3; margin: 0; padding: 24px; }
+    .card { background: #fff; border-radius: 12px; max-width: 560px; margin: 0 auto; overflow: hidden; box-shadow: 0 2px 8px rgba(11,52,60,0.08); }
+    .header { background: #0b343c; padding: 24px 32px; }
+    .logo { font-family: 'Bricolage Grotesque', 'DM Sans', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; color: #1ec8b6; margin: 0; letter-spacing: -0.01em; }
+    .body { padding: 28px 32px 32px; }
+    h2 { font-family: 'Bricolage Grotesque', 'DM Sans', Helvetica, Arial, sans-serif; margin: 0 0 12px; color: #0b343c; font-weight: 700; }
     p { color: #475569; line-height: 1.6; margin: 0 0 12px; }
-    .highlight { color: #1e293b; font-weight: bold; }
-    .btn { display: inline-block; margin-top: 16px; padding: 12px 24px; background: #0ea5e9; color: #fff; border-radius: 6px; text-decoration: none; font-weight: bold; }
+    .highlight { color: #0b343c; font-weight: 600; }
+    .btn { display: inline-block; margin-top: 16px; padding: 12px 26px; background: #1ec8b6; color: #0b343c; border-radius: 8px; text-decoration: none; font-weight: 700; }
+    blockquote { border-left: 4px solid #0f8f86; margin: 16px 0; padding: 8px 16px; color: #0b343c; }
     .footer { margin-top: 24px; font-size: 12px; color: #94a3b8; }
   </style>
 </head>
-<body><div class="card">${content}</div></body>
+<body><div class="card">
+  <div class="header"><p class="logo">Molekula Academy</p></div>
+  <div class="body">${content}</div>
+</div></body>
 </html>`;
 }
 
@@ -75,10 +86,9 @@ async function notifyTeacherNewMessage({ studentName, studentEmail, messageText 
   const subject = `Nova poruka od ${studentName} — Molekula Academy`;
 
   const html = wrapHtml(`
-    <div class="logo">Molekula Academy</div>
     <h2>Nova poruka od studenta</h2>
     <p><span class="highlight">${studentName}</span> (${studentEmail}) je poslao/la poruku:</p>
-    <blockquote style="border-left:4px solid #0ea5e9;margin:16px 0;padding:8px 16px;color:#1e293b;">
+    <blockquote>
       ${escapeHtml(messageText)}
     </blockquote>
     <a class="btn" href="https://molekula-academy.hr/admin/messages">Otvori poruke</a>
@@ -97,7 +107,6 @@ async function sendWelcomeEmail({ studentName, studentEmail }) {
   const subject = 'Dobrodošli u Molekula Academy!';
 
   const html = wrapHtml(`
-    <div class="logo">Molekula Academy</div>
     <h2>Dobrodošli, ${escapeHtml(studentName)}!</h2>
     <p>Drago nam je što si se pridružio/la Molekula Academy — online platformi za kemiju koja
        te priprema za IB, prijemni ispit i sveučilišne ispite.</p>
@@ -125,7 +134,6 @@ async function sendCertificateEmail({ studentName, studentEmail, topicName }) {
   const subject = `Čestitamo! Zaradio/la si certifikat za "${topicName}"`;
 
   const html = wrapHtml(`
-    <div class="logo">Molekula Academy</div>
     <h2>Čestitamo, ${escapeHtml(studentName)}! 🎓</h2>
     <p>Uspješno si završio/la temu <span class="highlight">${escapeHtml(topicName)}</span>
        i zaradio/la certifikat.</p>
@@ -145,13 +153,12 @@ async function sendCertificateEmail({ studentName, studentEmail, topicName }) {
 // ─── Step 59c: teacher reply notification to student ─────────────────────────
 
 async function notifyStudentTeacherReplied({ studentName, studentEmail, replyText }) {
-  const subject = 'Professor Tomislav ti je odgovorio — Molekula Academy';
+  const subject = 'Profesor Tomislav ti je odgovorio — Molekula Academy';
 
   const html = wrapHtml(`
-    <div class="logo">Molekula Academy</div>
     <h2>Imaš novu poruku od profesora</h2>
-    <p>Professor <span class="highlight">Tomislav</span> ti je odgovorio:</p>
-    <blockquote style="border-left:4px solid #0ea5e9;margin:16px 0;padding:8px 16px;color:#1e293b;">
+    <p>Profesor <span class="highlight">Tomislav</span> ti je odgovorio:</p>
+    <blockquote>
       ${escapeHtml(replyText)}
     </blockquote>
     <a class="btn" href="https://molekula-academy.hr/messages">Otvori razgovor</a>
@@ -171,7 +178,6 @@ async function sendPasswordResetEmail({ studentName, studentEmail, resetUrl }) {
   const subject = 'Zahtjev za promjenu lozinke — Molekula Academy';
 
   const html = wrapHtml(`
-    <div class="logo">Molekula Academy</div>
     <h2>Promjena lozinke</h2>
     <p>Bok ${escapeHtml(studentName)},</p>
     <p>Zaprimili smo zahtjev za promjenu lozinke na tvom računu. Klikni na gumb ispod
@@ -190,7 +196,82 @@ async function sendPasswordResetEmail({ studentName, studentEmail, resetUrl }) {
   await send({ to: studentEmail, subject, html, text });
 }
 
+// ─── H08: homework graded notification to student ────────────────────────────
+
+async function sendHomeworkGradedEmail({ studentName, studentEmail, homeworkTitle, score, teacherComment }) {
+  const subject = `Zadaća "${homeworkTitle}" je ocijenjena — Molekula Academy`;
+
+  const scoreLine =
+    score != null
+      ? `<p>Ostvareni bodovi: <span class="highlight">${escapeHtml(String(score))}</span></p>`
+      : '';
+  const commentBlock = teacherComment
+    ? `<p>Komentar profesora:</p><blockquote>${escapeHtml(teacherComment)}</blockquote>`
+    : '';
+
+  const html = wrapHtml(`
+    <h2>Tvoja zadaća je pregledana</h2>
+    <p>Profesor je ocijenio tvoju zadaću <span class="highlight">${escapeHtml(homeworkTitle)}</span>.</p>
+    ${scoreLine}
+    ${commentBlock}
+    <a class="btn" href="https://molekula-academy.hr/homeworks">Pogledaj ocjenu</a>
+    <div class="footer">Molekula Academy</div>
+  `);
+
+  const text =
+    `Bok ${studentName},\n\n` +
+    `Tvoja zadaća "${homeworkTitle}" je ocijenjena.\n` +
+    (score != null ? `Bodovi: ${score}\n` : '') +
+    (teacherComment ? `Komentar: ${teacherComment}\n` : '') +
+    `\nPogledaj na: https://molekula-academy.hr/homeworks`;
+
+  await send({ to: studentEmail, subject, html, text });
+}
+
+// ─── H08: session scheduled notification to student ──────────────────────────
+
+async function sendSessionScheduledEmail({ studentName, studentEmail, title, scheduledAt, zoomUrl, prepNote }) {
+  const subject = `Termin dogovoren: ${title} — Molekula Academy`;
+
+  const zoomBlock = zoomUrl
+    ? `<a class="btn" href="${zoomUrl}">Pridruži se Zoom pozivu</a>`
+    : `<a class="btn" href="https://molekula-academy.hr/sessions">Pogledaj termin</a>`;
+  const prepBlock = prepNote
+    ? `<p>Priprema za sat:</p><blockquote>${escapeHtml(prepNote)}</blockquote>`
+    : '';
+
+  const html = wrapHtml(`
+    <h2>Termin je dogovoren</h2>
+    <p>Bok ${escapeHtml(studentName)}, dogovoren je termin za
+       <span class="highlight">${escapeHtml(title)}</span>.</p>
+    <p>Vrijeme: <span class="highlight">${escapeHtml(formatDateTimeHr(scheduledAt))}</span></p>
+    ${prepBlock}
+    ${zoomBlock}
+    <div class="footer">Molekula Academy</div>
+  `);
+
+  const text =
+    `Bok ${studentName},\n\n` +
+    `Dogovoren je termin za "${title}".\n` +
+    `Vrijeme: ${formatDateTimeHr(scheduledAt)}\n` +
+    (prepNote ? `Priprema: ${prepNote}\n` : '') +
+    (zoomUrl ? `Zoom: ${zoomUrl}\n` : '') +
+    `\nPogledaj na: https://molekula-academy.hr/sessions`;
+
+  await send({ to: studentEmail, subject, html, text });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDateTimeHr(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return d.toLocaleString('hr-HR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
 
 function escapeHtml(str) {
   return String(str)
@@ -206,4 +287,6 @@ module.exports = {
   sendCertificateEmail,
   notifyStudentTeacherReplied,
   sendPasswordResetEmail,
+  sendHomeworkGradedEmail,
+  sendSessionScheduledEmail,
 };

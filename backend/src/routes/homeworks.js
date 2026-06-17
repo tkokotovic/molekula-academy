@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth, requireTeacher } = require('../middleware/auth');
+const { sendHomeworkGradedEmail } = require('../services/email');
 
 const teacherRouter = express.Router();
 const studentRouter = express.Router();
@@ -312,6 +313,24 @@ router.post('/homeworks/assignments/:id/correct', requireAuth, requireTeacher, (
     SET status = 'corrected', corrected_at = datetime('now')
     WHERE id = ?
   `).run(req.params.id);
+
+  // Notify the student their homework has been graded (fire-and-forget).
+  const student = db.prepare(
+    `SELECT u.name, u.email, hw.title AS homework_title
+       FROM homework_assignments ha
+       JOIN users u ON u.id = ha.student_id
+       JOIN homeworks hw ON hw.id = ha.homework_id
+      WHERE ha.id = ?`
+  ).get(req.params.id);
+  if (student) {
+    sendHomeworkGradedEmail({
+      studentName: student.name,
+      studentEmail: student.email,
+      homeworkTitle: student.homework_title,
+      score: totalScore,
+      teacherComment: teacher_comment ?? null,
+    });
+  }
 
   res.json({ submission: getSubmission(submission.id) });
 });

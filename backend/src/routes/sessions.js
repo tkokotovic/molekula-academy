@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth, requireTeacher } = require('../middleware/auth');
+const { sendSessionScheduledEmail } = require('../services/email');
 
 const student = express.Router();
 const teacher = express.Router();
@@ -49,13 +50,23 @@ teacher.post('/sessions', requireAuth, requireTeacher, (req, res) => {
     return res.status(400).json({ error: 'student_id, title, and scheduled_at are required' });
   }
 
-  const studentUser = db.prepare(`SELECT id FROM users WHERE id = ? AND role = 'student'`).get(student_id);
+  const studentUser = db.prepare(`SELECT id, name, email FROM users WHERE id = ? AND role = 'student'`).get(student_id);
   if (!studentUser) return res.status(404).json({ error: 'Student not found' });
 
   const result = db.prepare(`
     INSERT INTO sessions (student_id, title, scheduled_at, duration_minutes, zoom_url, prep_note, status)
     VALUES (?, ?, ?, ?, ?, ?, 'upcoming')
   `).run(student_id, title, scheduled_at, duration_minutes, zoom_url || null, prep_note || null);
+
+  // Notify the student a session has been scheduled (fire-and-forget).
+  sendSessionScheduledEmail({
+    studentName: studentUser.name,
+    studentEmail: studentUser.email,
+    title,
+    scheduledAt: scheduled_at,
+    zoomUrl: zoom_url || null,
+    prepNote: prep_note || null,
+  });
 
   const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(result.lastInsertRowid);
   return res.status(201).json({ session });
