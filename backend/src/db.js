@@ -631,6 +631,8 @@ const migrations = [
   `ALTER TABLE questions ADD COLUMN stem_blocks TEXT`,
   // R08b — course_type on courses (ib_sl | ib_hl | drzavna_matura | prijemni | medchem_1 | medchem_2)
   `ALTER TABLE courses ADD COLUMN course_type TEXT`,
+  // #3 — Short element-style symbol shown on landing page cards (e.g. "IB", "Rx", "Uni")
+  `ALTER TABLE courses ADD COLUMN symbol TEXT`,
   // Inline-chemistry compound library (searchable by HR/EN name → mhchem formula).
   // owner_id NULL = built-in seed; set = teacher's saved custom compound.
   `CREATE TABLE IF NOT EXISTS chem_compounds (

@@ -88,6 +88,7 @@ const btnGhost = {
 function CourseModal({ course, onClose, onSaved }) {
   const [title, setTitle] = useState(course?.title ?? '');
   const [description, setDescription] = useState(course?.description ?? '');
+  const [symbol, setSymbol] = useState(course?.symbol ?? '');
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -95,9 +96,9 @@ function CourseModal({ course, onClose, onSaved }) {
     setSaving(true);
     try {
       if (course) {
-        await updateCourse(course.id, { title, description });
+        await updateCourse(course.id, { title, description, symbol: symbol.trim() || null });
       } else {
-        await createCourse({ title, description });
+        await createCourse({ title, description, symbol: symbol.trim() || null });
       }
       onSaved();
     } catch (e) {
@@ -112,6 +113,11 @@ function CourseModal({ course, onClose, onSaved }) {
       <Field label="Naziv">
         <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && save()} autoFocus />
+      </Field>
+      <Field label="Simbol (2–4 znaka, npr. IB, Rx, Uni — prikazuje se na landing pageu)">
+        <input style={{ ...inputStyle, maxWidth: 100 }} value={symbol}
+          onChange={e => setSymbol(e.target.value.slice(0, 4))}
+          placeholder="npr. IB" />
       </Field>
       <Field label="Opis (opcionalno)">
         <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }}

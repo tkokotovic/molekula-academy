@@ -36,7 +36,7 @@ function parseCourse(row) {
 router.get('/', (req, res) => {
   const rows = db.prepare(`
     SELECT id, title, description, slug, cover_image_url, target_audience,
-           status, position, created_at, updated_at
+           symbol, status, position, created_at, updated_at
     FROM courses WHERE status = 'published' AND is_library = 0
     ORDER BY position, created_at
   `).all();
@@ -49,7 +49,7 @@ const teacher = express.Router();
 
 // POST /api/teacher/courses
 teacher.post('/', requireAuth, requireTeacher, (req, res) => {
-  const { title, description, cover_image_url, target_audience } = req.body;
+  const { title, description, cover_image_url, target_audience, symbol } = req.body;
 
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'title is required' });
@@ -60,9 +60,9 @@ teacher.post('/', requireAuth, requireTeacher, (req, res) => {
   const audienceJson = JSON.stringify(Array.isArray(target_audience) ? target_audience : []);
 
   const result = db.prepare(`
-    INSERT INTO courses (title, description, slug, cover_image_url, target_audience)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(title.trim(), description || null, slug, cover_image_url || null, audienceJson);
+    INSERT INTO courses (title, description, slug, cover_image_url, target_audience, symbol)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(title.trim(), description || null, slug, cover_image_url || null, audienceJson, symbol || null);
 
   const course = parseCourse(db.prepare('SELECT * FROM courses WHERE id = ?').get(result.lastInsertRowid));
   return res.status(201).json({ course });
@@ -88,21 +88,22 @@ teacher.put('/:id', requireAuth, requireTeacher, (req, res) => {
   const existing = db.prepare('SELECT * FROM courses WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Course not found' });
 
-  const { title, description, cover_image_url, target_audience } = req.body;
+  const { title, description, cover_image_url, target_audience, symbol } = req.body;
 
   const newTitle    = title           !== undefined ? title.trim()   : existing.title;
   const newDesc     = description     !== undefined ? description     : existing.description;
   const newCover    = cover_image_url !== undefined ? cover_image_url : existing.cover_image_url;
+  const newSymbol   = symbol          !== undefined ? symbol          : existing.symbol;
   const newAudience = target_audience !== undefined
     ? JSON.stringify(Array.isArray(target_audience) ? target_audience : [])
     : existing.target_audience;
 
   db.prepare(`
     UPDATE courses
-    SET title = ?, description = ?, cover_image_url = ?, target_audience = ?,
+    SET title = ?, description = ?, cover_image_url = ?, target_audience = ?, symbol = ?,
         updated_at = datetime('now')
     WHERE id = ?
-  `).run(newTitle, newDesc, newCover, newAudience, id);
+  `).run(newTitle, newDesc, newCover, newAudience, newSymbol, id);
 
   const course = parseCourse(db.prepare('SELECT * FROM courses WHERE id = ?').get(id));
   return res.json({ course });

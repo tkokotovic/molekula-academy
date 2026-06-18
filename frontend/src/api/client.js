@@ -89,6 +89,11 @@ export async function updateProfile(fields) {
 
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
+export async function getPublicCourses() {
+  const data = await apiFetch('/api/courses');
+  return data.courses;
+}
+
 export async function getCourses() {
   const data = await apiFetch('/api/teacher/courses');
   return data.courses;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getPublicCourses } from '../api/client';
 import './LandingPage.css';
 
 // ─── Content ──────────────────────────────────────────────────────────────────
@@ -474,6 +475,23 @@ function LpTrust({ c }) {
 
 function LpWhoFor({ c, onStart }) {
   const w = c.who;
+  const [apiCourses, setApiCourses] = useState(null);
+
+  useEffect(() => {
+    getPublicCourses()
+      .then(courses => { if (courses?.length) setApiCourses(courses); })
+      .catch(() => {});
+  }, []);
+
+  const cards = apiCourses
+    ? apiCourses.map(course => ({
+        tag: course.symbol || course.title.slice(0, 3),
+        title: course.title,
+        desc: course.description || '',
+        link: w.cards[0]?.link || 'Saznaj više',
+      }))
+    : w.cards;
+
   return (
     <section className="section">
       <div className="wrap">
@@ -483,7 +501,7 @@ function LpWhoFor({ c, onStart }) {
           <p>{w.sub}</p>
         </Reveal>
         <div className="three-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 22, marginTop: 48 }}>
-          {w.cards.map((card, i) => (
+          {cards.map((card, i) => (
             <Reveal key={i} delay={i * 90}>
               <button onClick={onStart} className="card lp-who-card">
                 <span className="hex lp-who-tag">{card.tag}</span>
