@@ -8,6 +8,7 @@ import {
 import { hydrateChemHtml } from '../components/extensions/chem';
 import { Watermark, useContentGuards } from '../components/ContentProtection';
 import MolekulaMark from '../components/MolekulaMark';
+import Molecule3dViewer from '../components/Molecule3dViewer';
 import './admin/LessonEditorCanvas.css';
 
 // Signal-block palette — kept in sync with the editor (LessonEditorPage SIGNAL),
@@ -457,31 +458,7 @@ function BlockLink({ content }) {
 }
 
 function BlockMolecule3d({ content }) {
-  const svgRef = useRef(null);
-  const smiles = (content?.smiles || '').trim();
-
-  useEffect(() => {
-    if (!smiles || !svgRef.current || !window.SmilesDrawer) return;
-    try {
-      const drawer = new window.SmilesDrawer.SvgDrawer({ width: 320, height: 240 });
-      window.SmilesDrawer.parse(
-        smiles,
-        tree => drawer.draw(tree, svgRef.current, 'light'),
-        () => { if (svgRef.current) svgRef.current.innerHTML = ''; }
-      );
-    } catch (_) { /* keep placeholder below */ }
-  }, [smiles]);
-
-  if (!smiles && !content?.name) return null;
-
-  return (
-    <figure style={{ margin: '4px 0', textAlign: 'center', background: 'var(--surface)', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '20px 16px' }}>
-      {smiles && window.SmilesDrawer
-        ? <svg ref={svgRef} width={320} height={240} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
-        : <div style={{ color: 'var(--ink-faint)' }}><div style={{ fontSize: 40, marginBottom: 8 }}>⚗️</div><p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 13 }}>{smiles || '(SMILES nije definiran)'}</p></div>}
-      {content?.name && <figcaption style={{ marginTop: 8, fontSize: 14, color: 'var(--ink-soft)' }}>{content.name}</figcaption>}
-    </figure>
-  );
+  return <Molecule3dViewer smiles={content?.smiles} name={content?.name} />;
 }
 
 function LessonBlock({ block, allBlocks }) {

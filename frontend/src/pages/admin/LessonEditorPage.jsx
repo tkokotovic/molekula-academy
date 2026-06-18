@@ -20,6 +20,7 @@ import TiptapEditor from '../../components/TiptapEditor';
 import { hydrateChemHtml } from '../../components/extensions/chem';
 import MolekulaMark from '../../components/MolekulaMark';
 import SmilesDrawer from 'smiles-drawer';
+import Molecule3dViewer from '../../components/Molecule3dViewer';
 import { ActiveEditorContext } from '../../contexts/ActiveEditorContext';
 import './LessonEditorCanvas.css';
 
@@ -738,8 +739,8 @@ function MediaSettings({ type, content, onChange }) {
             <input style={{ ...inp, fontFamily: 'var(--mono)' }} value={content.smiles || ''} onChange={e => onChange({ ...content, smiles: e.target.value })} placeholder="C(C(=O)O)N" />
           </Field>
           {content.smiles && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px', marginBottom: 12, textAlign: 'center' }}>
-              <MoleculeCanvas smiles={content.smiles} width={260} height={180} />
+            <div style={{ marginBottom: 12 }}>
+              <Molecule3dViewer smiles={content.smiles} name={content.name} height={200} />
             </div>
           )}
           <Field label="Ime molekule">
@@ -942,15 +943,7 @@ function MediaPreview({ type, content, onOpenSettings }) {
       );
 
     case 'molecule3d':
-      if (content.smiles) {
-        return (
-          <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px solid color-mix(in srgb, var(--accent) 25%, transparent)', borderRadius: 10, padding: '16px 24px', textAlign: 'center' }}>
-            {content.name && <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', marginBottom: 8 }}>{content.name}</div>}
-            <MoleculeCanvas smiles={content.smiles} width={320} height={220} />
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-faint)', marginTop: 6 }}>{content.smiles}</div>
-          </div>
-        );
-      }
+      if (content.smiles) return <Molecule3dViewer smiles={content.smiles} name={content.name} height={240} />;
       return (
         <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px dashed color-mix(in srgb, var(--accent) 35%, transparent)', borderRadius: 10, padding: '32px 24px', textAlign: 'center', cursor: 'pointer' }} onClick={onOpenSettings}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>⚗️</div>
@@ -1581,7 +1574,7 @@ function PreviewBlock({ block, allBlocks = [] }) {
         ? <figure style={{ margin: 0 }}><img src={content.url} alt={content.alt || ''} style={{ maxWidth: '100%', borderRadius: 8 }} />{cap && <figcaption style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 4 }}>{cap}</figcaption>}</figure>
         : mediaBox('🖼️', 'Slika');
     case 'molecule3d':
-      return content.smiles ? <MoleculeCanvas smiles={content.smiles} /> : mediaBox('⚗️', 'Molekula');
+      return <Molecule3dViewer smiles={content.smiles} name={content.name} height={220} />;
     case 'video':   return mediaBox('🎬', content.url || 'Video');
     case 'pdf':     return mediaBox('📄', content.label || content.url || 'PDF dokument');
     case 'link':    return mediaBox('🔗', content.title || content.url || 'Vanjski link');
