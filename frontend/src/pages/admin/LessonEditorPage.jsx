@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors,
@@ -1727,9 +1728,9 @@ function SyllabusTagPicker({ lessonId, courseType }) {
         </button>
       </div>
 
-      {/* Picker modal */}
-      {open && (
-        <div onClick={cancel} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Picker modal — rendered via portal to escape mol-canvas overflow:hidden and any stacking context */}
+      {open && createPortal(
+        <div onClick={cancel} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--line)', padding: 24, width: 560, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: 'var(--display)', color: 'var(--ink)' }}>Syllabus oznake</h3>
@@ -1812,7 +1813,7 @@ function SyllabusTagPicker({ lessonId, courseType }) {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }

@@ -1312,22 +1312,48 @@ function BulkImportPanel({ onImported }) {
       </p>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
-        <b style={{ color: 'var(--ink)', fontFamily: 'var(--mono)', fontSize: 12 }}>Primjer formata:</b>
-        <pre style={{ margin: '8px 0 0', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink)', background: 'var(--bg)', padding: '10px 12px', borderRadius: 7, overflowX: 'auto' }}>{
+        <b style={{ color: 'var(--ink)', fontFamily: 'var(--mono)', fontSize: 12 }}>Podržani formati:</b>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10, marginTop: 10 }}>
+          {[
+            {
+              label: 'MCQ (višestruki izbor)',
+              code:
 `1. Koja je molekularna formula vode?
 A) H2O2
 B) H2O
 C) HO
 D) H3O
-Answer: B
+Answer: B`,
+            },
+            {
+              label: 'Točno/Netočno → promijeni tip u pregledu',
+              code:
+`2. Kiseline imaju pH manji od 7.
+(nakon parsiranja promijeni tip → Točno/Netočno)`,
+            },
+            {
+              label: 'Kratki odgovor / Dopuni rupu',
+              code:
+`3. Navedi dva produkta reakcije kiseline i baze.
 
-2. Što je pH čiste vode pri 25°C?
-A) 5
-B) 6
-C) 7
-D) 8
-Answer: C`
-        }</pre>
+4. Voda ima kemijsku formulu ___.`,
+            },
+            {
+              label: 'Kemijska jednadžba → promijeni tip u pregledu',
+              code:
+`5. Uravnoteži: H2 + O2 → H2O
+(nakon parsiranja promijeni tip → Kemijska jednadžba)`,
+            },
+          ].map(({ label, code }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--accent-ink)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{label}</div>
+              <pre style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--ink)', background: 'var(--bg)', padding: '8px 10px', borderRadius: 7, overflowX: 'auto', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{code}</pre>
+            </div>
+          ))}
+        </div>
+        <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--ink-faint)' }}>
+          Tip pitanja možeš promijeniti u koraku pregleda. Sustav automatski detektira MCQ (A/B/C/D) i kratki odgovor.
+        </p>
       </div>
 
       <textarea

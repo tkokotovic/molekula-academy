@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   getStudentCourse, getStudentCourseTopics, getStudentLessonsByTopic,
+  getEnrollment,
 } from '../api/client';
 
 const DIFFICULTY_LABELS = { easy: 'Lagano', medium: 'Srednje', hard: 'Teško' };
@@ -132,16 +133,22 @@ export default function CourseDetailPage() {
   const [topics, setTopics]   = useState([]);
   const [topicLessonCounts, setTopicLessonCounts] = useState({});
   const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [courseData, topicList] = await Promise.all([
+      const [courseData, topicList, enr] = await Promise.all([
         getStudentCourse(Number(courseId)),
         getStudentCourseTopics(Number(courseId)),
+        getEnrollment(),
       ]);
       setCourse(courseData);
       setTopics(topicList);
+      const id = Number(courseId);
+      const enrolled = enr.enrollment?.course_id === id;
+      const previous = (enr.previous || []).some(p => p.course_id === id);
+      setHasAccess(enrolled || previous);
     } finally {
       setLoading(false);
     }
@@ -180,13 +187,53 @@ export default function CourseDetailPage() {
       {/* Topic list */}
       {loading && <p style={{ color: 'var(--ink-faint)' }}>Učitavam…</p>}
 
-      {!loading && topics.length === 0 && (
+      {!loading && !hasAccess && topics.length > 0 && (
+        <div>
+          <div style={{
+            border: '1.5px dashed var(--line)', borderRadius: 12, padding: '20px 24px',
+            background: 'var(--surface)', marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>
+                Ovaj kolegij je zaključan.
+              </p>
+              <p style={{ margin: '3px 0 0', fontSize: 13.5, color: 'var(--ink-soft)' }}>
+                Kupi paket da otključaš lekcije i kvizove.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {topics.map(topic => (
+              <div key={topic.id} style={{
+                border: '1.5px solid var(--line)', borderRadius: 12,
+                background: 'var(--surface)', padding: '14px 20px',
+                display: 'flex', alignItems: 'center', gap: 12, opacity: 0.7,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-soft)' }}>
+                  {topic.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && hasAccess && topics.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-faint)' }}>
           <p style={{ fontSize: 18 }}>Sadržaj kolegija je u pripremi.</p>
         </div>
       )}
 
-      {!loading && topics.length > 0 && (
+      {!loading && hasAccess && topics.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {topics.map((topic, idx) => (
             <TopicSection

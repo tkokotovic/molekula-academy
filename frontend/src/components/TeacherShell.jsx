@@ -79,7 +79,7 @@ function Sidebar({ onNav, user }) {
   return (
     <nav className="side" style={{ width: 228 }}>
       {/* Logo */}
-      <NavLink to="/admin/dashboard" className="side-logo" onClick={onNav}>
+      <NavLink to="/" className="side-logo" onClick={onNav}>
         <span className="mk">
           <i style={{ position: 'absolute', inset: 0, clipPath: 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)', background: 'var(--accent)' }} />
           <span style={{ position: 'relative', color: '#fff', fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 14, display: 'inline-block', transform: 'scaleX(1.35)' }}>M</span>

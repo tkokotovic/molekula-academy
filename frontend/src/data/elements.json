@@ -1,0 +1,1182 @@
+[
+  {
+    "number": 1, "symbol": "H",
+    "name": {"en": "Hydrogen", "hr": "Vodik"},
+    "mass": 1.008, "electronegativity": 2.2, "state": "gas",
+    "group": 1, "period": 1, "block": "s", "category": "nonmetal", "series": null,
+    "ie1": 1312, "atomic_radius": 53, "ionic_radius": null,
+    "melting_point": -259, "boiling_point": -253,
+    "config": "1s¹",
+    "fun": {"en": "Fuel of the stars — hydrogen fusion powers the Sun and releases 26 million kJ per gram.", "hr": "Gorivo zvijezda — fuzija vodika pokreće Sunce i oslobađa 26 milijuna kJ po gramu."}
+  },
+  {
+    "number": 2, "symbol": "He",
+    "name": {"en": "Helium", "hr": "Helij"},
+    "mass": 4.003, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 1, "block": "s", "category": "noble-gas", "series": null,
+    "ie1": 2372, "atomic_radius": 31, "ionic_radius": null,
+    "melting_point": -272, "boiling_point": -269,
+    "config": "1s²",
+    "fun": {"en": "Discovered on the Sun before Earth — its name comes from Helios, the Greek sun god.", "hr": "Otkriven na Suncu prije nego na Zemlji — ime dolazi od grčkog boga Sunca, Heliosa."}
+  },
+  {
+    "number": 3, "symbol": "Li",
+    "name": {"en": "Lithium", "hr": "Litij"},
+    "mass": 6.941, "electronegativity": 0.98, "state": "solid",
+    "group": 1, "period": 2, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 520, "atomic_radius": 167, "ionic_radius": {"value": 76, "ion": "+1"},
+    "melting_point": 181, "boiling_point": 1342,
+    "config": "[He] 2s¹",
+    "fun": {"en": "Used in almost every rechargeable battery in your phone, laptop, and electric car.", "hr": "Koristi se u gotovo svakoj punivoj bateriji u mobitelu, laptopu i električnom automobilu."}
+  },
+  {
+    "number": 4, "symbol": "Be",
+    "name": {"en": "Beryllium", "hr": "Berilij"},
+    "mass": 9.012, "electronegativity": 1.57, "state": "solid",
+    "group": 2, "period": 2, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 900, "atomic_radius": 112, "ionic_radius": {"value": 45, "ion": "+2"},
+    "melting_point": 1287, "boiling_point": 2470,
+    "config": "[He] 2s²",
+    "fun": {"en": "Extremely toxic — chronic beryllium exposure causes berylliosis, a serious lung disease.", "hr": "Iznimno otrovan — kronična izloženost beriliju uzrokuje beriliozu, ozbiljnu bolest pluća."}
+  },
+  {
+    "number": 5, "symbol": "B",
+    "name": {"en": "Boron", "hr": "Bor"},
+    "mass": 10.81, "electronegativity": 2.04, "state": "solid",
+    "group": 13, "period": 2, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 801, "atomic_radius": 87, "ionic_radius": {"value": 27, "ion": "+3"},
+    "melting_point": 2076, "boiling_point": 3927,
+    "config": "[He] 2s² 2p¹",
+    "fun": {"en": "Boron carbide armour is used in bulletproof vests — nearly as hard as diamond.", "hr": "Oklop od bor-karbida koristi se u neprobojnim prslucima — gotovo je tvrd kao dijamant."}
+  },
+  {
+    "number": 6, "symbol": "C",
+    "name": {"en": "Carbon", "hr": "Ugljik"},
+    "mass": 12.01, "electronegativity": 2.55, "state": "solid",
+    "group": 14, "period": 2, "block": "p", "category": "nonmetal", "series": null,
+    "ie1": 1086, "atomic_radius": 77, "ionic_radius": null,
+    "melting_point": 3550, "boiling_point": 4827,
+    "config": "[He] 2s² 2p²",
+    "fun": {"en": "Diamond and graphite are both pure carbon, yet completely different — carbon-14 also enables radiocarbon dating of ancient artefacts.", "hr": "Dijamant i grafit oba su čisti ugljik, ali potpuno različiti — ugljik-14 omogućuje radiokarbonsko datiranje drevnih artefakata."}
+  },
+  {
+    "number": 7, "symbol": "N",
+    "name": {"en": "Nitrogen", "hr": "Dušik"},
+    "mass": 14.01, "electronegativity": 3.04, "state": "gas",
+    "group": 15, "period": 2, "block": "p", "category": "nonmetal", "series": null,
+    "ie1": 1402, "atomic_radius": 75, "ionic_radius": {"value": 146, "ion": "-3"},
+    "melting_point": -210, "boiling_point": -196,
+    "config": "[He] 2s² 2p³",
+    "fun": {"en": "Makes up 78% of Earth's atmosphere, yet plants can't use it directly — they need bacteria to 'fix' it into ammonia.", "hr": "Čini 78% Zemljine atmosfere, ali ga biljke ne mogu koristiti izravno — trebaju bakterije za fiksaciju dušika u amonijak."}
+  },
+  {
+    "number": 8, "symbol": "O",
+    "name": {"en": "Oxygen", "hr": "Kisik"},
+    "mass": 16.00, "electronegativity": 3.44, "state": "gas",
+    "group": 16, "period": 2, "block": "p", "category": "nonmetal", "series": null,
+    "ie1": 1314, "atomic_radius": 73, "ionic_radius": {"value": 140, "ion": "-2"},
+    "melting_point": -219, "boiling_point": -183,
+    "config": "[He] 2s² 2p⁴",
+    "fun": {"en": "Liquid oxygen is pale blue, not colourless — and it is strongly attracted to magnets.", "hr": "Tekući kisik je blijedoplav, ne bezbojan — i snažno se privlači magnetima."}
+  },
+  {
+    "number": 9, "symbol": "F",
+    "name": {"en": "Fluorine", "hr": "Fluor"},
+    "mass": 19.00, "electronegativity": 3.98, "state": "gas",
+    "group": 17, "period": 2, "block": "p", "category": "halogen", "series": null,
+    "ie1": 1681, "atomic_radius": 64, "ionic_radius": {"value": 133, "ion": "-1"},
+    "melting_point": -220, "boiling_point": -188,
+    "config": "[He] 2s² 2p⁵",
+    "fun": {"en": "Most electronegative element of all — fluorine corrodes glass and even some noble metals.", "hr": "Najelektronegativniji element — fluor nagriza staklo i neke plemenite metale."}
+  },
+  {
+    "number": 10, "symbol": "Ne",
+    "name": {"en": "Neon", "hr": "Neon"},
+    "mass": 20.18, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 2, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": 2081, "atomic_radius": 38, "ionic_radius": null,
+    "melting_point": -249, "boiling_point": -246,
+    "config": "[He] 2s² 2p⁶",
+    "fun": {"en": "Neon itself is colourless — different gases give different colours to so-called 'neon' lights.", "hr": "Neon je sam po sebi bezbojan — različiti plinovi daju različite boje tzv. 'neonskim' svjetlima."}
+  },
+  {
+    "number": 11, "symbol": "Na",
+    "name": {"en": "Sodium", "hr": "Natrij"},
+    "mass": 22.99, "electronegativity": 0.93, "state": "solid",
+    "group": 1, "period": 3, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 496, "atomic_radius": 186, "ionic_radius": {"value": 102, "ion": "+1"},
+    "melting_point": 98, "boiling_point": 883,
+    "config": "[Ne] 3s¹",
+    "fun": {"en": "Burns with an intense yellow flame — sodium vapour streetlights work by the same emission.", "hr": "Gori intenzivno žutim plamenom — natrijeve uličke svjetiljke rade na istom principu emisije."}
+  },
+  {
+    "number": 12, "symbol": "Mg",
+    "name": {"en": "Magnesium", "hr": "Magnezij"},
+    "mass": 24.31, "electronegativity": 1.31, "state": "solid",
+    "group": 2, "period": 3, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 738, "atomic_radius": 160, "ionic_radius": {"value": 72, "ion": "+2"},
+    "melting_point": 650, "boiling_point": 1090,
+    "config": "[Ne] 3s²",
+    "fun": {"en": "Burns with blinding white light — magnesium fires cannot be extinguished with water; it reacts violently.", "hr": "Gori zasljepljujućim bijelim svjetlom — vatru magnezija ne možete ugasiti vodom jer nasilno reagira."}
+  },
+  {
+    "number": 13, "symbol": "Al",
+    "name": {"en": "Aluminium", "hr": "Aluminij"},
+    "mass": 26.98, "electronegativity": 1.61, "state": "solid",
+    "group": 13, "period": 3, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 578, "atomic_radius": 143, "ionic_radius": {"value": 54, "ion": "+3"},
+    "melting_point": 660, "boiling_point": 2467,
+    "config": "[Ne] 3s² 3p¹",
+    "fun": {"en": "Once more valuable than gold — Napoleon served honoured guests with aluminium cutlery while others used silver.", "hr": "Nekad vrjedniji od zlata — Napoleon je počasnim gostima posluživao aluminijskim priborom dok su ostali koristili srebrni."}
+  },
+  {
+    "number": 14, "symbol": "Si",
+    "name": {"en": "Silicon", "hr": "Silicij"},
+    "mass": 28.09, "electronegativity": 1.90, "state": "solid",
+    "group": 14, "period": 3, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 786, "atomic_radius": 117, "ionic_radius": null,
+    "melting_point": 1414, "boiling_point": 3265,
+    "config": "[Ne] 3s² 3p²",
+    "fun": {"en": "Silicon Valley is named after it — silicon chips power almost all modern computing.", "hr": "Silikonska dolina nazvana je po njemu — silicijski čipovi pokreću gotovo sve moderno računalstvo."}
+  },
+  {
+    "number": 15, "symbol": "P",
+    "name": {"en": "Phosphorus", "hr": "Fosfor"},
+    "mass": 30.97, "electronegativity": 2.19, "state": "solid",
+    "group": 15, "period": 3, "block": "p", "category": "nonmetal", "series": null,
+    "ie1": 1012, "atomic_radius": 110, "ionic_radius": {"value": 212, "ion": "-3"},
+    "melting_point": 44, "boiling_point": 281,
+    "config": "[Ne] 3s² 3p³",
+    "fun": {"en": "Discovered in 1669 by Hennig Brand, who evaporated urine — white phosphorus glows in the dark due to slow oxidation.", "hr": "Otkrio ga 1669. Hennig Brand isparavanjem urina — bijeli fosfor sjaji u mraku zbog spore oksidacije."}
+  },
+  {
+    "number": 16, "symbol": "S",
+    "name": {"en": "Sulfur", "hr": "Sumpor"},
+    "mass": 32.07, "electronegativity": 2.58, "state": "solid",
+    "group": 16, "period": 3, "block": "p", "category": "nonmetal", "series": null,
+    "ie1": 1000, "atomic_radius": 104, "ionic_radius": {"value": 184, "ion": "-2"},
+    "melting_point": 113, "boiling_point": 445,
+    "config": "[Ne] 3s² 3p⁴",
+    "fun": {"en": "Used in vulcanising rubber — without sulfur treatment, rubber melts in summer and cracks in winter.", "hr": "Koristi se za vulkanizaciju gume — bez tretmana sumporom guma bi se topila ljeti i pucala zimi."}
+  },
+  {
+    "number": 17, "symbol": "Cl",
+    "name": {"en": "Chlorine", "hr": "Klor"},
+    "mass": 35.45, "electronegativity": 3.16, "state": "gas",
+    "group": 17, "period": 3, "block": "p", "category": "halogen", "series": null,
+    "ie1": 1251, "atomic_radius": 99, "ionic_radius": {"value": 181, "ion": "-1"},
+    "melting_point": -101, "boiling_point": -34,
+    "config": "[Ne] 3s² 3p⁵",
+    "fun": {"en": "Chlorine gas was used as a chemical weapon in WWI — it is 2.5× denser than air and sinks into trenches.", "hr": "Klorni plin korišten je kao kemijsko oružje u 1. svjetskom ratu — 2,5× gušći od zraka i tone u rovove."}
+  },
+  {
+    "number": 18, "symbol": "Ar",
+    "name": {"en": "Argon", "hr": "Argon"},
+    "mass": 39.95, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 3, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": 1521, "atomic_radius": 71, "ionic_radius": null,
+    "melting_point": -189, "boiling_point": -186,
+    "config": "[Ne] 3s² 3p⁶",
+    "fun": {"en": "Fills incandescent light bulbs to prevent the tungsten filament from evaporating.", "hr": "Puni žarne žarulje kako bi spriječio isparavanje volframove niti."}
+  },
+  {
+    "number": 19, "symbol": "K",
+    "name": {"en": "Potassium", "hr": "Kalij"},
+    "mass": 39.10, "electronegativity": 0.82, "state": "solid",
+    "group": 1, "period": 4, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 419, "atomic_radius": 227, "ionic_radius": {"value": 138, "ion": "+1"},
+    "melting_point": 64, "boiling_point": 759,
+    "config": "[Ar] 4s¹",
+    "fun": {"en": "Essential for nerve impulse transmission in all animals — a potassium imbalance can stop the heart.", "hr": "Neophodan za prijenos živčanih impulsa u svim životinjama — neravnoteža kalija može zaustaviti srce."}
+  },
+  {
+    "number": 20, "symbol": "Ca",
+    "name": {"en": "Calcium", "hr": "Kalcij"},
+    "mass": 40.08, "electronegativity": 1.00, "state": "solid",
+    "group": 2, "period": 4, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 590, "atomic_radius": 197, "ionic_radius": {"value": 100, "ion": "+2"},
+    "melting_point": 842, "boiling_point": 1484,
+    "config": "[Ar] 4s²",
+    "fun": {"en": "Most abundant metal in the human body — 99% is in bones and teeth as calcium phosphate.", "hr": "Najzastupljeniji metal u ljudskom tijelu — 99% se nalazi u kostima i zubima kao kalcijev fosfat."}
+  },
+  {
+    "number": 21, "symbol": "Sc",
+    "name": {"en": "Scandium", "hr": "Skandij"},
+    "mass": 44.96, "electronegativity": 1.36, "state": "solid",
+    "group": 3, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 633, "atomic_radius": 162, "ionic_radius": {"value": 75, "ion": "+3"},
+    "melting_point": 1541, "boiling_point": 2836,
+    "config": "[Ar] 3d¹ 4s²",
+    "fun": {"en": "Added in small amounts to aluminium alloys to make bicycle frames and baseball bats lighter and stronger.", "hr": "Dodaje se u malim količinama aluminijevim legurama za lakše i čvršće biciklističke okvire i bejzbolske palice."}
+  },
+  {
+    "number": 22, "symbol": "Ti",
+    "name": {"en": "Titanium", "hr": "Titanij"},
+    "mass": 47.87, "electronegativity": 1.54, "state": "solid",
+    "group": 4, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 659, "atomic_radius": 147, "ionic_radius": {"value": 61, "ion": "+4"},
+    "melting_point": 1668, "boiling_point": 3287,
+    "config": "[Ar] 3d² 4s²",
+    "fun": {"en": "As strong as steel but 45% lighter — used in aircraft, spacecraft, and medical implants due to its biocompatibility.", "hr": "Jak kao čelik ali 45% lakši — koristi se u zrakoplovima, svemirskim letjelicama i medicinskim implantatima."}
+  },
+  {
+    "number": 23, "symbol": "V",
+    "name": {"en": "Vanadium", "hr": "Vanadij"},
+    "mass": 50.94, "electronegativity": 1.63, "state": "solid",
+    "group": 5, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 651, "atomic_radius": 134, "ionic_radius": {"value": 59, "ion": "+5"},
+    "melting_point": 1910, "boiling_point": 3407,
+    "config": "[Ar] 3d³ 4s²",
+    "fun": {"en": "Named after Vanadis, a Scandinavian goddess — vanadium steel is used in high-speed cutting tools.", "hr": "Imenovan po Vanadis, skandinavskoj božici — vanadijev čelik koristi se u alatima za brzo rezanje."}
+  },
+  {
+    "number": 24, "symbol": "Cr",
+    "name": {"en": "Chromium", "hr": "Krom"},
+    "mass": 52.00, "electronegativity": 1.66, "state": "solid",
+    "group": 6, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 653, "atomic_radius": 128, "ionic_radius": {"value": 52, "ion": "+6"},
+    "melting_point": 1907, "boiling_point": 2671,
+    "config": "[Ar] 3d⁵ 4s¹",
+    "fun": {"en": "Anomalous config [Ar] 3d⁵ 4s¹ — half-filled d orbitals are extra stable. Chrome plating and ruby-red colour both come from chromium.", "hr": "Anomalna konfiguracija [Ar] 3d⁵ 4s¹ — napola popunjene d orbitale su posebno stabilne. Kromiranje i rubinsko-crvena boja dolaze od kroma."}
+  },
+  {
+    "number": 25, "symbol": "Mn",
+    "name": {"en": "Manganese", "hr": "Mangan"},
+    "mass": 54.94, "electronegativity": 1.55, "state": "solid",
+    "group": 7, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 717, "atomic_radius": 127, "ionic_radius": {"value": 67, "ion": "+2"},
+    "melting_point": 1246, "boiling_point": 2061,
+    "config": "[Ar] 3d⁵ 4s²",
+    "fun": {"en": "Manganese nodules on the ocean floor are a vast, largely unmined mineral resource for the future.", "hr": "Manganski noduli na dnu oceana golemi su, uglavnom neiskorišteni mineralni resurs budućnosti."}
+  },
+  {
+    "number": 26, "symbol": "Fe",
+    "name": {"en": "Iron", "hr": "Željezo"},
+    "mass": 55.85, "electronegativity": 1.83, "state": "solid",
+    "group": 8, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 762, "atomic_radius": 126, "ionic_radius": {"value": 78, "ion": "+2"},
+    "melting_point": 1538, "boiling_point": 2861,
+    "config": "[Ar] 3d⁶ 4s²",
+    "fun": {"en": "Earth's core is largely solid iron — its slow solidification generates the magnetic field that deflects cosmic rays.", "hr": "Zemljino jezgro je uglavnom čvrsto željezo — njegovo sporo skrućivanje stvara magnetsko polje koje odbija kozmičke zrake."}
+  },
+  {
+    "number": 27, "symbol": "Co",
+    "name": {"en": "Cobalt", "hr": "Kobalt"},
+    "mass": 58.93, "electronegativity": 1.88, "state": "solid",
+    "group": 9, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 760, "atomic_radius": 125, "ionic_radius": {"value": 75, "ion": "+2"},
+    "melting_point": 1495, "boiling_point": 2927,
+    "config": "[Ar] 3d⁷ 4s²",
+    "fun": {"en": "Medieval miners called cobalt ore 'Kobold' (goblin) because smelting it released toxic arsenic fumes.", "hr": "Medievalni rudari zvali su kobaltovu rudu 'Kobold' (goblin) jer je taljenje oslobađalo otrovne pare arsena."}
+  },
+  {
+    "number": 28, "symbol": "Ni",
+    "name": {"en": "Nickel", "hr": "Nikal"},
+    "mass": 58.69, "electronegativity": 1.91, "state": "solid",
+    "group": 10, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 737, "atomic_radius": 124, "ionic_radius": {"value": 69, "ion": "+2"},
+    "melting_point": 1455, "boiling_point": 2913,
+    "config": "[Ar] 3d⁸ 4s²",
+    "fun": {"en": "Named from German 'Nickel' (goblin) — miners thought the ore contained copper, but it didn't.", "hr": "Ime dolazi od njemačkog 'Nickel' (goblin) — rudari su mislili da ruda sadrži bakar, ali nije."}
+  },
+  {
+    "number": 29, "symbol": "Cu",
+    "name": {"en": "Copper", "hr": "Bakar"},
+    "mass": 63.55, "electronegativity": 1.90, "state": "solid",
+    "group": 11, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 745, "atomic_radius": 128, "ionic_radius": {"value": 73, "ion": "+1"},
+    "melting_point": 1085, "boiling_point": 2562,
+    "config": "[Ar] 3d¹⁰ 4s¹",
+    "fun": {"en": "Anomalous config [Ar] 3d¹⁰ 4s¹ — full d subshell is extra stable. The oldest metal used by humans, with artefacts over 10,000 years old.", "hr": "Anomalna konfiguracija [Ar] 3d¹⁰ 4s¹ — puna d podljuska je posebno stabilna. Najstariji metal koji su koristili ljudi, artefakti stari više od 10.000 godina."}
+  },
+  {
+    "number": 30, "symbol": "Zn",
+    "name": {"en": "Zinc", "hr": "Cink"},
+    "mass": 65.38, "electronegativity": 1.65, "state": "solid",
+    "group": 12, "period": 4, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 906, "atomic_radius": 122, "ionic_radius": {"value": 74, "ion": "+2"},
+    "melting_point": 420, "boiling_point": 907,
+    "config": "[Ar] 3d¹⁰ 4s²",
+    "fun": {"en": "Galvanising (coating steel with zinc) prevents rust — zinc acts as a sacrificial anode, corroding instead of the iron.", "hr": "Galvanizacija (prevlačenje čelika cinkom) sprječava rđanje — cink djeluje kao žrtvena anoda i korodira umjesto željeza."}
+  },
+  {
+    "number": 31, "symbol": "Ga",
+    "name": {"en": "Gallium", "hr": "Galij"},
+    "mass": 69.72, "electronegativity": 1.81, "state": "solid",
+    "group": 13, "period": 4, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 579, "atomic_radius": 122, "ionic_radius": {"value": 62, "ion": "+3"},
+    "melting_point": 30, "boiling_point": 2204,
+    "config": "[Ar] 3d¹⁰ 4s² 4p¹",
+    "fun": {"en": "Melts at just 30 °C — you can melt gallium in the palm of your hand.", "hr": "Tali se već pri 30 °C — galij možete stopiti u dlanu ruke."}
+  },
+  {
+    "number": 32, "symbol": "Ge",
+    "name": {"en": "Germanium", "hr": "Germanij"},
+    "mass": 72.63, "electronegativity": 2.01, "state": "solid",
+    "group": 14, "period": 4, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 762, "atomic_radius": 122, "ionic_radius": {"value": 53, "ion": "+4"},
+    "melting_point": 938, "boiling_point": 2833,
+    "config": "[Ar] 3d¹⁰ 4s² 4p²",
+    "fun": {"en": "Predicted by Mendeleev in 1871 as 'eka-silicon' before its 1886 discovery — a triumph for the periodic table.", "hr": "Predvidio ga Mendeleev 1871. kao 'eka-silicij' prije otkrića 1886. — trijumf periodičnog sustava."}
+  },
+  {
+    "number": 33, "symbol": "As",
+    "name": {"en": "Arsenic", "hr": "Arsen"},
+    "mass": 74.92, "electronegativity": 2.18, "state": "solid",
+    "group": 15, "period": 4, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 947, "atomic_radius": 121, "ionic_radius": null,
+    "melting_point": 817, "boiling_point": 614,
+    "config": "[Ar] 3d¹⁰ 4s² 4p³",
+    "fun": {"en": "Victorian green wallpaper often contained arsenic pigments that slowly released toxic gas, poisoning entire families.", "hr": "Viktorijanske zelene tapete često su sadržavale arsenove pigmente koji su polako otpuštali otrovni plin i trovali cijele obitelji."}
+  },
+  {
+    "number": 34, "symbol": "Se",
+    "name": {"en": "Selenium", "hr": "Selenij"},
+    "mass": 78.97, "electronegativity": 2.55, "state": "solid",
+    "group": 16, "period": 4, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 941, "atomic_radius": 117, "ionic_radius": {"value": 198, "ion": "-2"},
+    "melting_point": 221, "boiling_point": 685,
+    "config": "[Ar] 3d¹⁰ 4s² 4p⁴",
+    "fun": {"en": "Its electrical conductivity increases dramatically in light — this property enabled the invention of the photocopier.", "hr": "Električna vodljivost mu dramatično raste na svjetlu — ovo svojstvo omogućilo je izum fotokopirnog stroja."}
+  },
+  {
+    "number": 35, "symbol": "Br",
+    "name": {"en": "Bromine", "hr": "Brom"},
+    "mass": 79.90, "electronegativity": 2.96, "state": "liquid",
+    "group": 17, "period": 4, "block": "p", "category": "halogen", "series": null,
+    "ie1": 1140, "atomic_radius": 114, "ionic_radius": {"value": 196, "ion": "-1"},
+    "melting_point": -7, "boiling_point": 59,
+    "config": "[Ar] 3d¹⁰ 4s² 4p⁵",
+    "fun": {"en": "One of only two elements liquid at room temperature (the other is mercury) — its name comes from Greek for 'stench'.", "hr": "Jedan od samo dva elementa tekuća na sobnoj temperaturi (drugi je živa) — ime dolazi od grčke riječi za 'smrad'."}
+  },
+  {
+    "number": 36, "symbol": "Kr",
+    "name": {"en": "Krypton", "hr": "Kripton"},
+    "mass": 83.80, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 4, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": 1351, "atomic_radius": 88, "ionic_radius": null,
+    "melting_point": -157, "boiling_point": -153,
+    "config": "[Ar] 3d¹⁰ 4s² 4p⁶",
+    "fun": {"en": "The SI metre was once defined by a specific number of krypton-86 wavelengths — before lasers took over.", "hr": "SI metar je nekad bio definiran određenim brojem valnih duljina kriptona-86 — prije nego su laseri preuzeli tu ulogu."}
+  },
+  {
+    "number": 37, "symbol": "Rb",
+    "name": {"en": "Rubidium", "hr": "Rubidij"},
+    "mass": 85.47, "electronegativity": 0.82, "state": "solid",
+    "group": 1, "period": 5, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 403, "atomic_radius": 248, "ionic_radius": {"value": 152, "ion": "+1"},
+    "melting_point": 39, "boiling_point": 688,
+    "config": "[Kr] 5s¹",
+    "fun": {"en": "So reactive it ignites spontaneously in air and explodes violently on contact with water.", "hr": "Toliko reaktivan da se spontano pali na zraku i nasilno eksplodira u kontaktu s vodom."}
+  },
+  {
+    "number": 38, "symbol": "Sr",
+    "name": {"en": "Strontium", "hr": "Stroncij"},
+    "mass": 87.62, "electronegativity": 0.95, "state": "solid",
+    "group": 2, "period": 5, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 550, "atomic_radius": 215, "ionic_radius": {"value": 118, "ion": "+2"},
+    "melting_point": 777, "boiling_point": 1382,
+    "config": "[Kr] 5s²",
+    "fun": {"en": "Strontium salts give fireworks their brilliant crimson-red colour.", "hr": "Soli stroncija daju vatrometu sjajnu karminski-crvenu boju."}
+  },
+  {
+    "number": 39, "symbol": "Y",
+    "name": {"en": "Yttrium", "hr": "Itrij"},
+    "mass": 88.91, "electronegativity": 1.22, "state": "solid",
+    "group": 3, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 600, "atomic_radius": 180, "ionic_radius": {"value": 90, "ion": "+3"},
+    "melting_point": 1522, "boiling_point": 3345,
+    "config": "[Kr] 4d¹ 5s²",
+    "fun": {"en": "Yttrium aluminium garnet (YAG) crystals are used in surgical lasers and are the basis of most white LEDs.", "hr": "Kristali itrij-aluminijevog granata (YAG) koriste se u kirurškim laserima i osnova su većine bijelih LED-ova."}
+  },
+  {
+    "number": 40, "symbol": "Zr",
+    "name": {"en": "Zirconium", "hr": "Cirkonij"},
+    "mass": 91.22, "electronegativity": 1.33, "state": "solid",
+    "group": 4, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 640, "atomic_radius": 160, "ionic_radius": {"value": 72, "ion": "+4"},
+    "melting_point": 1855, "boiling_point": 4409,
+    "config": "[Kr] 4d² 5s²",
+    "fun": {"en": "Used in nuclear reactor fuel rod cladding because it absorbs almost no neutrons — crucial for reactor efficiency.", "hr": "Koristi se u oblozi gorivnih šipki nuklearnih reaktora jer gotovo uopće ne apsorbira neutrone — ključno za učinkovitost reaktora."}
+  },
+  {
+    "number": 41, "symbol": "Nb",
+    "name": {"en": "Niobium", "hr": "Niobij"},
+    "mass": 92.91, "electronegativity": 1.60, "state": "solid",
+    "group": 5, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 652, "atomic_radius": 146, "ionic_radius": {"value": 64, "ion": "+5"},
+    "melting_point": 2477, "boiling_point": 4744,
+    "config": "[Kr] 4d⁴ 5s¹",
+    "fun": {"en": "Added to steel to make high-strength low-alloy (HSLA) steel used in pipelines, ships, and bridges worldwide.", "hr": "Dodaje se čeliku za izradu visokorezistentnog niskolegirajućeg (HSLA) čelika koji se koristi u cjevovodima, brodovima i mostovima."}
+  },
+  {
+    "number": 42, "symbol": "Mo",
+    "name": {"en": "Molybdenum", "hr": "Molibden"},
+    "mass": 95.95, "electronegativity": 2.16, "state": "solid",
+    "group": 6, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 684, "atomic_radius": 139, "ionic_radius": {"value": 59, "ion": "+6"},
+    "melting_point": 2623, "boiling_point": 4639,
+    "config": "[Kr] 4d⁵ 5s¹",
+    "fun": {"en": "Molybdenite (MoS₂) is used as a dry lubricant — it functions at extreme temperatures where oils break down.", "hr": "Molibdenit (MoS₂) koristi se kao suhi lubrikant — funkcionira na ekstremnim temperaturama gdje ulja ne rade."}
+  },
+  {
+    "number": 43, "symbol": "Tc",
+    "name": {"en": "Technetium", "hr": "Tehnecij"},
+    "mass": 97, "electronegativity": 1.90, "state": "solid",
+    "group": 7, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 702, "atomic_radius": 136, "ionic_radius": {"value": 65, "ion": "+4"},
+    "melting_point": 2157, "boiling_point": 4265,
+    "config": "[Kr] 4d⁵ 5s²",
+    "fun": {"en": "First artificially produced element — all primordial technetium has decayed. Tc-99m is the most widely used medical radioisotope.", "hr": "Prvi umjetno proizvedeni element — sav izvorni tehnecij se raspao. Tc-99m je najšire korišten medicinski radioizotop."}
+  },
+  {
+    "number": 44, "symbol": "Ru",
+    "name": {"en": "Ruthenium", "hr": "Rutenij"},
+    "mass": 101.07, "electronegativity": 2.20, "state": "solid",
+    "group": 8, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 711, "atomic_radius": 134, "ionic_radius": {"value": 68, "ion": "+3"},
+    "melting_point": 2334, "boiling_point": 4150,
+    "config": "[Kr] 4d⁷ 5s¹",
+    "fun": {"en": "Named after Ruthenia (Latin for Russia) — ruthenium is a key catalyst in the production of ammonia and acetic acid.", "hr": "Imenovan po Rutheniji (latinski za Rusiju) — rutenij je ključni katalizator u proizvodnji amonijaka i octene kiseline."}
+  },
+  {
+    "number": 45, "symbol": "Rh",
+    "name": {"en": "Rhodium", "hr": "Rodij"},
+    "mass": 102.91, "electronegativity": 2.28, "state": "solid",
+    "group": 9, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 720, "atomic_radius": 134, "ionic_radius": {"value": 67, "ion": "+3"},
+    "melting_point": 1964, "boiling_point": 3695,
+    "config": "[Kr] 4d⁸ 5s¹",
+    "fun": {"en": "One of the rarest and most expensive elements — rhodium in catalytic converters reduces toxic NOₓ emissions from cars.", "hr": "Jedan od najrjeđih i najskupljih elemenata — rodij u katalitičkim pretvornicima smanjuje otrovne NOₓ emisije automobila."}
+  },
+  {
+    "number": 46, "symbol": "Pd",
+    "name": {"en": "Palladium", "hr": "Paladij"},
+    "mass": 106.42, "electronegativity": 2.20, "state": "solid",
+    "group": 10, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 805, "atomic_radius": 137, "ionic_radius": {"value": 86, "ion": "+2"},
+    "melting_point": 1555, "boiling_point": 2963,
+    "config": "[Kr] 4d¹⁰",
+    "fun": {"en": "Anomalous config [Kr] 4d¹⁰ — no 5s electrons at all. Palladium can absorb up to 900 times its own volume of hydrogen gas.", "hr": "Anomalna konfiguracija [Kr] 4d¹⁰ — bez 5s elektrona. Paladij može apsorbirati do 900 puta svog volumena vodika."}
+  },
+  {
+    "number": 47, "symbol": "Ag",
+    "name": {"en": "Silver", "hr": "Srebro"},
+    "mass": 107.87, "electronegativity": 1.93, "state": "solid",
+    "group": 11, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 731, "atomic_radius": 144, "ionic_radius": {"value": 115, "ion": "+1"},
+    "melting_point": 962, "boiling_point": 2162,
+    "config": "[Kr] 4d¹⁰ 5s¹",
+    "fun": {"en": "Highest electrical and thermal conductivity of all elements — silver iodide is used to seed clouds and induce rainfall.", "hr": "Najveća električna i toplinska vodljivost od svih elemenata — srebrov jodid koristi se za 'sijanje' oblaka i indukciju kiše."}
+  },
+  {
+    "number": 48, "symbol": "Cd",
+    "name": {"en": "Cadmium", "hr": "Kadmij"},
+    "mass": 112.41, "electronegativity": 1.69, "state": "solid",
+    "group": 12, "period": 5, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 868, "atomic_radius": 151, "ionic_radius": {"value": 95, "ion": "+2"},
+    "melting_point": 321, "boiling_point": 767,
+    "config": "[Kr] 4d¹⁰ 5s²",
+    "fun": {"en": "Cadmium-nickel batteries powered early mobile phones and power tools — now largely replaced by lithium-ion due to cadmium's toxicity.", "hr": "Kadmij-nikalne baterije napajale su rane mobilne telefone i alate — sada uglavnom zamijenjene litij-ionskima zbog toksičnosti kadmija."}
+  },
+  {
+    "number": 49, "symbol": "In",
+    "name": {"en": "Indium", "hr": "Indij"},
+    "mass": 114.82, "electronegativity": 1.78, "state": "solid",
+    "group": 13, "period": 5, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 558, "atomic_radius": 167, "ionic_radius": {"value": 80, "ion": "+3"},
+    "melting_point": 157, "boiling_point": 2072,
+    "config": "[Kr] 4d¹⁰ 5s² 5p¹",
+    "fun": {"en": "Indium tin oxide (ITO) coats every smartphone and tablet touchscreen — it is transparent and electrically conductive.", "hr": "Indij-kositrov oksid (ITO) prevlači svaki zaslon pametnog telefona i tableta — proziran je i električno vodljiv."}
+  },
+  {
+    "number": 50, "symbol": "Sn",
+    "name": {"en": "Tin", "hr": "Kositar"},
+    "mass": 118.71, "electronegativity": 1.96, "state": "solid",
+    "group": 14, "period": 5, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 709, "atomic_radius": 140, "ionic_radius": {"value": 69, "ion": "+4"},
+    "melting_point": 232, "boiling_point": 2602,
+    "config": "[Kr] 4d¹⁰ 5s² 5p²",
+    "fun": {"en": "The Bronze Age was made possible by tin — alloyed with copper to produce bronze, far harder than either metal alone.", "hr": "Brončano doba omogućio je kositar — legiran s bakrom daje broncu, mnogo tvrđu od oba metala zasebno."}
+  },
+  {
+    "number": 51, "symbol": "Sb",
+    "name": {"en": "Antimony", "hr": "Antimon"},
+    "mass": 121.76, "electronegativity": 2.05, "state": "solid",
+    "group": 15, "period": 5, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 834, "atomic_radius": 141, "ionic_radius": {"value": 76, "ion": "+3"},
+    "melting_point": 631, "boiling_point": 1587,
+    "config": "[Kr] 4d¹⁰ 5s² 5p³",
+    "fun": {"en": "Used in antimony–lead alloys for car batteries — improves mechanical strength and reduces gassing during charging.", "hr": "Koristi se u antimon-olovnim legurama za auto-baterije — poboljšava mehaničku čvrstoću i smanjuje plinovanje pri punjenju."}
+  },
+  {
+    "number": 52, "symbol": "Te",
+    "name": {"en": "Tellurium", "hr": "Telurij"},
+    "mass": 127.60, "electronegativity": 2.10, "state": "solid",
+    "group": 16, "period": 5, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 869, "atomic_radius": 137, "ionic_radius": {"value": 221, "ion": "-2"},
+    "melting_point": 450, "boiling_point": 988,
+    "config": "[Kr] 4d¹⁰ 5s² 5p⁴",
+    "fun": {"en": "Tellurium improves the machinability of steel — tiny additions let machine tools cut it far more easily.", "hr": "Telurij poboljšava obradivost čelika — mali dodaci znatno olakšavaju obradu alatnim strojevima."}
+  },
+  {
+    "number": 53, "symbol": "I",
+    "name": {"en": "Iodine", "hr": "Jod"},
+    "mass": 126.90, "electronegativity": 2.66, "state": "solid",
+    "group": 17, "period": 5, "block": "p", "category": "halogen", "series": null,
+    "ie1": 1008, "atomic_radius": 133, "ionic_radius": {"value": 220, "ion": "-1"},
+    "melting_point": 114, "boiling_point": 184,
+    "config": "[Kr] 4d¹⁰ 5s² 5p⁵",
+    "fun": {"en": "Essential for thyroid hormone synthesis — iodine deficiency is the most common preventable cause of intellectual disability worldwide.", "hr": "Neophodan za sintezu hormona štitnjače — nedostatak joda najčešći je preventabilni uzrok intelektualnih poteškoća u svijetu."}
+  },
+  {
+    "number": 54, "symbol": "Xe",
+    "name": {"en": "Xenon", "hr": "Ksenon"},
+    "mass": 131.29, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 5, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": 1170, "atomic_radius": 108, "ionic_radius": null,
+    "melting_point": -112, "boiling_point": -108,
+    "config": "[Kr] 4d¹⁰ 5s² 5p⁶",
+    "fun": {"en": "Xenon anaesthesia produces surgical-depth anaesthesia with minimal organ toxicity — and it leaves the body completely unchanged.", "hr": "Ksenonska anestezija postiže kiruršku dubinu anestezije uz minimalnu toksičnost za organe — i tijelo ga izlučuje potpuno nepromijenjenog."}
+  },
+  {
+    "number": 55, "symbol": "Cs",
+    "name": {"en": "Caesium", "hr": "Cezij"},
+    "mass": 132.91, "electronegativity": 0.79, "state": "solid",
+    "group": 1, "period": 6, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 376, "atomic_radius": 265, "ionic_radius": {"value": 167, "ion": "+1"},
+    "melting_point": 29, "boiling_point": 671,
+    "config": "[Xe] 6s¹",
+    "fun": {"en": "Caesium defines the SI second — one second is exactly 9,192,631,770 oscillations of a Cs-133 atom.", "hr": "Cezij definira SI sekundu — jedna sekunda je točno 9.192.631.770 oscilacija atoma Cs-133."}
+  },
+  {
+    "number": 56, "symbol": "Ba",
+    "name": {"en": "Barium", "hr": "Barij"},
+    "mass": 137.33, "electronegativity": 0.89, "state": "solid",
+    "group": 2, "period": 6, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 503, "atomic_radius": 222, "ionic_radius": {"value": 135, "ion": "+2"},
+    "melting_point": 727, "boiling_point": 1870,
+    "config": "[Xe] 6s²",
+    "fun": {"en": "Patients swallow a 'barium meal' before X-rays — barium sulfate is so insoluble and X-ray opaque it outlines the digestive tract.", "hr": "Pacijenti gutaju 'barijev obrok' prije rendgena — barijev sulfat je toliko netopljiv i neproziran za X-zrake da ocrtava probavni trakt."}
+  },
+  {
+    "number": 57, "symbol": "La",
+    "name": {"en": "Lanthanum", "hr": "Lantan"},
+    "mass": 138.91, "electronegativity": 1.10, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 538, "atomic_radius": 187, "ionic_radius": {"value": 103, "ion": "+3"},
+    "melting_point": 920, "boiling_point": 3464,
+    "config": "[Xe] 5d¹ 6s²",
+    "fun": {"en": "Used in high-refractive-index optical glass for camera and telescope lenses — lanthanum makes lenses sharper.", "hr": "Koristi se u optičkom staklu visokog indeksa loma za leće fotoaparata i teleskopa — lantan čini leće oštrijima."}
+  },
+  {
+    "number": 58, "symbol": "Ce",
+    "name": {"en": "Cerium", "hr": "Cerij"},
+    "mass": 140.12, "electronegativity": 1.12, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 534, "atomic_radius": 182, "ionic_radius": {"value": 101, "ion": "+3"},
+    "melting_point": 799, "boiling_point": 3443,
+    "config": "[Xe] 4f¹ 5d¹ 6s²",
+    "fun": {"en": "Cerium oxide is used in automotive catalytic converters and in the glass of self-cleaning ovens.", "hr": "Cerijev oksid koristi se u automobilskim katalitičkim pretvornicima i u staklu samočistećih peći."}
+  },
+  {
+    "number": 59, "symbol": "Pr",
+    "name": {"en": "Praseodymium", "hr": "Praseodimij"},
+    "mass": 140.91, "electronegativity": 1.13, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 527, "atomic_radius": 183, "ionic_radius": {"value": 99, "ion": "+3"},
+    "melting_point": 931, "boiling_point": 3520,
+    "config": "[Xe] 4f³ 6s²",
+    "fun": {"en": "Praseodymium magnets (Nd–Pr–Fe–B) are used in hybrid car motors and wind turbine generators.", "hr": "Praseodimijevi magneti (Nd–Pr–Fe–B) koriste se u motorima hibridnih automobila i generatorima vjetroturbina."}
+  },
+  {
+    "number": 60, "symbol": "Nd",
+    "name": {"en": "Neodymium", "hr": "Neodimij"},
+    "mass": 144.24, "electronegativity": 1.14, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 533, "atomic_radius": 182, "ionic_radius": {"value": 98, "ion": "+3"},
+    "melting_point": 1021, "boiling_point": 3074,
+    "config": "[Xe] 4f⁴ 6s²",
+    "fun": {"en": "Neodymium magnets are the strongest permanent magnets known — a small handful can lift a car.", "hr": "Neodimijevi magneti najjači su trajni magneti poznati znanosti — mala šaka ih može podignuti automobil."}
+  },
+  {
+    "number": 61, "symbol": "Pm",
+    "name": {"en": "Promethium", "hr": "Prometij"},
+    "mass": 145, "electronegativity": 1.13, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 540, "atomic_radius": 181, "ionic_radius": {"value": 97, "ion": "+3"},
+    "melting_point": 1042, "boiling_point": 3000,
+    "config": "[Xe] 4f⁵ 6s²",
+    "fun": {"en": "Has no stable isotopes — all promethium on Earth is produced synthetically in nuclear reactors and decays away.", "hr": "Nema stabilnih izotopa — sav prometij na Zemlji se sintetički proizvodi u nuklearnim reaktorima i zatim raspada."}
+  },
+  {
+    "number": 62, "symbol": "Sm",
+    "name": {"en": "Samarium", "hr": "Samarij"},
+    "mass": 150.36, "electronegativity": 1.17, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 545, "atomic_radius": 180, "ionic_radius": {"value": 96, "ion": "+3"},
+    "melting_point": 1074, "boiling_point": 1794,
+    "config": "[Xe] 4f⁶ 6s²",
+    "fun": {"en": "Samarium–cobalt magnets work at temperatures up to 300 °C where neodymium magnets lose their magnetism.", "hr": "Samarij-kobaltni magneti rade na temperaturama do 300 °C gdje neodimijevi magneti gube magnetizam."}
+  },
+  {
+    "number": 63, "symbol": "Eu",
+    "name": {"en": "Europium", "hr": "Europij"},
+    "mass": 151.96, "electronegativity": 1.20, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 547, "atomic_radius": 180, "ionic_radius": {"value": 95, "ion": "+3"},
+    "melting_point": 822, "boiling_point": 1529,
+    "config": "[Xe] 4f⁷ 6s²",
+    "fun": {"en": "Europium gives euro banknotes their red and blue fluorescence under UV light — a key anti-counterfeiting measure.", "hr": "Europij daje eurobankovnicama crvenu i plavu fluorescenciju pod UV svjetlom — ključna mjera zaštite od krivotvorenja."}
+  },
+  {
+    "number": 64, "symbol": "Gd",
+    "name": {"en": "Gadolinium", "hr": "Gadolinij"},
+    "mass": 157.25, "electronegativity": 1.20, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 593, "atomic_radius": 180, "ionic_radius": {"value": 94, "ion": "+3"},
+    "melting_point": 1313, "boiling_point": 3273,
+    "config": "[Xe] 4f⁷ 5d¹ 6s²",
+    "fun": {"en": "Gadolinium contrast agents are injected before MRI scans — its seven unpaired electrons create an extremely strong magnetic signal.", "hr": "Gadolinijeva kontrastna sredstva injektiraju se prije MRI skeniranja — sedam nesparenih elektrona stvaraju iznimno jak magnetski signal."}
+  },
+  {
+    "number": 65, "symbol": "Tb",
+    "name": {"en": "Terbium", "hr": "Terbij"},
+    "mass": 158.93, "electronegativity": 1.20, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 566, "atomic_radius": 177, "ionic_radius": {"value": 92, "ion": "+3"},
+    "melting_point": 1356, "boiling_point": 3230,
+    "config": "[Xe] 4f⁹ 6s²",
+    "fun": {"en": "Terbium activates the green phosphor in colour displays — it is why your screen can show bright green.", "hr": "Terbij aktivira zeleni fosfor u prikaznicima u boji — zbog njega vaš zaslon može prikazivati jarko zelenu."}
+  },
+  {
+    "number": 66, "symbol": "Dy",
+    "name": {"en": "Dysprosium", "hr": "Disprozij"},
+    "mass": 162.50, "electronegativity": 1.22, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 573, "atomic_radius": 178, "ionic_radius": {"value": 91, "ion": "+3"},
+    "melting_point": 1412, "boiling_point": 2567,
+    "config": "[Xe] 4f¹⁰ 6s²",
+    "fun": {"en": "Added to neodymium magnets to keep them working at high temperatures — critical for electric vehicle motors.", "hr": "Dodaje se neodimijevim magnetima kako bi radili na visokim temperaturama — ključno za motore električnih vozila."}
+  },
+  {
+    "number": 67, "symbol": "Ho",
+    "name": {"en": "Holmium", "hr": "Holmij"},
+    "mass": 164.93, "electronegativity": 1.23, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 581, "atomic_radius": 176, "ionic_radius": {"value": 90, "ion": "+3"},
+    "melting_point": 1474, "boiling_point": 2700,
+    "config": "[Xe] 4f¹¹ 6s²",
+    "fun": {"en": "Holmium has the highest magnetic moment of any element — used in the pole pieces of the strongest laboratory electromagnets.", "hr": "Holmij ima najveći magnetski moment od svih elemenata — koristi se u polovima najsnažnijih laboratorijskih elektromagneta."}
+  },
+  {
+    "number": 68, "symbol": "Er",
+    "name": {"en": "Erbium", "hr": "Erbij"},
+    "mass": 167.26, "electronegativity": 1.24, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 589, "atomic_radius": 176, "ionic_radius": {"value": 89, "ion": "+3"},
+    "melting_point": 1529, "boiling_point": 2868,
+    "config": "[Xe] 4f¹² 6s²",
+    "fun": {"en": "Erbium-doped fibre amplifiers (EDFAs) boost signals in internet fibre-optic cables — they are why the global internet works at scale.", "hr": "Pojačivači vlakana dopiranih erbijem (EDFA) pojačavaju signale u internet kabelima optičkih vlakana — zbog njih globalni internet funkcionira."}
+  },
+  {
+    "number": 69, "symbol": "Tm",
+    "name": {"en": "Thulium", "hr": "Tulij"},
+    "mass": 168.93, "electronegativity": 1.25, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 597, "atomic_radius": 176, "ionic_radius": {"value": 88, "ion": "+3"},
+    "melting_point": 1545, "boiling_point": 1950,
+    "config": "[Xe] 4f¹³ 6s²",
+    "fun": {"en": "Thulium-doped fibre lasers can cut through steel and are used in precision medical and industrial laser surgery.", "hr": "Laseri optičkih vlakana dopiranih tulijem mogu rezati čelik i koriste se u preciznoj medicinskoj i industrijskoj laserskoj kirurgiji."}
+  },
+  {
+    "number": 70, "symbol": "Yb",
+    "name": {"en": "Ytterbium", "hr": "Iterbij"},
+    "mass": 173.04, "electronegativity": 1.10, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 603, "atomic_radius": 176, "ionic_radius": {"value": 87, "ion": "+3"},
+    "melting_point": 824, "boiling_point": 1196,
+    "config": "[Xe] 4f¹⁴ 6s²",
+    "fun": {"en": "Ytterbium atomic clocks are so precise they would drift by less than one second in 10 billion years.", "hr": "Atomski satovi izerbijem toliko su precizni da bi se pomaknuli za manje od jedne sekunde u 10 milijardi godina."}
+  },
+  {
+    "number": 71, "symbol": "Lu",
+    "name": {"en": "Lutetium", "hr": "Lutecij"},
+    "mass": 174.97, "electronegativity": 1.27, "state": "solid",
+    "group": null, "period": 6, "block": "f", "category": "lanthanide", "series": "lanthanide",
+    "ie1": 524, "atomic_radius": 174, "ionic_radius": {"value": 86, "ion": "+3"},
+    "melting_point": 1663, "boiling_point": 3402,
+    "config": "[Xe] 4f¹⁴ 5d¹ 6s²",
+    "fun": {"en": "Lutetium oxyorthosilicate crystals in PET scanners convert gamma rays into light for medical imaging.", "hr": "Kristali lutecijeva oksiortosilikita u PET skenerima pretvaraju gama zrake u svjetlost za medicinsko slikanje."}
+  },
+  {
+    "number": 72, "symbol": "Hf",
+    "name": {"en": "Hafnium", "hr": "Hafnij"},
+    "mass": 178.49, "electronegativity": 1.30, "state": "solid",
+    "group": 4, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 659, "atomic_radius": 159, "ionic_radius": {"value": 71, "ion": "+4"},
+    "melting_point": 2233, "boiling_point": 4603,
+    "config": "[Xe] 4f¹⁴ 5d² 6s²",
+    "fun": {"en": "Used in nuclear reactor control rods — hafnium absorbs neutrons so effectively it can shut down a reactor entirely.", "hr": "Koristi se u kontrolnim šipkama nuklearnih reaktora — hafnij apsorbira neutrone toliko učinkovito da može potpuno ugasiti reaktor."}
+  },
+  {
+    "number": 73, "symbol": "Ta",
+    "name": {"en": "Tantalum", "hr": "Tantal"},
+    "mass": 180.95, "electronegativity": 1.50, "state": "solid",
+    "group": 5, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 761, "atomic_radius": 146, "ionic_radius": {"value": 64, "ion": "+5"},
+    "melting_point": 3017, "boiling_point": 5458,
+    "config": "[Xe] 4f¹⁴ 5d³ 6s²",
+    "fun": {"en": "Tantalum capacitors are inside every smartphone — they store charge in a tiny space and are essential for modern electronics.", "hr": "Tantalski kondenzatori nalaze se u svakom pametnom telefonu — pohranjuju naboj u malom prostoru i ključni su za modernu elektroniku."}
+  },
+  {
+    "number": 74, "symbol": "W",
+    "name": {"en": "Tungsten", "hr": "Volfram"},
+    "mass": 183.84, "electronegativity": 2.36, "state": "solid",
+    "group": 6, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 770, "atomic_radius": 139, "ionic_radius": {"value": 60, "ion": "+6"},
+    "melting_point": 3422, "boiling_point": 5555,
+    "config": "[Xe] 4f¹⁴ 5d⁴ 6s²",
+    "fun": {"en": "Highest melting point of all elements — the filaments of old incandescent light bulbs were pure tungsten wire.", "hr": "Najviša točka taljenja od svih elemenata — niti starih žarnih žarulja bile su od čistog volframskog žičanog vlakna."}
+  },
+  {
+    "number": 75, "symbol": "Re",
+    "name": {"en": "Rhenium", "hr": "Renij"},
+    "mass": 186.21, "electronegativity": 1.90, "state": "solid",
+    "group": 7, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 760, "atomic_radius": 137, "ionic_radius": {"value": 58, "ion": "+7"},
+    "melting_point": 3186, "boiling_point": 5596,
+    "config": "[Xe] 4f¹⁴ 5d⁵ 6s²",
+    "fun": {"en": "Rhenium jet engine turbine blades retain their strength above 1500 °C — crucial for modern high-performance aircraft.", "hr": "Lopatice turbina mlaznih motora od renija zadržavaju čvrstoću iznad 1500 °C — ključno za moderne visokoučinkovite zrakoplove."}
+  },
+  {
+    "number": 76, "symbol": "Os",
+    "name": {"en": "Osmium", "hr": "Osmij"},
+    "mass": 190.23, "electronegativity": 2.20, "state": "solid",
+    "group": 8, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 840, "atomic_radius": 135, "ionic_radius": {"value": 55, "ion": "+4"},
+    "melting_point": 3033, "boiling_point": 5012,
+    "config": "[Xe] 4f¹⁴ 5d⁶ 6s²",
+    "fun": {"en": "Densest naturally occurring element — a cube of osmium the size of a sugar cube weighs about 450 g.", "hr": "Najgušći prirodno prisutni element — kocka osmija veličine kocke šećera teži oko 450 g."}
+  },
+  {
+    "number": 77, "symbol": "Ir",
+    "name": {"en": "Iridium", "hr": "Iridij"},
+    "mass": 192.22, "electronegativity": 2.20, "state": "solid",
+    "group": 9, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 880, "atomic_radius": 136, "ionic_radius": {"value": 68, "ion": "+3"},
+    "melting_point": 2446, "boiling_point": 4428,
+    "config": "[Xe] 4f¹⁴ 5d⁷ 6s²",
+    "fun": {"en": "Most corrosion-resistant metal — iridium survived the asteroid impact that killed the dinosaurs, leaving a thin global layer.", "hr": "Najotporniji metal na koroziju — iridij je preživio udar asteroida koji je ubio dinosaure, ostavljajući tanki globalni sloj."}
+  },
+  {
+    "number": 78, "symbol": "Pt",
+    "name": {"en": "Platinum", "hr": "Platina"},
+    "mass": 195.08, "electronegativity": 2.28, "state": "solid",
+    "group": 10, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 870, "atomic_radius": 139, "ionic_radius": {"value": 63, "ion": "+4"},
+    "melting_point": 1768, "boiling_point": 3825,
+    "config": "[Xe] 4f¹⁴ 5d⁹ 6s¹",
+    "fun": {"en": "Catalytic converters in cars contain platinum — it speeds up the conversion of CO and NOₓ into CO₂ and N₂.", "hr": "Katalitički pretvornici u automobilima sadrže platinu — ubrzava pretvorbu CO i NOₓ u CO₂ i N₂."}
+  },
+  {
+    "number": 79, "symbol": "Au",
+    "name": {"en": "Gold", "hr": "Zlato"},
+    "mass": 196.97, "electronegativity": 2.54, "state": "solid",
+    "group": 11, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 890, "atomic_radius": 144, "ionic_radius": {"value": 85, "ion": "+3"},
+    "melting_point": 1064, "boiling_point": 2856,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s¹",
+    "fun": {"en": "So unreactive it has been found unoxidised in ancient shipwrecks after centuries underwater — it never tarnishes.", "hr": "Toliko nereaktivno da je pronađeno neoksidirano u starim brodolomima nakon stoljeća pod vodom — nikad ne gubi sjaj."}
+  },
+  {
+    "number": 80, "symbol": "Hg",
+    "name": {"en": "Mercury", "hr": "Živa"},
+    "mass": 200.59, "electronegativity": 2.00, "state": "liquid",
+    "group": 12, "period": 6, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": 1007, "atomic_radius": 151, "ionic_radius": {"value": 102, "ion": "+2"},
+    "melting_point": -39, "boiling_point": 357,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s²",
+    "fun": {"en": "The only metal liquid at room temperature — once used in barometers and thermometers; its vapour is highly toxic.", "hr": "Jedini metal tekući na sobnoj temperaturi — nekad korišten u barometrima i termometrima; para mu je visoko otovna."}
+  },
+  {
+    "number": 81, "symbol": "Tl",
+    "name": {"en": "Thallium", "hr": "Talij"},
+    "mass": 204.38, "electronegativity": 1.62, "state": "solid",
+    "group": 13, "period": 6, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 589, "atomic_radius": 170, "ionic_radius": {"value": 150, "ion": "+1"},
+    "melting_point": 304, "boiling_point": 1473,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹",
+    "fun": {"en": "Thallium poisoning mimics many other diseases, making it notoriously difficult to diagnose — it was once used as rat poison.", "hr": "Trovanje talijem oponaša mnoge druge bolesti, što ga čini notorno teškim za dijagnostiku — nekad je korišten kao otrov za štakore."}
+  },
+  {
+    "number": 82, "symbol": "Pb",
+    "name": {"en": "Lead", "hr": "Olovo"},
+    "mass": 207.2, "electronegativity": 2.33, "state": "solid",
+    "group": 14, "period": 6, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 716, "atomic_radius": 175, "ionic_radius": {"value": 119, "ion": "+2"},
+    "melting_point": 327, "boiling_point": 1749,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²",
+    "fun": {"en": "Romans used lead pipes and lead-lined wine vessels — centuries of low-level lead poisoning may have contributed to Rome's decline.", "hr": "Rimljani su koristili olovne cijevi i posude za vino — stoljeća niskog trovanja olovom možda su pridonijela propasti Rima."}
+  },
+  {
+    "number": 83, "symbol": "Bi",
+    "name": {"en": "Bismuth", "hr": "Bizmut"},
+    "mass": 208.98, "electronegativity": 2.02, "state": "solid",
+    "group": 15, "period": 6, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": 703, "atomic_radius": 170, "ionic_radius": {"value": 103, "ion": "+3"},
+    "melting_point": 271, "boiling_point": 1564,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³",
+    "fun": {"en": "Bismuth subsalicylate is the active ingredient in Pepto-Bismol — one of the few heavy metals safe enough to swallow.", "hr": "Bizmut-subsalicilat aktivni je sastojak u Pepto-Bismolu — jedan od rijetkih teških metala dovoljno sigurnih za gutanje."}
+  },
+  {
+    "number": 84, "symbol": "Po",
+    "name": {"en": "Polonium", "hr": "Polonij"},
+    "mass": 209, "electronegativity": 2.00, "state": "solid",
+    "group": 16, "period": 6, "block": "p", "category": "metalloid", "series": null,
+    "ie1": 812, "atomic_radius": 168, "ionic_radius": {"value": 94, "ion": "+4"},
+    "melting_point": 254, "boiling_point": 962,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴",
+    "fun": {"en": "Discovered by Marie Curie and named after Poland — polonium-210 is one of the most toxic substances known; lethal in nanogram quantities.", "hr": "Otkrila ga Marie Curie i imenovala po Poljskoj — polonij-210 jedna je od najtoksičnijih poznatih tvari; smrtonosan u nanogramskim količinama."}
+  },
+  {
+    "number": 85, "symbol": "At",
+    "name": {"en": "Astatine", "hr": "Astat"},
+    "mass": 210, "electronegativity": 2.20, "state": "solid",
+    "group": 17, "period": 6, "block": "p", "category": "halogen", "series": null,
+    "ie1": 899, "atomic_radius": 143, "ionic_radius": null,
+    "melting_point": 302, "boiling_point": 337,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵",
+    "fun": {"en": "Rarest naturally occurring element — at any moment, less than 1 gram exists in all of Earth's crust combined.", "hr": "Najrjeđi prirodno prisutni element — u bilo koje doba, manje od 1 grama postoji u cijeloj Zemljinoj kori zajedno."}
+  },
+  {
+    "number": 86, "symbol": "Rn",
+    "name": {"en": "Radon", "hr": "Radon"},
+    "mass": 222, "electronegativity": null, "state": "gas",
+    "group": 18, "period": 6, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": 1037, "atomic_radius": 120, "ionic_radius": null,
+    "melting_point": -71, "boiling_point": -62,
+    "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶",
+    "fun": {"en": "Second leading cause of lung cancer after smoking — radon seeps naturally from granite rocks into homes and accumulates in basements.", "hr": "Drugi vodeći uzrok raka pluća nakon pušenja — radon prirodno procuri iz granitnih stijena u domove i nakuplja se u podrumima."}
+  },
+  {
+    "number": 87, "symbol": "Fr",
+    "name": {"en": "Francium", "hr": "Francij"},
+    "mass": 223, "electronegativity": 0.70, "state": "solid",
+    "group": 1, "period": 7, "block": "s", "category": "alkali-metal", "series": null,
+    "ie1": 380, "atomic_radius": 348, "ionic_radius": {"value": 180, "ion": "+1"},
+    "melting_point": 27, "boiling_point": 677,
+    "config": "[Rn] 7s¹",
+    "fun": {"en": "So unstable that no pure sample has ever been observed — scientists have studied as few as 300,000 atoms at a time.", "hr": "Toliko nestabilan da čisti uzorak nikad nije viđen — znanstvenici su proučavali svega 300.000 atoma odjednom."}
+  },
+  {
+    "number": 88, "symbol": "Ra",
+    "name": {"en": "Radium", "hr": "Radij"},
+    "mass": 226, "electronegativity": 0.90, "state": "solid",
+    "group": 2, "period": 7, "block": "s", "category": "alkaline-earth-metal", "series": null,
+    "ie1": 509, "atomic_radius": 283, "ionic_radius": {"value": 148, "ion": "+2"},
+    "melting_point": 700, "boiling_point": 1737,
+    "config": "[Rn] 7s²",
+    "fun": {"en": "Marie Curie carried radium in her pocket and used it as a night light — she died of aplastic anaemia from radiation exposure.", "hr": "Marie Curie nosila je radij u džepu i koristila ga kao noćno svjetlo — umrla je od aplastične anemije zbog izlaganja zračenju."}
+  },
+  {
+    "number": 89, "symbol": "Ac",
+    "name": {"en": "Actinium", "hr": "Aktinij"},
+    "mass": 227, "electronegativity": 1.10, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 499, "atomic_radius": 188, "ionic_radius": {"value": 112, "ion": "+3"},
+    "melting_point": 1050, "boiling_point": 3198,
+    "config": "[Rn] 6d¹ 7s²",
+    "fun": {"en": "Named from Greek 'aktinos' (ray) — actinium glows blue-white in the dark due to the intensity of its radioactive decay.", "hr": "Ime dolazi od grčkog 'aktinos' (zrak) — aktinij sjaji plavičasto-bijelo u mraku zbog intenziteta svog radioaktivnog raspada."}
+  },
+  {
+    "number": 90, "symbol": "Th",
+    "name": {"en": "Thorium", "hr": "Torij"},
+    "mass": 232.04, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 587, "atomic_radius": 179, "ionic_radius": {"value": 94, "ion": "+4"},
+    "melting_point": 1750, "boiling_point": 4788,
+    "config": "[Rn] 6d² 7s²",
+    "fun": {"en": "Three times more abundant than uranium — some countries are developing thorium reactors as a safer nuclear fuel alternative.", "hr": "Tri puta zastupljeniji od urana — neke zemlje razvijaju torijeve reaktore kao sigurniju alternativu nuklearnom gorivu."}
+  },
+  {
+    "number": 91, "symbol": "Pa",
+    "name": {"en": "Protactinium", "hr": "Protaktinij"},
+    "mass": 231.04, "electronegativity": 1.50, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 568, "atomic_radius": 163, "ionic_radius": null,
+    "melting_point": 1572, "boiling_point": 4000,
+    "config": "[Rn] 5f² 6d¹ 7s²",
+    "fun": {"en": "One of the rarest naturally occurring elements — protactinium has no commercial applications due to extreme scarcity and radioactivity.", "hr": "Jedan od najrjeđih prirodno prisutnih elemenata — protaktinij nema komercijalnih primjena zbog iznimne rijetkosti i radioaktivnosti."}
+  },
+  {
+    "number": 92, "symbol": "U",
+    "name": {"en": "Uranium", "hr": "Uranij"},
+    "mass": 238.03, "electronegativity": 1.38, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 598, "atomic_radius": 156, "ionic_radius": {"value": 89, "ion": "+6"},
+    "melting_point": 1135, "boiling_point": 4131,
+    "config": "[Rn] 5f³ 6d¹ 7s²",
+    "fun": {"en": "Uranium was used in glass to create yellow-green fluorescence under UV light — 'Vaseline glass' is still collected today.", "hr": "Uran se koristio u staklu za žuto-zelenu fluorescenciju pod UV svjetlom — 'vazelin-staklo' se i danas skuplja."}
+  },
+  {
+    "number": 93, "symbol": "Np",
+    "name": {"en": "Neptunium", "hr": "Neptunij"},
+    "mass": 237, "electronegativity": 1.36, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 605, "atomic_radius": 155, "ionic_radius": null,
+    "melting_point": 644, "boiling_point": 4000,
+    "config": "[Rn] 5f⁴ 6d¹ 7s²",
+    "fun": {"en": "Named after the planet Neptune — discovered in 1940 at UC Berkeley, the first transuranic element produced artificially.", "hr": "Imenovan po planetu Neptunu — otkriven 1940. na UC Berkeleyu, prvi transuranij element artificijalno proizveden."}
+  },
+  {
+    "number": 94, "symbol": "Pu",
+    "name": {"en": "Plutonium", "hr": "Plutonij"},
+    "mass": 244, "electronegativity": 1.28, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 585, "atomic_radius": 159, "ionic_radius": null,
+    "melting_point": 640, "boiling_point": 3228,
+    "config": "[Rn] 5f⁶ 7s²",
+    "fun": {"en": "Pu-239 is the fissile material in nuclear weapons — only ~6 kg is needed to reach critical mass.", "hr": "Pu-239 je fisijski materijal u nuklearnom oružju — potrebno je samo ~6 kg za dostizanje kritične mase."}
+  },
+  {
+    "number": 95, "symbol": "Am",
+    "name": {"en": "Americium", "hr": "Americij"},
+    "mass": 243, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 578, "atomic_radius": 173, "ionic_radius": null,
+    "melting_point": 1176, "boiling_point": 2607,
+    "config": "[Rn] 5f⁷ 7s²",
+    "fun": {"en": "Tiny amounts of Am-241 in smoke detectors ionise air to detect smoke particles — a rare everyday use of a radioactive element.", "hr": "Male količine Am-241 u detektorima dima ioniziraju zrak za detekciju čestica dima — rijetka svakodnevna primjena radioaktivnog elementa."}
+  },
+  {
+    "number": 96, "symbol": "Cm",
+    "name": {"en": "Curium", "hr": "Kurij"},
+    "mass": 247, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 581, "atomic_radius": 174, "ionic_radius": null,
+    "melting_point": 1345, "boiling_point": 3110,
+    "config": "[Rn] 5f⁷ 6d¹ 7s²",
+    "fun": {"en": "Named after Marie and Pierre Curie — curium is so intensely radioactive that one gram generates about 3 watts of heat.", "hr": "Imenovan po Mariji i Pierreu Curieju — kurij je toliko intenzivno radioaktivan da jedan gram generira oko 3 vata topline."}
+  },
+  {
+    "number": 97, "symbol": "Bk",
+    "name": {"en": "Berkelium", "hr": "Berkelij"},
+    "mass": 247, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 601, "atomic_radius": 170, "ionic_radius": null,
+    "melting_point": 1050, "boiling_point": 2627,
+    "config": "[Rn] 5f⁹ 7s²",
+    "fun": {"en": "Named after Berkeley, California — first synthesised in 1949 by Glenn Seaborg's team; produced only in microgram quantities.", "hr": "Imenovan po Berkeleyu, Kalifornija — prvi put sintetiziran 1949. od strane tima Glenna Seaborga; producira se samo u mikrogramskim količinama."}
+  },
+  {
+    "number": 98, "symbol": "Cf",
+    "name": {"en": "Californium", "hr": "Kalifornij"},
+    "mass": 251, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 608, "atomic_radius": 168, "ionic_radius": null,
+    "melting_point": 900, "boiling_point": 1470,
+    "config": "[Rn] 5f¹⁰ 7s²",
+    "fun": {"en": "Californium-252 is used as a portable neutron source for detecting gold and silver ore and for treating certain cancers.", "hr": "Kalifornij-252 koristi se kao prijenosni izvor neutrona za detekciju zlatnih i srebrnih ruda te liječenje određenih vrsta raka."}
+  },
+  {
+    "number": 99, "symbol": "Es",
+    "name": {"en": "Einsteinium", "hr": "Ajnštajnij"},
+    "mass": 252, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 619, "atomic_radius": 165, "ionic_radius": null,
+    "melting_point": 860, "boiling_point": 996,
+    "config": "[Rn] 5f¹¹ 7s²",
+    "fun": {"en": "Named after Albert Einstein — first found in the debris of the 1952 Ivy Mike hydrogen bomb test; only ever produced in tiny amounts.", "hr": "Imenovan po Albertu Einsteinu — prvi put pronađen u ostatcima testa vodikove bombe Ivy Mike 1952.; nikad produciran u većim količinama."}
+  },
+  {
+    "number": 100, "symbol": "Fm",
+    "name": {"en": "Fermium", "hr": "Fermij"},
+    "mass": 257, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 627, "atomic_radius": 167, "ionic_radius": null,
+    "melting_point": 1527, "boiling_point": null,
+    "config": "[Rn] 5f¹² 7s²",
+    "fun": {"en": "Named after Enrico Fermi — fermium has no practical uses; it has only been produced in picogram quantities.", "hr": "Imenovan po Enricu Fermiju — fermij nema praktičnih primjena; produciran je samo u pikogramskim količinama."}
+  },
+  {
+    "number": 101, "symbol": "Md",
+    "name": {"en": "Mendelevium", "hr": "Mendelevij"},
+    "mass": 258, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 635, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": 827, "boiling_point": null,
+    "config": "[Rn] 5f¹³ 7s²",
+    "fun": {"en": "Named after Dmitri Mendeleev, creator of the periodic table — first synthesised in 1955 by bombarding einsteinium with alpha particles.", "hr": "Imenovan po Dmitriju Mendelejevu, tvorcu periodičnog sustava — prvi put sintetiziran 1955. bombardiranjem ajnštajnija alfa česticama."}
+  },
+  {
+    "number": 102, "symbol": "No",
+    "name": {"en": "Nobelium", "hr": "Nobelij"},
+    "mass": 259, "electronegativity": 1.30, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 642, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": 827, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 7s²",
+    "fun": {"en": "Named after Alfred Nobel — its discovery was disputed between American and Soviet teams for years before IUPAC settled it.", "hr": "Imenovan po Alfredu Nobelu — otkriće su godinama osporavali američki i sovjetski timovi dok ga IUPAC nije razriješio."}
+  },
+  {
+    "number": 103, "symbol": "Lr",
+    "name": {"en": "Lawrencium", "hr": "Lorencij"},
+    "mass": 266, "electronegativity": null, "state": "solid",
+    "group": null, "period": 7, "block": "f", "category": "actinide", "series": "actinide",
+    "ie1": 479, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": 1627, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 7s² 7p¹",
+    "fun": {"en": "Named after Ernest Lawrence, inventor of the cyclotron — the last actinide element and the final f-block element.", "hr": "Imenovan po Ernestu Lawrenceu, izumitelju ciklotrona — zadnji aktinidni element i posljednji element f-bloka."}
+  },
+  {
+    "number": 104, "symbol": "Rf",
+    "name": {"en": "Rutherfordium", "hr": "Raderfordij"},
+    "mass": 267, "electronegativity": null, "state": "unknown",
+    "group": 4, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d² 7s²",
+    "fun": {"en": "Named after Ernest Rutherford — first transactinide element; produced one atom at a time by bombarding californium with carbon nuclei.", "hr": "Imenovan po Ernestu Rutherfordu — prvi transaktinidni element; producira se atom po atom bombardiranjem kalifornija ugljičnim jezgrama."}
+  },
+  {
+    "number": 105, "symbol": "Db",
+    "name": {"en": "Dubnium", "hr": "Dubnij"},
+    "mass": 268, "electronegativity": null, "state": "unknown",
+    "group": 5, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d³ 7s²",
+    "fun": {"en": "Named after Dubna, Russia — its discovery was long contested between American and Soviet teams (the 'Transfermium Wars').", "hr": "Imenovan po Dubni, Rusija — otkriće je dugo osporavano između američkih i sovjetskih timova ('Transfermijevi ratovi')."}
+  },
+  {
+    "number": 106, "symbol": "Sg",
+    "name": {"en": "Seaborgium", "hr": "Siborgij"},
+    "mass": 271, "electronegativity": null, "state": "unknown",
+    "group": 6, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁴ 7s²",
+    "fun": {"en": "Named after Glenn Seaborg — the only person to have a chemical element named after them while still alive.", "hr": "Imenovan po Glennu Seaborgu — jedina osoba po kojoj je kemijski element imenovan dok je još bila živa."}
+  },
+  {
+    "number": 107, "symbol": "Bh",
+    "name": {"en": "Bohrium", "hr": "Borij"},
+    "mass": 272, "electronegativity": null, "state": "unknown",
+    "group": 7, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁵ 7s²",
+    "fun": {"en": "Named after Niels Bohr — bohrium atoms last only seconds before decaying; its chemistry has barely been studied.", "hr": "Imenovan po Nielsu Bohru — atomi borija traju samo sekunde prije raspada; njegova kemija jedva je proučavana."}
+  },
+  {
+    "number": 108, "symbol": "Hs",
+    "name": {"en": "Hassium", "hr": "Hasij"},
+    "mass": 270, "electronegativity": null, "state": "unknown",
+    "group": 8, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁶ 7s²",
+    "fun": {"en": "Named after Hesse (Hassia), Germany — only a handful of hassium atoms have ever been created in total.", "hr": "Imenovan po Hessenu (Hassia), Njemačka — ukupno je ikad stvoreno tek nekoliko atoma hasija."}
+  },
+  {
+    "number": 109, "symbol": "Mt",
+    "name": {"en": "Meitnerium", "hr": "Meitnerij"},
+    "mass": 278, "electronegativity": null, "state": "unknown",
+    "group": 9, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁷ 7s²",
+    "fun": {"en": "Named after Lise Meitner, co-discoverer of nuclear fission — she was controversially overlooked for the Nobel Prize.", "hr": "Imenovan po Lise Meitner, suotkrivačici nuklearne fisije — kontroverzno je bila zaobiđena pri dodjeli Nobelove nagrade."}
+  },
+  {
+    "number": 110, "symbol": "Ds",
+    "name": {"en": "Darmstadtium", "hr": "Darmštatij"},
+    "mass": 281, "electronegativity": null, "state": "unknown",
+    "group": 10, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁸ 7s²",
+    "fun": {"en": "Named after Darmstadt, Germany — darmstadtium atoms exist for milliseconds; its only use is fundamental nuclear research.", "hr": "Imenovan po Darmstadtu, Njemačka — atomi darmštatija postoje milisekunde; jedina mu je namjena temeljno nuklearno istraživanje."}
+  },
+  {
+    "number": 111, "symbol": "Rg",
+    "name": {"en": "Roentgenium", "hr": "Rendgenij"},
+    "mass": 282, "electronegativity": null, "state": "unknown",
+    "group": 11, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d⁹ 7s²",
+    "fun": {"en": "Named after Wilhelm Röntgen, discoverer of X-rays — relativistic effects are predicted to make roentgenium behave unlike its group 11 neighbours.", "hr": "Imenovan po Wilhelmu Röntgenu, otkrivaču rendgenskih zraka — relativistički učinci predviđaju da će se rendgenij ponašati drugačije od svojih susjeda u skupini 11."}
+  },
+  {
+    "number": 112, "symbol": "Cn",
+    "name": {"en": "Copernicium", "hr": "Kopernicij"},
+    "mass": 285, "electronegativity": null, "state": "unknown",
+    "group": 12, "period": 7, "block": "d", "category": "transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s²",
+    "fun": {"en": "Named after Nicolaus Copernicus — relativistic effects may make it behave as a gas at room temperature, unlike mercury below it.", "hr": "Imenovan po Nikoli Koperniku — relativistički učinci mogu ga učiniti plinom na sobnoj temperaturi, za razliku od žive ispod njega."}
+  },
+  {
+    "number": 113, "symbol": "Nh",
+    "name": {"en": "Nihonium", "hr": "Nihonij"},
+    "mass": 286, "electronegativity": null, "state": "unknown",
+    "group": 13, "period": 7, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹",
+    "fun": {"en": "Named after Japan (Nihon) — first element discovered in Asia, synthesised at RIKEN in 2004; officially named in 2016.", "hr": "Imenovan po Japanu (Nihon) — prvi element otkriven u Aziji, sintetiziran u RIKEN-u 2004.; službeno imenovan 2016."}
+  },
+  {
+    "number": 114, "symbol": "Fl",
+    "name": {"en": "Flerovium", "hr": "Flerovij"},
+    "mass": 289, "electronegativity": null, "state": "unknown",
+    "group": 14, "period": 7, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²",
+    "fun": {"en": "Named after Flerov Laboratory of Nuclear Reactions in Dubna — predicted to behave more like a noble gas than a metal due to relativistic effects.", "hr": "Imenovan po Flerovljevom laboratoriju nuklearnih reakcija u Dubni — predviđa se da će se ponašati više kao plemeniti plin nego kao metal."}
+  },
+  {
+    "number": 115, "symbol": "Mc",
+    "name": {"en": "Moscovium", "hr": "Moskovij"},
+    "mass": 290, "electronegativity": null, "state": "unknown",
+    "group": 15, "period": 7, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³",
+    "fun": {"en": "Named after Moscow Oblast, home of JINR Dubna — only about 100 atoms of moscovium have ever been observed.", "hr": "Imenovan po Moskovskoj oblasti, domovini JINR Dubna — promatrano je svega oko 100 atoma moskovija."}
+  },
+  {
+    "number": 116, "symbol": "Lv",
+    "name": {"en": "Livermorium", "hr": "Livermorij"},
+    "mass": 293, "electronegativity": null, "state": "unknown",
+    "group": 16, "period": 7, "block": "p", "category": "post-transition-metal", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴",
+    "fun": {"en": "Named after Lawrence Livermore National Laboratory — predicted to be a liquid metal at room temperature.", "hr": "Imenovan po Nacionalnom laboratoriju Lawrence Livermore — predviđa se kao tekući metal na sobnoj temperaturi."}
+  },
+  {
+    "number": 117, "symbol": "Ts",
+    "name": {"en": "Tennessine", "hr": "Tenesin"},
+    "mass": 294, "electronegativity": null, "state": "unknown",
+    "group": 17, "period": 7, "block": "p", "category": "halogen", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵",
+    "fun": {"en": "Named after Tennessee (home of ORNL, Vanderbilt University, and UT) — only 4–5 atoms have ever been observed.", "hr": "Imenovan po Tennesseeju (domovini ORNL-a, Vanderbilt sveučilišta i UT-a) — promatrano je samo 4–5 atoma."}
+  },
+  {
+    "number": 118, "symbol": "Og",
+    "name": {"en": "Oganesson", "hr": "Oganeson"},
+    "mass": 294, "electronegativity": null, "state": "unknown",
+    "group": 18, "period": 7, "block": "p", "category": "noble-gas", "series": null,
+    "ie1": null, "atomic_radius": null, "ionic_radius": null,
+    "melting_point": null, "boiling_point": null,
+    "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶",
+    "fun": {"en": "Named after Yuri Oganessian, a pioneer of superheavy element research — despite being in the noble gas group, it is predicted to be a solid.", "hr": "Imenovan po Yuriju Oganessyanu, pioniru istraživanja superheavy elemenata — unatoč tome što je u skupini plemenitih plinova, predviđa se kao čvrsto tijelo."}
+  }
+]

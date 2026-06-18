@@ -57,7 +57,7 @@ function Sidebar({ lang, onNav, nextSession }) {
   return (
     <nav className="side">
       {/* Logo */}
-      <NavLink to="/dashboard" className="side-logo" onClick={onNav}>
+      <NavLink to="/" className="side-logo" onClick={onNav}>
         <LogoMark />
         Molekula
       </NavLink>

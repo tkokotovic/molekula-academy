@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import PeriodicTableOverlay from './components/PeriodicTableOverlay';
 import AppShell from './components/AppShell';
 import TeacherShell from './components/TeacherShell';
 import { isAuthenticated, getToken } from './api/client';
@@ -82,6 +83,7 @@ function RequireTeacher({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <PeriodicTableOverlay />
       <Suspense fallback={<div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: 'var(--ink-faint)', fontSize: 14 }}>Učitavanje…</div>}>
       <Routes>
         <Route path="/" element={<LandingPage />} />

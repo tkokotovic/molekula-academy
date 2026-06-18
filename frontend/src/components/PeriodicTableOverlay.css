@@ -1,0 +1,268 @@
+/* ─── Floating trigger ─────────────────────────────────────────────────────── */
+.pto-trigger {
+  position: fixed;
+  z-index: 9000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent, #0f8f86);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  transition: transform .15s, box-shadow .15s;
+  user-select: none;
+  touch-action: none;
+}
+.pto-trigger:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+.pto-trigger:active { cursor: grabbing; }
+
+/* ─── Backdrop ─────────────────────────────────────────────────────────────── */
+.pto-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9001;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ─── Modal ────────────────────────────────────────────────────────────────── */
+.pto-modal {
+  background: #0b1f26;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 740px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────────── */
+.pto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #0e2d36;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0;
+}
+.pto-header-l {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #eaf4f2;
+  font-weight: 500;
+  font-size: 14px;
+}
+.pto-flask { font-size: 18px; }
+.pto-header-r { display: flex; align-items: center; gap: 8px; }
+
+.pto-lang-toggle {
+  display: flex;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pto-lang-toggle button {
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: rgba(255,255,255,.5);
+  font-family: var(--body, 'DM Sans', sans-serif);
+  transition: background .15s, color .15s;
+}
+.pto-lang-toggle button.active {
+  background: rgba(15,143,134,.25);
+  color: #5dd8d0;
+  font-weight: 500;
+}
+.pto-close, .pto-det-close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255,255,255,.45);
+  transition: color .15s, border-color .15s;
+  line-height: 1;
+}
+.pto-close:hover, .pto-det-close:hover {
+  color: #eaf4f2;
+  border-color: rgba(255,255,255,.35);
+}
+
+/* ─── Legend ───────────────────────────────────────────────────────────────── */
+.pto-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 8px 16px;
+  background: #0e2d36;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0;
+}
+.pto-leg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+}
+.pto-leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ─── Grid scroll container ────────────────────────────────────────────────── */
+.pto-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #0b1f26;
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+.pto-grid {
+  display: grid;
+  grid-template-columns: repeat(18, 35px);
+  grid-template-rows: repeat(7, 46px) 14px repeat(2, 46px);
+  gap: 2px;
+  width: 660px;
+}
+
+/* ─── Element cell ─────────────────────────────────────────────────────────── */
+.pto-el {
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 2px 3px;
+  display: flex;
+  flex-direction: column;
+  transition: transform .1s, border-color .1s, z-index 0s;
+  overflow: hidden;
+}
+.pto-el:hover, .pto-el--sel {
+  transform: scale(1.15);
+  z-index: 10;
+  border-color: rgba(255,255,255,.55) !important;
+}
+
+.pto-num  { font-size: 8px; color: rgba(255,255,255,.55); line-height: 1; }
+.pto-en   { position: absolute; top: 2px; right: 3px; font-size: 7px; color: rgba(255,255,255,.5); }
+.pto-sym  { font-size: 14px; font-weight: 500; color: #fff; line-height: 1.1; text-align: center; width: 100%; }
+.pto-name { font-size: 7.5px; color: rgba(255,255,255,.7); text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pto-mass { font-size: 7.5px; color: rgba(255,255,255,.5); text-align: center; width: 100%; }
+.pto-state { position: absolute; bottom: 2px; right: 3px; width: 5px; height: 5px; border-radius: 50%; }
+
+/* ─── Placeholder + series labels ─────────────────────────────────────────── */
+.pto-placeholder {
+  border-radius: 4px;
+  background: #0e2d36;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: rgba(255,255,255,.3);
+}
+.pto-series-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-size: 8px;
+  color: rgba(255,255,255,.3);
+  text-align: right;
+  line-height: 1.35;
+}
+
+/* ─── Detail panel ─────────────────────────────────────────────────────────── */
+.pto-detail {
+  flex: 1;
+  overflow-y: auto;
+  background: #0e2d36;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: 16px;
+}
+.pto-det-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pto-det-sym {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 500;
+  color: #fff;
+  flex-shrink: 0;
+}
+.pto-det-info { flex: 1; min-width: 0; }
+.pto-det-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin: 0 0 3px;
+  text-transform: capitalize;
+}
+.pto-det-name-main {
+  font-size: 20px;
+  font-weight: 500;
+  color: #eaf4f2;
+  margin: 0 0 2px;
+  font-family: var(--display, 'Bricolage Grotesque', sans-serif);
+}
+.pto-det-name-alt { font-size: 13px; color: rgba(255,255,255,.4); margin: 0; }
+.pto-det-cfg {
+  font-family: var(--mono, 'Space Mono', monospace);
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin: 5px 0 0;
+}
+
+.pto-det-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.pto-stat {
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.pto-stat-label { font-size: 10px; color: rgba(255,255,255,.4); margin-bottom: 3px; }
+.pto-stat-val   { font-size: 14px; font-weight: 500; color: #eaf4f2; }
+.pto-stat-val--empty { color: rgba(255,255,255,.2); font-weight: 400; }
+.pto-stat-unit  { font-size: 10px; color: rgba(255,255,255,.4); font-weight: 400; }
+
+.pto-det-fun {
+  background: rgba(0,0,0,.2);
+  border-left: 3px solid #0f8f86;
+  border-radius: 0 6px 6px 0;
+  padding: 10px 12px;
+}
+.pto-det-fun p { margin: 0; font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.6; }
+.pto-det-fun-alt {
+  margin-top: 8px !important;
+  font-style: italic;
+  color: rgba(255,255,255,.38) !important;
+  font-size: 12px !important;
+}
