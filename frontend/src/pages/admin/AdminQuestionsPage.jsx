@@ -1131,7 +1131,6 @@ function BulkImportPanel({ onImported }) {
       })));
       setResult(resp);
       setStep('done');
-      if (onImported) onImported();
     } catch (ex) {
       setErr(ex.message);
     } finally {
@@ -1147,15 +1146,21 @@ function BulkImportPanel({ onImported }) {
 
   if (step === 'done') {
     return (
-      <div style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center' }}>
+      <div style={{ maxWidth: 560, margin: '60px auto', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
         <h2 style={{ margin: '0 0 8px', fontFamily: 'var(--display)', color: 'var(--ink)' }}>Uvoz završen</h2>
         <p style={{ color: 'var(--ink-soft)', fontSize: 14, margin: '0 0 24px' }}>
-          {result?.imported_count} pitanja uvezeno s oznakom <b>Na čekanju</b> — odobri ih u bazi pitanja.
+          <b>{result?.imported_count}</b> {result?.imported_count === 1 ? 'pitanje uvezeno' : 'pitanja uvezena'} s oznakom <b>Na čekanju</b>.
+          Odobri ih u bazi pitanja.
         </p>
-        <button onClick={reset} style={{ padding: '10px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-          Uvezi više
-        </button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button onClick={reset} style={{ padding: '10px 22px', background: 'var(--bg)', color: 'var(--ink)', border: '1.5px solid var(--line)', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            Uvezi više
+          </button>
+          <button onClick={onImported} style={{ padding: '10px 22px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            Vidi uvezena pitanja →
+          </button>
+        </div>
       </div>
     );
   }
@@ -1580,7 +1585,7 @@ export default function AdminQuestionsPage() {
 
       {/* ── Import tab ── */}
       {tab === 'import' && (
-        <BulkImportPanel onImported={() => { load(); setTab('bank'); }} />
+        <BulkImportPanel onImported={() => { setFilterStatus('pending_approval'); setTab('bank'); }} />
       )}
 
       {/* ── Modal ── */}
