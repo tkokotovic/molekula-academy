@@ -539,10 +539,10 @@ function LpFeatures({ c }) {
         <div className="feat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18, marginTop: 48 }}>
           {f.items.map((it, i) => (
             <Reveal key={i} delay={(i % 4) * 70}>
-              <div className="card" style={{ padding: 24, height: '100%' }}>
-                <ElementTile num={i + 1} sym={it.el} size={52} accent={i % 4 === 0} />
-                <h4 style={{ fontSize: 18, marginTop: 18 }}>{it.name}</h4>
-                <p style={{ color: 'var(--ink-soft)', marginTop: 7, fontSize: 14.5 }}>{it.desc}</p>
+              <div className="card lp-feat-card">
+                <ElementTile num={i + 1} sym={it.el} size={62} accent />
+                <h4 style={{ fontSize: 17, marginTop: 20, letterSpacing: '-0.01em' }}>{it.name}</h4>
+                <p style={{ color: 'var(--ink-soft)', marginTop: 8, fontSize: 14, lineHeight: 1.55 }}>{it.desc}</p>
               </div>
             </Reveal>
           ))}

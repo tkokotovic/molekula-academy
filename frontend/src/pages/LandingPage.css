@@ -197,6 +197,22 @@
 .lp-plan-card[data-popular="true"] .lp-feature-list li.off .icon { color: rgba(255,255,255,.35); }
 .lp-feature-list li.off span:last-child { text-decoration: line-through; text-decoration-color: var(--line-strong); }
 
+/* Feature cards */
+.lp-feat-card {
+  padding: 26px 22px 28px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.lp-feat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
 /* FAQ */
 .lp-faq-q {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
