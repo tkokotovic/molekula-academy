@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireTeacher, requireOwner } = require('../middleware/auth');
 
@@ -61,7 +62,7 @@ router.get('/students/:id', requireTeacher, (req, res) => {
     JOIN topics t ON t.course_id = co.id
     JOIN lessons l ON l.topic_id = t.id
     LEFT JOIN lesson_progress lp ON lp.lesson_id = l.id AND lp.student_id = ?
-    WHERE en.student_id = ? AND co.status = 'published'
+    WHERE en.student_id = ?
     GROUP BY co.id
     ORDER BY en.enrolled_at ASC
   `).all(req.params.id, req.params.id);
@@ -183,6 +184,59 @@ router.patch('/students/:id/profile', requireTeacher, (req, res) => {
     'SELECT id, name, email, subscription_tier, created_at, exam_date, admin_notes FROM users WHERE id = ?'
   ).get(req.params.id);
   return res.json({ user: updated });
+});
+
+// POST /api/admin/students — manually create a student account (beta)
+router.post('/students', requireOwner, async (req, res) => {
+  const { name, email, password, subscription_tier = 'basic' } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Ime, email i lozinka su obavezni.' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Lozinka mora imati najmanje 8 znakova.' });
+  }
+  if (!['basic', 'premium'].includes(subscription_tier)) {
+    return res.status(400).json({ error: "subscription_tier mora biti 'basic' ili 'premium'." });
+  }
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase().trim());
+  if (existing) return res.status(409).json({ error: 'Korisnik s tim emailom već postoji.' });
+
+  const hashed = await bcrypt.hash(password, 12);
+  const result = db.prepare(
+    'INSERT INTO users (name, email, password, role, subscription_tier) VALUES (?, ?, ?, ?, ?)'
+  ).run(name.trim(), email.toLowerCase().trim(), hashed, 'student', subscription_tier);
+
+  const student = db.prepare('SELECT id, name, email, subscription_tier, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+  return res.status(201).json({ student });
+});
+
+// POST /api/admin/students/:id/enrollments — enroll student in a course
+router.post('/students/:id/enrollments', requireOwner, (req, res) => {
+  const { course_id } = req.body;
+  if (!course_id) return res.status(400).json({ error: 'course_id je obavezan.' });
+
+  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
+  if (!student) return res.status(404).json({ error: 'Student nije pronađen.' });
+
+  const course = db.prepare("SELECT id FROM courses WHERE id = ?").get(course_id);
+  if (!course) return res.status(404).json({ error: 'Kolegij nije pronađen.' });
+
+  db.prepare(`
+    INSERT INTO enrollments (student_id, course_id, status)
+    VALUES (?, ?, 'active')
+    ON CONFLICT(student_id, course_id) DO UPDATE SET status = 'active', unenrolled_at = NULL
+  `).run(req.params.id, course_id);
+
+  return res.status(201).json({ ok: true });
+});
+
+// DELETE /api/admin/students/:id/enrollments/:courseId — unenroll student
+router.delete('/students/:id/enrollments/:courseId', requireOwner, (req, res) => {
+  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
+  if (!student) return res.status(404).json({ error: 'Student nije pronađen.' });
+
+  db.prepare('DELETE FROM enrollments WHERE student_id = ? AND course_id = ?').run(req.params.id, req.params.courseId);
+  return res.json({ ok: true });
 });
 
 // ─── Revenue snapshot (stub — no Stripe yet) ─────────────────────────────────

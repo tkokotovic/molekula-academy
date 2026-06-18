@@ -5,6 +5,7 @@ import {
   getHomeworkInbox, getHomeworkAssignment, correctAssignment,
   getTeacherSessions, createSession, updateSession, deleteSession,
   downloadParentReportPDF, downloadProgressReportPDF,
+  getCourses, adminEnrollStudent, adminUnenrollStudent,
 } from '../../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -347,13 +348,91 @@ function SessionModal({ studentId, session, onClose, onSaved }) {
 
 // ─── Tab components ───────────────────────────────────────────────────────────
 
-function TabOverview({ student, courses, onProfileSaved }) {
+function EnrollCourseModal({ studentId, enrolledCourseIds, onClose, onEnrolled }) {
+  const [allCourses, setAllCourses] = useState([]);
+  const [selected, setSelected] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    getCourses().then(cs => setAllCourses((cs || []).filter(c => !enrolledCourseIds.includes(c.id)))).catch(() => {});
+  }, []);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!selected) return;
+    setSaving(true);
+    setErr('');
+    try {
+      await adminEnrollStudent(studentId, Number(selected));
+      onEnrolled();
+      onClose();
+    } catch (ex) {
+      setErr(ex.message || t('Greška.', 'Error.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--surface)', borderRadius: 14, padding: '28px 28px 24px',
+        width: '100%', maxWidth: 400, boxShadow: '0 8px 40px rgba(0,0,0,.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontFamily: 'var(--display)', fontSize: 20, color: 'var(--ink)', margin: 0, flex: 1 }}>
+            {t('Upiši kolegij', 'Enroll in course')}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-soft)', fontSize: 20 }}>×</button>
+        </div>
+
+        {allCourses.length === 0 ? (
+          <p style={{ color: 'var(--ink-soft)', fontSize: 14 }}>{t('Svi kolegiji su već upisani.', 'All courses already enrolled.')}</p>
+        ) : (
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'block', marginBottom: 4 }}>{t('Kolegij', 'Course')}</label>
+              <select
+                required
+                value={selected}
+                onChange={e => setSelected(e.target.value)}
+                style={{ ...inp, width: '100%' }}
+              >
+                <option value="">{t('— odaberi —', '— select —')}</option>
+                {allCourses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            {err && <div style={{ fontSize: 13, color: '#dc2626', background: '#fee2e2', borderRadius: 6, padding: '8px 12px' }}>{err}</div>}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button" onClick={onClose} style={{
+                padding: '8px 18px', borderRadius: 8, border: '1px solid var(--line)',
+                background: 'transparent', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 13.5,
+              }}>{t('Odustani', 'Cancel')}</button>
+              <button type="submit" disabled={saving || !selected} style={{
+                padding: '8px 22px', borderRadius: 8, border: 'none',
+                background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
+                opacity: (saving || !selected) ? .6 : 1,
+              }}>{saving ? '…' : t('Upiši', 'Enroll')}</button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabOverview({ student, courses, onProfileSaved, onCoursesChanged }) {
   const isPremium = student.subscription_tier === 'premium';
   const [editExam,   setEditExam]   = useState(false);
   const [examVal,    setExamVal]    = useState(student.exam_date ?? '');
   const [editNotes,  setEditNotes]  = useState(false);
   const [notesVal,   setNotesVal]   = useState(student.admin_notes ?? '');
   const [saving,     setSaving]     = useState(false);
+  const [showEnroll, setShowEnroll] = useState(false);
 
   async function saveField(field, value) {
     setSaving(true);
@@ -435,11 +514,21 @@ function TabOverview({ student, courses, onProfileSaved }) {
       </div>
 
       {/* Courses */}
-      {courses.length > 0 && (
-        <div>
-          <h3 style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 10, marginTop: 0 }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, marginTop: 0 }}>
+          <h3 style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--ink-soft)', margin: 0 }}>
             {t('Upisani kolegiji', 'Enrolled courses')}
           </h3>
+          <button onClick={() => setShowEnroll(true)} style={{
+            fontSize: 11.5, color: 'var(--accent)', background: 'none', border: 'none',
+            cursor: 'pointer', textDecoration: 'underline', padding: 0,
+          }}>
+            + {t('Dodaj', 'Add')}
+          </button>
+        </div>
+        {courses.length === 0 ? (
+          <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', fontStyle: 'italic' }}>{t('Nema upisanih kolegija.', 'No enrolled courses.')}</div>
+        ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {courses.map(c => {
               const pct = c.total_lessons > 0 ? Math.round((c.completed_lessons / c.total_lessons) * 100) : 0;
@@ -450,18 +539,41 @@ function TabOverview({ student, courses, onProfileSaved }) {
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}>
                   <Ring pct={pct} size={52} colour={pct >= 80 ? '#1ec8b6' : pct >= 40 ? '#f59e0b' : 'var(--accent)'} />
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>{c.title}</div>
                     <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
                       {c.completed_lessons}/{c.total_lessons} {t('lekcija', 'lessons')}
                       {' · '}{t('upisano', 'enrolled')} {fmtDate(c.enrolled_at)}
                     </div>
                   </div>
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(t('Ispiši studenta s ovog kolegija?', 'Remove student from this course?'))) return;
+                      await adminUnenrollStudent(student.id, c.id).catch(() => {});
+                      onCoursesChanged();
+                    }}
+                    style={{
+                      fontSize: 11.5, color: '#dc2626', background: 'none',
+                      border: '1px solid #fca5a5', borderRadius: 6,
+                      cursor: 'pointer', padding: '3px 10px',
+                    }}
+                  >
+                    {t('Ispiši', 'Remove')}
+                  </button>
                 </div>
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
+
+      {showEnroll && (
+        <EnrollCourseModal
+          studentId={student.id}
+          enrolledCourseIds={courses.map(c => c.id)}
+          onClose={() => setShowEnroll(false)}
+          onEnrolled={onCoursesChanged}
+        />
       )}
 
       {/* Private notes */}
@@ -1043,7 +1155,7 @@ export default function AdminStudentDetailPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'overview'  && <TabOverview student={student} courses={courses} onProfileSaved={load} />}
+      {activeTab === 'overview'  && <TabOverview student={student} courses={courses} onProfileSaved={load} onCoursesChanged={load} />}
       {activeTab === 'progress'  && <TabProgress courses={courses} quizHistory={quizHistory} />}
       {activeTab === 'quizzes'   && <TabQuizzes quizHistory={quizHistory} />}
       {activeTab === 'homeworks' && <TabHomeworks studentId={id} />}

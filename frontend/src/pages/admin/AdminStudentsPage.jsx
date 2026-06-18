@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAdminStudents, setStudentSubscription, getHomeworkInbox } from '../../api/client';
+import { getAdminStudents, setStudentSubscription, getHomeworkInbox, createAdminStudent } from '../../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,6 +69,97 @@ function PlanBadge({ tier, studentId, onChanged }) {
   );
 }
 
+const inp = {
+  width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 8,
+  border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)',
+  fontSize: 13.5, fontFamily: 'inherit', outline: 'none',
+};
+
+function AddStudentModal({ onClose, onCreated }) {
+  const lang = localStorage.getItem('mol_lang') || 'hr';
+  const t = (hr, en) => lang === 'en' ? en : hr;
+
+  const [form, setForm] = useState({ name: '', email: '', password: '', subscription_tier: 'basic' });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  function set(k, v) { setForm(p => ({ ...p, [k]: v })); setErr(''); }
+
+  async function submit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setErr('');
+    try {
+      await createAdminStudent(form);
+      onCreated();
+      onClose();
+    } catch (ex) {
+      setErr(ex.message || t('Greška.', 'Error.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--surface)', borderRadius: 14, padding: '28px 28px 24px',
+        width: '100%', maxWidth: 420, boxShadow: '0 8px 40px rgba(0,0,0,.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontFamily: 'var(--display)', fontSize: 20, color: 'var(--ink)', margin: 0, flex: 1 }}>
+            {t('Dodaj studenta', 'Add student')}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-soft)', fontSize: 20 }}>×</button>
+        </div>
+
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'block', marginBottom: 4 }}>{t('Ime i prezime', 'Full name')}</label>
+            <input required value={form.name} onChange={e => set('name', e.target.value)} style={inp} placeholder="Ana Horvat" />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'block', marginBottom: 4 }}>Email</label>
+            <input required type="email" value={form.email} onChange={e => set('email', e.target.value)} style={inp} placeholder="ana@example.com" />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'block', marginBottom: 4 }}>{t('Lozinka (min. 8 znakova)', 'Password (min. 8 chars)')}</label>
+            <input required type="password" value={form.password} onChange={e => set('password', e.target.value)} style={inp} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'block', marginBottom: 4 }}>Plan</label>
+            <select value={form.subscription_tier} onChange={e => set('subscription_tier', e.target.value)} style={inp}>
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+
+          {err && <div style={{ fontSize: 13, color: '#dc2626', background: '#fee2e2', borderRadius: 6, padding: '8px 12px' }}>{err}</div>}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 6, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={{
+              padding: '8px 18px', borderRadius: 8, border: '1px solid var(--line)',
+              background: 'transparent', color: 'var(--ink-soft)', cursor: 'pointer', fontSize: 13.5,
+            }}>
+              {t('Odustani', 'Cancel')}
+            </button>
+            <button type="submit" disabled={saving} style={{
+              padding: '8px 22px', borderRadius: 8, border: 'none',
+              background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
+              opacity: saving ? .7 : 1,
+            }}>
+              {saving ? '…' : t('Kreiraj', 'Create')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── AdminStudentsPage ────────────────────────────────────────────────────────
 
 export default function AdminStudentsPage() {
@@ -80,6 +171,7 @@ export default function AdminStudentsPage() {
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState('');
   const [planFilter, setPlanFilter] = useState('all');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   function load() {
     setLoading(true);
@@ -137,14 +229,33 @@ export default function AdminStudentsPage() {
     <div style={{ padding: '28px 28px 48px' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <p style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--accent)', margin: '0 0 4px' }}>
-          Admin
-        </p>
-        <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', margin: 0 }}>
-          {t('Studenti', 'Students')}
-        </h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 12 }}>
+        <div>
+          <p style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--accent)', margin: '0 0 4px' }}>
+            Admin
+          </p>
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', margin: 0 }}>
+            {t('Studenti', 'Students')}
+          </h1>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            marginTop: 8, padding: '8px 18px', borderRadius: 9, border: 'none',
+            background: 'var(--accent)', color: '#fff', cursor: 'pointer',
+            fontSize: 13.5, fontWeight: 600, flexShrink: 0,
+          }}
+        >
+          + {t('Dodaj studenta', 'Add student')}
+        </button>
       </div>
+
+      {showAddModal && (
+        <AddStudentModal
+          onClose={() => setShowAddModal(false)}
+          onCreated={load}
+        />
+      )}
 
       {/* Filter chips + search row */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>

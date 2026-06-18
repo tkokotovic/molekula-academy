@@ -718,6 +718,27 @@ export async function updateStudentProfile(id, fields) {
   return data.user;
 }
 
+export async function createAdminStudent(fields) {
+  const data = await apiFetch('/api/admin/students', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+  return data.student;
+}
+
+export async function adminEnrollStudent(studentId, courseId) {
+  return apiFetch(`/api/admin/students/${studentId}/enrollments`, {
+    method: 'POST',
+    body: JSON.stringify({ course_id: courseId }),
+  });
+}
+
+export async function adminUnenrollStudent(studentId, courseId) {
+  return apiFetch(`/api/admin/students/${studentId}/enrollments/${courseId}`, {
+    method: 'DELETE',
+  });
+}
+
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 
 export async function getStudentSessions() {
