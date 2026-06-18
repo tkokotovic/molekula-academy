@@ -40,6 +40,7 @@ const AdminReportsPage       = lazy(() => import('./pages/admin/AdminReportsPage
 const AdminQuestionsPage     = lazy(() => import('./pages/admin/AdminQuestionsPage'));
 const LessonEditorPage       = lazy(() => import('./pages/admin/LessonEditorPage'));
 const LessonPrintPage        = lazy(() => import('./pages/admin/LessonPrintPage'));
+const AdminChemToolsPage     = lazy(() => import('./pages/admin/AdminChemToolsPage'));
 
 // ─── Error boundary (dev debugging) ───────────────────────────────────────────
 
@@ -122,6 +123,7 @@ export default function App() {
         <Route path="/admin/revenue"                element={<RequireTeacher><AdminRevenuePage /></RequireTeacher>} />
         <Route path="/admin/reports"                element={<RequireTeacher><AdminReportsPage /></RequireTeacher>} />
         <Route path="/admin/questions"              element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
+        <Route path="/admin/chem-tools"            element={<RequireTeacher><AdminChemToolsPage /></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/print" element={<RequireTeacher><LessonPrintPage /></RequireTeacher>} />
       </Routes>
