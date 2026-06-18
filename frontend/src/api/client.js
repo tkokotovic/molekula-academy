@@ -925,3 +925,19 @@ export async function downloadLessonPDF(lessonId, lessonTitle) {
     `${safe}.pdf`,
   );
 }
+
+// Upload a PDF or DOCX file and get back AI-suggested lesson blocks for review.
+export async function aiImportLesson(lessonId, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`/api/teacher/lessons/${lessonId}/ai-import`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}

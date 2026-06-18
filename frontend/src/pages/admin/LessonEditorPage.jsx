@@ -13,7 +13,7 @@ import {
   getLesson, getLessonBlocks, createLessonBlock, updateLessonBlock,
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility, changeLessonBlockType,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
-  setLessonStatus, getToken, downloadLessonPDF,
+  setLessonStatus, getToken, downloadLessonPDF, aiImportLesson,
   getChemCompounds, saveChemCompound,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
@@ -1904,6 +1904,170 @@ function StatusControl({ status, publishAt, open, saving, scheduleDate, onToggle
   );
 }
 
+// ─── AI Import modal ──────────────────────────────────────────────────────────
+
+const BLOCK_TYPE_LABELS = {
+  heading: 'Naslov', text: 'Tekst', equation: 'Jednadžba', list: 'Lista',
+  callout: 'Ključna točka', exam_tip: 'Savjet za ispit', warning: 'Upozorenje',
+  summary: 'Sažetak', divider: 'Separator', molecule3d: 'Molekula 3D',
+};
+
+function blockPreviewText(block) {
+  const c = block.content || {};
+  if (block.type === 'heading') return c.text || '';
+  if (block.type === 'text') return (c.html || '').replace(/<[^>]+>/g, '').slice(0, 120);
+  if (block.type === 'equation') return c.latex || '';
+  if (block.type === 'list') return (c.items || []).join(' · ').slice(0, 120);
+  if (block.type === 'callout' || block.type === 'exam_tip' || block.type === 'warning') return c.text || '';
+  if (block.type === 'summary') return (c.items || []).join(' · ').slice(0, 120);
+  return '';
+}
+
+function AiImportModal({ lessonId, onInsert, onClose }) {
+  const fileRef = useRef(null);
+  const [file,     setFile]     = useState(null);
+  const [status,   setStatus]   = useState('idle'); // idle | uploading | done | error
+  const [errorMsg, setErrorMsg] = useState('');
+  const [blocks,   setBlocks]   = useState([]);
+  const [selected, setSelected] = useState(new Set());
+
+  async function handleUpload() {
+    if (!file) return;
+    setStatus('uploading');
+    setErrorMsg('');
+    try {
+      const res = await aiImportLesson(lessonId, file);
+      setBlocks(res.blocks || []);
+      setSelected(new Set((res.blocks || []).map((_, i) => i)));
+      setStatus('done');
+    } catch (e) {
+      setErrorMsg(e.message || 'Greška pri uvozu');
+      setStatus('error');
+    }
+  }
+
+  function toggleAll(val) {
+    setSelected(val ? new Set(blocks.map((_, i) => i)) : new Set());
+  }
+
+  const overlay = {
+    position: 'fixed', inset: 0, background: 'rgba(11,52,60,.55)', zIndex: 10000,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+  const modal = {
+    background: '#fff', borderRadius: 16, width: '100%', maxWidth: 700,
+    maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    boxShadow: '0 20px 60px rgba(0,0,0,.25)',
+  };
+
+  return (
+    <div style={overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={modal}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 24px 16px', borderBottom: '1px solid var(--line)' }}>
+          <span style={{ fontSize: 22 }}>📄</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>AI uvoz iz PDF-a / Word dokumenta</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginTop: 2 }}>Claude će parsirati dokument i predložiti blokove. Vi odabirete što se ubacuje.</div>
+          </div>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--ink-faint)', lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+          {status !== 'done' && (
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div
+                onClick={() => fileRef.current?.click()}
+                style={{ flex: 1, border: '2px dashed var(--line)', borderRadius: 10, padding: '28px 20px', textAlign: 'center', cursor: 'pointer', background: 'var(--surface)', transition: 'border-color .15s' }}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setFile(f); }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📂</div>
+                <div style={{ fontSize: 14, color: 'var(--ink-soft)' }}>
+                  {file ? <strong>{file.name}</strong> : 'Klikni ili povuci PDF / DOCX datoteku ovdje'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 4 }}>Max 20 MB · .pdf ili .docx</div>
+                <input ref={fileRef} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  style={{ display: 'none' }}
+                  onChange={e => setFile(e.target.files[0] || null)}
+                />
+              </div>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div style={{ marginTop: 16, padding: '12px 16px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, color: '#991b1b', fontSize: 14 }}>
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
+          {status === 'uploading' && (
+            <div style={{ marginTop: 24, textAlign: 'center', color: 'var(--ink-soft)', fontSize: 15 }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>⏳</div>
+              Claude analizira dokument… ovo može potrajati 10–30 sekundi.
+            </div>
+          )}
+
+          {status === 'done' && blocks.length === 0 && (
+            <div style={{ textAlign: 'center', color: 'var(--ink-faint)', padding: 32 }}>AI nije pronašao blokove u dokumentu.</div>
+          )}
+
+          {status === 'done' && blocks.length > 0 && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <strong style={{ fontSize: 15 }}>Pronađeno {blocks.length} blokova</strong>
+                <button onClick={() => toggleAll(true)}  style={{ fontSize: 12, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>odaberi sve</button>
+                <button onClick={() => toggleAll(false)} style={{ fontSize: 12, color: 'var(--ink-faint)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>poništi</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {blocks.map((b, i) => {
+                  const checked = selected.has(i);
+                  const label = BLOCK_TYPE_LABELS[b.type] || b.type;
+                  const preview = blockPreviewText(b);
+                  return (
+                    <label key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${checked ? 'var(--teal)' : 'var(--line)'}`, background: checked ? 'var(--accent-wash, #e7f4f0)' : '#fff', cursor: 'pointer', transition: 'all .12s' }}>
+                      <input type="checkbox" checked={checked} onChange={e => {
+                        setSelected(s => { const n = new Set(s); e.target.checked ? n.add(i) : n.delete(i); return n; });
+                      }} style={{ marginTop: 2, accentColor: 'var(--teal)' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: .5 }}>{label}</span>
+                        {preview && <div style={{ fontSize: 13, color: 'var(--ink)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--line)' }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid var(--line)', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 14, color: 'var(--ink-soft)' }}>Odustani</button>
+          {status !== 'done' ? (
+            <button
+              onClick={handleUpload}
+              disabled={!file || status === 'uploading'}
+              style={{ padding: '9px 22px', border: 'none', borderRadius: 8, background: !file || status === 'uploading' ? '#ccc' : 'var(--teal)', color: '#fff', cursor: !file || status === 'uploading' ? 'default' : 'pointer', fontSize: 14, fontWeight: 700 }}
+            >
+              {status === 'uploading' ? 'Analiziranje…' : '📤 Analiziraj s AI'}
+            </button>
+          ) : (
+            <button
+              onClick={() => onInsert(blocks.filter((_, i) => selected.has(i)))}
+              disabled={selected.size === 0}
+              style={{ padding: '9px 22px', border: 'none', borderRadius: 8, background: selected.size === 0 ? '#ccc' : 'var(--teal)', color: '#fff', cursor: selected.size === 0 ? 'default' : 'pointer', fontSize: 14, fontWeight: 700 }}
+            >
+              ✅ Dodaj {selected.size} blok{selected.size === 1 ? '' : 'a'} u lekciju
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Compound sidebar ──────────────────────────────────────────────────────────
 // Right-side panel: search compound DB → insert \ce{formula} into the focused
 // TiptapEditor (onMouseDown so focus doesn't shift), or add a molecule3d block.
@@ -2046,6 +2210,7 @@ export default function LessonEditorPage() {
   const [statusSaving,   setStatusSaving]   = useState(false);
   const [saveState,      setSaveState]      = useState('idle'); // idle | saving | saved
   const [sidebarOpen,    setSidebarOpen]    = useState(false);
+  const [aiImportOpen,   setAiImportOpen]   = useState(false);
   const saveStateTimer                      = useRef(null);
   const activeEditorRef                     = useRef(null);
 
@@ -2281,6 +2446,11 @@ export default function LessonEditorPage() {
           style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 16px', fontWeight: 600, fontSize: 14, cursor: blocks.length === 0 ? 'default' : 'pointer', opacity: blocks.length === 0 ? 0.5 : 1 }}>
           👁 Pregled kao student
         </button>
+        <button onClick={() => setAiImportOpen(true)}
+          title="Uvezi sadržaj iz PDF-a ili Word dokumenta pomoću AI"
+          style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          📄 AI uvoz
+        </button>
         <button onClick={() => setSidebarOpen(s => !s)}
           title="Baza kemijskih spojeva"
           style={{ background: sidebarOpen ? 'var(--accent-wash)' : 'var(--surface)', color: sidebarOpen ? 'var(--accent-ink)' : 'var(--ink-soft)', border: `1px solid ${sidebarOpen ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
@@ -2377,6 +2547,18 @@ export default function LessonEditorPage() {
 
       {showPicker && <BlockPicker onPick={handleAddBlock} onClose={() => setShowPicker(false)} />}
       {showPreview && <StudentPreviewModal blocks={blocks} onClose={() => setShowPreview(false)} />}
+      {aiImportOpen && (
+        <AiImportModal
+          lessonId={lessonId}
+          onInsert={async (selectedBlocks) => {
+            for (const b of selectedBlocks) {
+              await handleAddBlock(b.type, b.content);
+            }
+            setAiImportOpen(false);
+          }}
+          onClose={() => setAiImportOpen(false)}
+        />
+      )}
     </div>
     </ActiveEditorContext.Provider>
   );
