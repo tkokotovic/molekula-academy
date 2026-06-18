@@ -65,6 +65,77 @@ ${htmlItems.map(h => `<div class="eq" id="e${h.idx}">${h.rendered}</div>`).join(
   }
 }
 
+// Batch-render all molecule3d blocks to PNG using puppeteer + SmilesDrawer.
+// Returns Map<blockId, pngBuffer>. Falls back gracefully if puppeteer fails.
+async function renderMoleculesPng(blocks) {
+  const fs = require('fs');
+  const path = require('path');
+
+  const molItems = blocks
+    .map((b, i) => ({ i, b }))
+    .filter(({ b }) => {
+      if (b.type !== 'molecule3d') return false;
+      const c = typeof b.content === 'string' ? JSON.parse(b.content) : (b.content || {});
+      return !!(c.smiles || '').trim();
+    });
+  if (!molItems.length) return new Map();
+
+  const sdPath = path.resolve(__dirname, '../../../frontend/node_modules/smiles-drawer/dist/smiles-drawer.min.js');
+  let sdSrc = '';
+  try { sdSrc = fs.readFileSync(sdPath, 'utf8'); } catch { return new Map(); }
+
+  const items = molItems.map(({ b }) => {
+    const c = typeof b.content === 'string' ? JSON.parse(b.content) : (b.content || {});
+    return { blockId: b.id, smiles: (c.smiles || '').trim() };
+  });
+
+  const pageHtml = `<!DOCTYPE html><html><head>
+<style>html,body{margin:0;padding:0;background:#fff;}
+.mol{display:inline-block;width:360px;height:260px;background:#fff;}
+svg{width:100%;height:100%;}
+</style>
+<script>${sdSrc}</script>
+</head><body>
+${items.map((it, idx) => `<div class="mol" id="m${idx}"><svg id="s${idx}"></svg></div>`).join('\n')}
+<script>
+var items = ${JSON.stringify(items)};
+var SmilesDrawer = window.SmilesDrawer || (window.default && window.default.SmilesDrawer);
+if (!SmilesDrawer && window['smiles-drawer']) SmilesDrawer = window['smiles-drawer'];
+if (!SmilesDrawer) SmilesDrawer = Object.values(window).find(v => v && v.SvgDrawer);
+items.forEach(function(it, idx) {
+  try {
+    var drawer = new SmilesDrawer.SvgDrawer({ width: 360, height: 260, padding: 12 });
+    SmilesDrawer.parse(it.smiles,
+      function(tree) { drawer.draw(tree, document.getElementById('s'+idx), 'light'); },
+      function() {}
+    );
+  } catch(e) {}
+});
+</script>
+</body></html>`;
+
+  let puppeteer;
+  try { puppeteer = require('puppeteer'); } catch { return new Map(); }
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 800 });
+    await page.setContent(pageHtml, { waitUntil: 'networkidle2', timeout: 20000 });
+    await page.evaluate(() => new Promise(r => setTimeout(r, 600)));
+    const result = new Map();
+    for (let idx = 0; idx < items.length; idx++) {
+      const el = await page.$(`#m${idx}`);
+      if (el) result.set(items[idx].blockId, await el.screenshot({ type: 'png' }));
+    }
+    return result;
+  } finally {
+    await browser.close();
+  }
+}
+
 // ─── Brand palette (hex without #, as docx wants) ────────────────────────────
 const DEEP = '0B343C';
 const TEAL = '0F8F86';
@@ -246,7 +317,7 @@ function signalBox(type, lines) {
 }
 
 // ─── Per-block → Paragraphs ──────────────────────────────────────────────────
-async function blockToParagraphs(block, allBlocks, eqPngs = new Map()) {
+async function blockToParagraphs(block, allBlocks, eqPngs = new Map(), molPngs = new Map()) {
   const c = typeof block.content === 'string' ? JSON.parse(block.content) : (block.content || {});
   const paras = [];
   const body = (text, opts = {}) => new Paragraph({ children: [new TextRun({ text: String(text || ''), ...opts })] });
@@ -359,10 +430,31 @@ async function blockToParagraphs(block, allBlocks, eqPngs = new Map()) {
       if (c.caption) paras.push(body(c.caption, { italics: true, color: '6B7280', size: 18 }));
       break;
     }
-    case 'molecule3d':
-      paras.push(body(`Molekula: ${c.name || ''}`, { bold: true, color: DEEP }));
-      paras.push(codeBox(`SMILES: ${c.smiles || ''}`));
+    case 'molecule3d': {
+      const molPng = molPngs.get(block.id);
+      if (molPng) {
+        try {
+          const meta = await sharp(molPng).metadata();
+          const maxW = 360;
+          const w = Math.min(meta.width || maxW, maxW);
+          const h = Math.round(w * (meta.height || 260) / (meta.width || maxW));
+          if (c.name) paras.push(body(c.name, { bold: true, color: DEEP }));
+          paras.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 60, after: 60 },
+            children: [new ImageRun({ data: molPng, type: 'png', transformation: { width: w, height: h } })],
+          }));
+          if (c.smiles) paras.push(body(c.smiles, { font: 'Courier New', size: 16, color: FAINT }));
+        } catch {
+          paras.push(body(`Molekula: ${c.name || ''}`, { bold: true, color: DEEP }));
+          paras.push(codeBox(`SMILES: ${c.smiles || ''}`));
+        }
+      } else {
+        paras.push(body(`Molekula: ${c.name || ''}`, { bold: true, color: DEEP }));
+        paras.push(codeBox(`SMILES: ${c.smiles || ''}`));
+      }
       break;
+    }
     case 'image': case 'gif':
       paras.push(body(`[${block.type === 'gif' ? 'GIF' : 'Slika'}${c.caption ? ': ' + c.caption : ''}]`, { color: '6B7280', italics: true }));
       if (c.url) paras.push(body(c.url, { color: TEAL, size: 18 }));
@@ -462,7 +554,10 @@ async function buildLessonDocx(lesson, blocks, teacher) {
     })],
   });
 
-  const eqPngs = await renderEquationsToPng(blocks);
+  const [eqPngs, molPngs] = await Promise.all([
+    renderEquationsToPng(blocks),
+    renderMoleculesPng(blocks),
+  ]);
 
   const children = [];
   children.push(new Paragraph({ text: lesson.title, heading: HeadingLevel.TITLE }));
@@ -470,7 +565,7 @@ async function buildLessonDocx(lesson, blocks, teacher) {
   children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: DEEP } }, spacing: { after: 160 } }));
 
   for (const block of blocks) {
-    const paras = await blockToParagraphs(block, blocks, eqPngs);
+    const paras = await blockToParagraphs(block, blocks, eqPngs, molPngs);
     paras.forEach(p => children.push(p));
     children.push(new Paragraph({ spacing: { after: 40 } }));
   }

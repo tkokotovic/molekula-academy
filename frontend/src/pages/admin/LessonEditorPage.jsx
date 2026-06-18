@@ -2102,11 +2102,16 @@ function CompoundSidebar({ activeEditorRef, onAddBlock }) {
     return () => { alive = false; clearTimeout(t); };
   }, [query]);
 
-  // onMouseDown + preventDefault keeps TiptapEditor focus alive while clicking sidebar
+  // onMouseDown + preventDefault keeps TiptapEditor focus alive while clicking sidebar.
+  // activeEditorRef is never cleared on blur, so cursor position is preserved
+  // even after the user types in the search box.
   function insertFormula(e, compound) {
     e.preventDefault();
     const editor = activeEditorRef.current;
-    if (!editor) return;
+    if (!editor) {
+      alert('Klikni unutar tekstualnog bloka da postaviš kursor, zatim klikni "Umetni u tekst".');
+      return;
+    }
     editor.chain().focus().insertChem({ latex: `\\ce{${compound.formula}}`, display: false }).run();
   }
 

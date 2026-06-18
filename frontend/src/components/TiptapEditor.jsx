@@ -345,7 +345,8 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
       onChange?.(editor.getHTML());
     },
     onFocus: ({ editor: ed }) => { activeCtxRef.current?.setActive(ed); },
-    onBlur:  ()              => { activeCtxRef.current?.setActive(null); },
+    // Do NOT clear on blur — keep last-focused editor so the compound sidebar
+    // can still insert at that cursor position after the search box steals focus.
     editorProps: {
       attributes: { style: `min-height:${minHeight}px` },
       handlePaste(view, event) {

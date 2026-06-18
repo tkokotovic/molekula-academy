@@ -59,7 +59,7 @@ function css() {
 @import url('https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-@page{size:A4;margin:16mm 20mm 20mm 20mm}
+@page{size:A4;margin:25mm}
 html,body{background:#fff}
 body{font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10.5pt;color:${B.ink};line-height:1.6}
 
@@ -194,7 +194,7 @@ ${smilesJs ? `<script>
 (function() {
   document.querySelectorAll('svg.mol-svg[data-smiles]').forEach(function(el) {
     try {
-      var drawer = new SmilesDrawer.SvgDrawer({ width: 260, height: 180 });
+      var drawer = new SmilesDrawer.SvgDrawer({ width: 360, height: 260 });
       SmilesDrawer.parse(el.getAttribute('data-smiles'), function(tree) {
         drawer.draw(tree, el, 'light');
       }, function() {});
@@ -410,7 +410,7 @@ function renderBlock(b) {
       const name   = (c.name   || '').trim();
       return `<div class="blk mol-3d">
         ${name ? `<div class="mol-3d-name">${esc(name)}</div>` : ''}
-        ${smiles ? `<svg class="mol-svg" data-smiles="${esc(smiles)}" width="260" height="180" style="display:block;margin:0 auto;max-width:100%"></svg>` : ''}
+        ${smiles ? `<svg class="mol-svg" data-smiles="${esc(smiles)}" width="360" height="260" style="display:block;margin:0 auto;max-width:100%"></svg>` : ''}
         ${smiles ? `<div class="mol-3d-smiles">${esc(smiles)}</div>` : ''}
         ${!smiles && !name ? '<span class="blk-skip">[Molekula — bez SMILES]</span>' : ''}
       </div>`;
@@ -459,6 +459,8 @@ async function renderToPDF(html) {
   try {
     // networkidle2: wait for SmilesDrawer init script + KaTeX CSS (2 or fewer open connections)
     await pg.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
+    // SmilesDrawer uses async callbacks — wait for all SVG renders to complete.
+    await pg.evaluate(() => new Promise(r => setTimeout(r, 600)));
     return await pg.pdf({
       format: 'A4',
       printBackground: true,
