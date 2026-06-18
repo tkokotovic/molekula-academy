@@ -47,12 +47,17 @@ router.get('/', (req, res) => {
 
 const teacher = express.Router();
 
+const VALID_COURSE_TYPES = ['ib_sl', 'ib_hl', 'drzavna_matura', 'prijemni', 'medchem_1', 'medchem_2'];
+
 // POST /api/teacher/courses
 teacher.post('/', requireAuth, requireTeacher, (req, res) => {
-  const { title, description, cover_image_url, target_audience, symbol } = req.body;
+  const { title, description, cover_image_url, target_audience, symbol, course_type } = req.body;
 
   if (!title || !title.trim()) {
     return res.status(400).json({ error: 'title is required' });
+  }
+  if (course_type && !VALID_COURSE_TYPES.includes(course_type)) {
+    return res.status(400).json({ error: `course_type must be one of: ${VALID_COURSE_TYPES.join(', ')}` });
   }
 
   const base = slugify(title);
@@ -60,9 +65,9 @@ teacher.post('/', requireAuth, requireTeacher, (req, res) => {
   const audienceJson = JSON.stringify(Array.isArray(target_audience) ? target_audience : []);
 
   const result = db.prepare(`
-    INSERT INTO courses (title, description, slug, cover_image_url, target_audience, symbol)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(title.trim(), description || null, slug, cover_image_url || null, audienceJson, symbol || null);
+    INSERT INTO courses (title, description, slug, cover_image_url, target_audience, symbol, course_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(title.trim(), description || null, slug, cover_image_url || null, audienceJson, symbol || null, course_type || null);
 
   const course = parseCourse(db.prepare('SELECT * FROM courses WHERE id = ?').get(result.lastInsertRowid));
   return res.status(201).json({ course });
@@ -88,22 +93,27 @@ teacher.put('/:id', requireAuth, requireTeacher, (req, res) => {
   const existing = db.prepare('SELECT * FROM courses WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Course not found' });
 
-  const { title, description, cover_image_url, target_audience, symbol } = req.body;
+  const { title, description, cover_image_url, target_audience, symbol, course_type } = req.body;
 
-  const newTitle    = title           !== undefined ? title.trim()   : existing.title;
-  const newDesc     = description     !== undefined ? description     : existing.description;
-  const newCover    = cover_image_url !== undefined ? cover_image_url : existing.cover_image_url;
-  const newSymbol   = symbol          !== undefined ? symbol          : existing.symbol;
-  const newAudience = target_audience !== undefined
+  if (course_type !== undefined && course_type !== null && !VALID_COURSE_TYPES.includes(course_type)) {
+    return res.status(400).json({ error: `course_type must be one of: ${VALID_COURSE_TYPES.join(', ')}` });
+  }
+
+  const newTitle      = title           !== undefined ? title.trim()   : existing.title;
+  const newDesc       = description     !== undefined ? description     : existing.description;
+  const newCover      = cover_image_url !== undefined ? cover_image_url : existing.cover_image_url;
+  const newSymbol     = symbol          !== undefined ? symbol          : existing.symbol;
+  const newCourseType = course_type     !== undefined ? (course_type || null) : existing.course_type;
+  const newAudience   = target_audience !== undefined
     ? JSON.stringify(Array.isArray(target_audience) ? target_audience : [])
     : existing.target_audience;
 
   db.prepare(`
     UPDATE courses
     SET title = ?, description = ?, cover_image_url = ?, target_audience = ?, symbol = ?,
-        updated_at = datetime('now')
+        course_type = ?, updated_at = datetime('now')
     WHERE id = ?
-  `).run(newTitle, newDesc, newCover, newAudience, newSymbol, id);
+  `).run(newTitle, newDesc, newCover, newAudience, newSymbol, newCourseType, id);
 
   const course = parseCourse(db.prepare('SELECT * FROM courses WHERE id = ?').get(id));
   return res.json({ course });

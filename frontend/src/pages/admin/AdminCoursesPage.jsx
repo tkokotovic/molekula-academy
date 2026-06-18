@@ -6,7 +6,17 @@ import {
   getLessonsByTopic, createLesson, updateLesson, deleteLessonById, setLessonStatus,
   getLibraryLessons, createLibraryLesson, forkLesson,
   getLessonForks, pushLessonToForks,
+  getSyllabusCodes,
 } from '../../api/client';
+
+const CURRICULUM_LABELS = {
+  ib_sl: 'IB Chemistry SL',
+  ib_hl: 'IB Chemistry HL',
+  drzavna_matura: 'Državna matura',
+  prijemni: 'Prijemni ispit (medicina)',
+  medchem_1: 'Medicinska kemija 1',
+  medchem_2: 'Medicinska kemija 2',
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -89,16 +99,18 @@ function CourseModal({ course, onClose, onSaved }) {
   const [title, setTitle] = useState(course?.title ?? '');
   const [description, setDescription] = useState(course?.description ?? '');
   const [symbol, setSymbol] = useState(course?.symbol ?? '');
+  const [courseType, setCourseType] = useState(course?.course_type ?? '');
   const [saving, setSaving] = useState(false);
 
   async function save() {
     if (!title.trim()) return;
     setSaving(true);
     try {
+      const fields = { title, description, symbol: symbol.trim() || null, course_type: courseType || null };
       if (course) {
-        await updateCourse(course.id, { title, description, symbol: symbol.trim() || null });
+        await updateCourse(course.id, fields);
       } else {
-        await createCourse({ title, description, symbol: symbol.trim() || null });
+        await createCourse(fields);
       }
       onSaved();
     } catch (e) {
@@ -119,6 +131,14 @@ function CourseModal({ course, onClose, onSaved }) {
           onChange={e => setSymbol(e.target.value.slice(0, 4))}
           placeholder="npr. IB" />
       </Field>
+      <Field label="Curriculum (opcionalno)">
+        <select style={inputStyle} value={courseType} onChange={e => setCourseType(e.target.value)}>
+          <option value="">— bez curriculuma —</option>
+          {Object.entries(CURRICULUM_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+      </Field>
       <Field label="Opis (opcionalno)">
         <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }}
           value={description} onChange={e => setDescription(e.target.value)} />
@@ -135,18 +155,31 @@ function CourseModal({ course, onClose, onSaved }) {
 
 // ─── Topic modal ──────────────────────────────────────────────────────────────
 
-function TopicModal({ courseId, topic, onClose, onSaved }) {
+function TopicModal({ courseId, courseType, topic, onClose, onSaved }) {
   const [title, setTitle] = useState(topic?.title ?? '');
+  const [codes, setCodes] = useState([]);
+  const [selectedIds, setSelectedIds] = useState(
+    () => Array.isArray(topic?.syllabus_item_ids) ? topic.syllabus_item_ids : []
+  );
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!courseType) return;
+    getSyllabusCodes(courseType).then(rows => setCodes(rows || [])).catch(() => {});
+  }, [courseType]);
+
+  function toggleCode(id) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
 
   async function save() {
     if (!title.trim()) return;
     setSaving(true);
     try {
       if (topic) {
-        await updateTopic(topic.id, { title });
+        await updateTopic(topic.id, { title, syllabus_item_ids: selectedIds });
       } else {
-        await createTopic(courseId, { title });
+        await createTopic(courseId, { title, syllabus_item_ids: selectedIds });
       }
       onSaved();
     } catch (e) {
@@ -160,8 +193,36 @@ function TopicModal({ courseId, topic, onClose, onSaved }) {
     <Modal title={topic ? 'Uredi poglavlje' : 'Novo poglavlje'} onClose={onClose}>
       <Field label="Naziv poglavlja">
         <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && save()} autoFocus />
+          onKeyDown={e => e.key === 'Enter' && !codes.length && save()} autoFocus />
       </Field>
+
+      {codes.length > 0 && (
+        <Field label={`Syllabus kodovi (${CURRICULUM_LABELS[courseType] ?? courseType})`}>
+          <div style={{
+            maxHeight: 180, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 7,
+            padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 3,
+          }}>
+            {codes.map(c => (
+              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12.5, color: 'var(--ink)' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(c.id)}
+                  onChange={() => toggleCode(c.id)}
+                  style={{ accentColor: 'var(--accent)', flexShrink: 0 }}
+                />
+                <span style={{ fontFamily: 'var(--mono)', color: 'var(--accent)', minWidth: 28, fontSize: 11.5 }}>{c.code}</span>
+                <span style={{ color: 'var(--ink-soft)' }}>{c.title}</span>
+              </label>
+            ))}
+          </div>
+          {selectedIds.length > 0 && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 4 }}>
+              {selectedIds.length} kodova odabrano
+            </div>
+          )}
+        </Field>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
         <button style={btnGhost} onClick={onClose}>Odustani</button>
         <button style={{ ...btnPrimary, opacity: saving || !title.trim() ? 0.6 : 1 }} onClick={save} disabled={saving || !title.trim()}>
@@ -293,7 +354,7 @@ function LessonRow({ lesson, topicId, onRefresh }) {
 
 // ─── Topic accordion ──────────────────────────────────────────────────────────
 
-function TopicAccordion({ topic, courseId, onRefresh }) {
+function TopicAccordion({ topic, courseId, courseType, onRefresh }) {
   const [open, setOpen] = useState(true);
   const [lessons, setLessons] = useState(null);
   const [loadingLessons, setLoadingLessons] = useState(false);
@@ -347,7 +408,7 @@ function TopicAccordion({ topic, courseId, onRefresh }) {
   return (
     <>
       {editing && (
-        <TopicModal courseId={courseId} topic={topic} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); onRefresh(); }} />
+        <TopicModal courseId={courseId} courseType={courseType} topic={topic} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); onRefresh(); }} />
       )}
       {addingLesson && (
         <LessonModal topicId={topic.id} onClose={() => setAddingLesson(false)} onSaved={() => { setAddingLesson(false); refreshLessons(); }} />
@@ -412,6 +473,182 @@ function TopicAccordion({ topic, courseId, onRefresh }) {
   );
 }
 
+// ─── Curriculum sidebar ───────────────────────────────────────────────────────
+
+function CurriculumSidebar({ courseType, topics, onClose }) {
+  const [codes, setCodes] = useState([]);
+
+  useEffect(() => {
+    getSyllabusCodes(courseType).then(rows => setCodes(rows || [])).catch(() => {});
+  }, [courseType]);
+
+  // Build a set of all covered syllabus_code ids from topics
+  const coveredIds = new Set(
+    (topics || []).flatMap(t => Array.isArray(t.syllabus_item_ids) ? t.syllabus_item_ids : [])
+  );
+
+  const total = codes.length;
+  const covered = codes.filter(c => coveredIds.has(c.id)).length;
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, right: 0, bottom: 0, width: 340,
+      background: 'var(--surface)', borderLeft: '1px solid var(--line)',
+      zIndex: 200, display: 'flex', flexDirection: 'column',
+      boxShadow: '-4px 0 24px rgba(0,0,0,.12)',
+    }}>
+      {/* Header */}
+      <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 2 }}>
+            Curriculum
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{CURRICULUM_LABELS[courseType] ?? courseType}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 3 }}>
+            {covered}/{total} kodova pokriveno
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--ink-soft)', padding: 4 }}>×</button>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 3, background: 'var(--line)' }}>
+        <div style={{ height: '100%', width: `${total ? (covered / total) * 100 : 0}%`, background: 'var(--accent)', transition: 'width .3s' }} />
+      </div>
+
+      {/* Code list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
+        {codes.map(c => {
+          const isCovered = coveredIds.has(c.id);
+          return (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 6px', borderRadius: 6,
+              marginBottom: 2, background: isCovered ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
+            }}>
+              <span style={{
+                fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, minWidth: 32, flexShrink: 0,
+                color: isCovered ? 'var(--accent)' : 'var(--ink-soft)', paddingTop: 1,
+              }}>
+                {c.code}
+              </span>
+              <span style={{ fontSize: 12.5, color: isCovered ? 'var(--ink)' : 'var(--ink-soft)', lineHeight: 1.4 }}>
+                {c.title}
+              </span>
+              {isCovered && (
+                <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>✓</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Bulk-import topics from curriculum ────────────────────────────────────────
+
+function BulkImportModal({ courseId, courseType, existingTopicTitles, onClose, onImported }) {
+  const [codes, setCodes] = useState([]);
+  const [selected, setSelected] = useState(new Set());
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getSyllabusCodes(courseType).then(rows => setCodes(rows || [])).catch(() => {});
+  }, [courseType]);
+
+  function toggle(id) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === codes.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(codes.map(c => c.id)));
+    }
+  }
+
+  async function importTopics() {
+    if (!selected.size) return;
+    setSaving(true);
+    try {
+      const toCreate = codes.filter(c => selected.has(c.id));
+      for (const c of toCreate) {
+        await createTopic(courseId, {
+          title: `${c.code} — ${c.title}`,
+          syllabus_item_ids: [c.id],
+        });
+      }
+      onImported();
+      onClose();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12,
+        padding: '24px 24px 20px', width: 520, maxWidth: '95vw', maxHeight: '85vh',
+        display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.25)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>
+              Uvezi poglavlja iz curriculuma
+            </h2>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 3 }}>
+              {CURRICULUM_LABELS[courseType]} · odaberi kodove koji postaju poglavlja
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--ink-soft)', marginLeft: 12 }}>×</button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <button onClick={toggleAll} style={{ ...btnGhost, fontSize: 12, padding: '4px 10px' }}>
+            {selected.size === codes.length ? 'Odznači sve' : 'Odaberi sve'}
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{selected.size} odabrano</span>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+          {codes.map(c => (
+            <label key={c.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 4px', cursor: 'pointer', borderRadius: 5 }}>
+              <input
+                type="checkbox"
+                checked={selected.has(c.id)}
+                onChange={() => toggle(c.id)}
+                style={{ accentColor: 'var(--accent)', marginTop: 2, flexShrink: 0 }}
+              />
+              <span style={{ fontFamily: 'var(--mono)', color: 'var(--accent)', minWidth: 30, fontSize: 11.5, paddingTop: 1 }}>{c.code}</span>
+              <span style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.4 }}>{c.title}</span>
+            </label>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+          <button style={btnGhost} onClick={onClose}>Odustani</button>
+          <button
+            style={{ ...btnPrimary, opacity: saving || !selected.size ? 0.6 : 1 }}
+            onClick={importTopics}
+            disabled={saving || !selected.size}
+          >
+            {saving ? 'Kreira…' : `Kreiraj ${selected.size || ''} poglavlja`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Course detail view ───────────────────────────────────────────────────────
 
 function CourseDetail({ course, onBack, onCourseUpdated }) {
@@ -420,6 +657,8 @@ function CourseDetail({ course, onBack, onCourseUpdated }) {
   const [addingTopic, setAddingTopic] = useState(false);
   const [editingCourse, setEditingCourse] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   useEffect(() => { loadTopics(); }, [course.id]);
 
@@ -447,13 +686,31 @@ function CourseDetail({ course, onBack, onCourseUpdated }) {
     }
   }
 
+  const hasCurriculum = !!course.course_type;
+
   return (
     <>
       {editingCourse && (
         <CourseModal course={course} onClose={() => setEditingCourse(false)} onSaved={() => { setEditingCourse(false); onCourseUpdated(); }} />
       )}
       {addingTopic && (
-        <TopicModal courseId={course.id} onClose={() => setAddingTopic(false)} onSaved={() => { setAddingTopic(false); loadTopics(); }} />
+        <TopicModal courseId={course.id} courseType={course.course_type} onClose={() => setAddingTopic(false)} onSaved={() => { setAddingTopic(false); loadTopics(); }} />
+      )}
+      {showBulkImport && hasCurriculum && (
+        <BulkImportModal
+          courseId={course.id}
+          courseType={course.course_type}
+          existingTopicTitles={(topics || []).map(t => t.title)}
+          onClose={() => setShowBulkImport(false)}
+          onImported={() => { setShowBulkImport(false); loadTopics(); }}
+        />
+      )}
+      {showSidebar && hasCurriculum && (
+        <CurriculumSidebar
+          courseType={course.course_type}
+          topics={topics || []}
+          onClose={() => setShowSidebar(false)}
+        />
       )}
 
       {/* Header */}
@@ -466,6 +723,21 @@ function CourseDetail({ course, onBack, onCourseUpdated }) {
             {course.title}
           </h1>
           <StatusBadge status={course.status ?? 'draft'} onClick={cycleStatus} loading={statusLoading} />
+          {hasCurriculum && (
+            <button
+              onClick={() => setShowSidebar(s => !s)}
+              title={CURRICULUM_LABELS[course.course_type]}
+              style={{
+                ...btnGhost,
+                fontSize: 12, padding: '6px 12px',
+                background: showSidebar ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : undefined,
+                color: showSidebar ? 'var(--accent)' : undefined,
+                border: showSidebar ? '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' : undefined,
+              }}
+            >
+              📋 Curriculum
+            </button>
+          )}
           <button onClick={() => setEditingCourse(true)} style={btnGhost}>Uredi kolegij</button>
         </div>
         {course.description && (
@@ -473,12 +745,18 @@ function CourseDetail({ course, onBack, onCourseUpdated }) {
             {course.description}
           </p>
         )}
-        <div style={{ marginTop: 10, display: 'flex', gap: 16, fontSize: 12.5, color: 'var(--ink-soft)', fontFamily: 'var(--mono)' }}>
+        <div style={{ marginTop: 10, display: 'flex', gap: 16, fontSize: 12.5, color: 'var(--ink-soft)', fontFamily: 'var(--mono)', flexWrap: 'wrap' }}>
           <span>{topics?.length ?? '—'} poglavlja</span>
           <span>·</span>
           <span>{course.lesson_count ?? '—'} lekcija</span>
           <span>·</span>
           <span>{course.enrolled_count ?? 0} upisanih</span>
+          {hasCurriculum && (
+            <>
+              <span>·</span>
+              <span style={{ color: 'var(--accent)' }}>{CURRICULUM_LABELS[course.course_type]}</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -489,25 +767,40 @@ function CourseDetail({ course, onBack, onCourseUpdated }) {
           padding: '32px 24px', border: '1px dashed var(--line)', borderRadius: 10,
           textAlign: 'center', color: 'var(--ink-soft)', fontSize: 13.5,
         }}>
-          Nema poglavlja. Dodaj prvo poglavlje.
+          Nema poglavlja. Dodaj prvo poglavlje{hasCurriculum ? ' ili uvezi iz curriculuma' : ''}.
         </div>
       )}
       {!loading && topics && topics.map(t => (
-        <TopicAccordion key={t.id} topic={t} courseId={course.id} onRefresh={loadTopics} />
+        <TopicAccordion key={t.id} topic={t} courseId={course.id} courseType={course.course_type} onRefresh={loadTopics} />
       ))}
 
       {!loading && (
-        <button
-          onClick={() => setAddingTopic(true)}
-          style={{
-            marginTop: 12, padding: '9px 16px', borderRadius: 8,
-            border: '1px dashed var(--line)', background: 'none', cursor: 'pointer',
-            fontSize: 13, color: 'var(--accent)', fontWeight: 600, width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}
-        >
-          + Novo poglavlje
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <button
+            onClick={() => setAddingTopic(true)}
+            style={{
+              flex: 1, padding: '9px 16px', borderRadius: 8,
+              border: '1px dashed var(--line)', background: 'none', cursor: 'pointer',
+              fontSize: 13, color: 'var(--accent)', fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            + Novo poglavlje
+          </button>
+          {hasCurriculum && (
+            <button
+              onClick={() => setShowBulkImport(true)}
+              style={{
+                padding: '9px 16px', borderRadius: 8,
+                border: '1px dashed var(--line)', background: 'none', cursor: 'pointer',
+                fontSize: 13, color: 'var(--ink-soft)', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              ⬇ Uvezi iz curriculuma
+            </button>
+          )}
+        </div>
       )}
     </>
   );
