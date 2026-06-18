@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { ActiveEditorContext } from '../contexts/ActiveEditorContext';
 import { ChemNode } from './extensions/chem';
 import ChemPicker from './ChemPicker';
 import StarterKit from '@tiptap/starter-kit';
@@ -291,6 +292,11 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
   const [pasteNote, setPasteNote] = useState(null); // transient toast
   const [uploading, setUploading] = useState(false);
 
+  // Register this editor instance with the sidebar's ActiveEditorContext on focus.
+  const activeCtx = useContext(ActiveEditorContext);
+  const activeCtxRef = useRef(activeCtx);
+  useEffect(() => { activeCtxRef.current = activeCtx; }, [activeCtx]);
+
   function flashNote(msg) {
     setPasteNote(msg);
     clearTimeout(flashNote._t);
@@ -338,6 +344,8 @@ export default function TiptapEditor({ value, onChange, placeholder = 'Počni pi
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
     },
+    onFocus: ({ editor: ed }) => { activeCtxRef.current?.setActive(ed); },
+    onBlur:  ()              => { activeCtxRef.current?.setActive(null); },
     editorProps: {
       attributes: { style: `min-height:${minHeight}px` },
       handlePaste(view, event) {

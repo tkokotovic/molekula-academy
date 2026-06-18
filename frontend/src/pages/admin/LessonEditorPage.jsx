@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -14,11 +14,13 @@ import {
   deleteLessonBlock, reorderLessonBlocks, setBlockVisibility, changeLessonBlockType,
   getSyllabusCodes, getLessonSyllabusTags, setLessonSyllabusTags,
   setLessonStatus, getToken, downloadLessonPDF,
+  getChemCompounds, saveChemCompound,
 } from '../../api/client';
 import TiptapEditor from '../../components/TiptapEditor';
 import { hydrateChemHtml } from '../../components/extensions/chem';
 import MolekulaMark from '../../components/MolekulaMark';
 import SmilesDrawer from 'smiles-drawer';
+import { ActiveEditorContext } from '../../contexts/ActiveEditorContext';
 import './LessonEditorCanvas.css';
 
 // ─── Block type registry ───────────────────────────────────────────────────────
@@ -1909,6 +1911,129 @@ function StatusControl({ status, publishAt, open, saving, scheduleDate, onToggle
   );
 }
 
+// ─── Compound sidebar ──────────────────────────────────────────────────────────
+// Right-side panel: search compound DB → insert \ce{formula} into the focused
+// TiptapEditor (onMouseDown so focus doesn't shift), or add a molecule3d block.
+
+function KatexPill({ latex }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current || !latex) return;
+    const k = window.katex;
+    if (k) {
+      try { k.render(latex, ref.current, { throwOnError: false, displayMode: false }); return; }
+      catch { /* fall through */ }
+    }
+    if (ref.current) ref.current.textContent = latex;
+  }, [latex]);
+  return <span ref={ref} style={{ fontSize: 12, color: 'var(--ink-soft)' }} />;
+}
+
+function CompoundSidebar({ activeEditorRef, onAddBlock }) {
+  const [query, setQuery]     = useState('');
+  const [results, setResults] = useState([]);
+  const [newName, setNewName] = useState('');
+  const [newFormula, setNewFormula] = useState('');
+  const [saving, setSaving]   = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const t = setTimeout(async () => {
+      try { const r = await getChemCompounds(query); if (alive) setResults(r); }
+      catch { if (alive) setResults([]); }
+    }, 200);
+    return () => { alive = false; clearTimeout(t); };
+  }, [query]);
+
+  // onMouseDown + preventDefault keeps TiptapEditor focus alive while clicking sidebar
+  function insertFormula(e, compound) {
+    e.preventDefault();
+    const editor = activeEditorRef.current;
+    if (!editor) return;
+    editor.chain().focus().insertChem({ latex: `\\ce{${compound.formula}}`, display: false }).run();
+  }
+
+  function addMoleculeBlock(e, compound) {
+    e.preventDefault();
+    onAddBlock({ type: 'molecule3d', content: { smiles: '', name: compound.name_hr || '' } });
+  }
+
+  async function handleSaveCompound() {
+    if (!newName.trim() || !newFormula.trim()) return;
+    setSaving(true);
+    try {
+      await saveChemCompound({ name_hr: newName.trim(), name_en: '', formula: newFormula.trim() });
+      setNewName('');
+      setNewFormula('');
+      const r = await getChemCompounds(query);
+      setResults(r);
+    } catch { /* non-fatal */ }
+    finally { setSaving(false); }
+  }
+
+  const inp = { width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 12, outline: 'none', fontFamily: 'inherit', marginBottom: 4 };
+
+  return (
+    <div style={{ width: 252, flexShrink: 0, borderLeft: '1px solid var(--line)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 57, height: 'calc(100vh - 57px)', overflow: 'hidden' }}>
+      {/* Header + search */}
+      <div style={{ padding: '12px 12px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 8 }}>
+          ⚗️ Baza spojeva
+        </div>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Traži po imenu ili formuli…"
+          style={{ ...inp, marginBottom: 0, fontSize: 13 }}
+        />
+      </div>
+
+      {/* Results list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 8px' }}>
+        {results.length === 0 && (
+          <div style={{ padding: '12px 6px', color: 'var(--ink-faint)', fontSize: 12, fontStyle: 'italic' }}>
+            {query ? 'Nema rezultata.' : 'Počni tipkati za pretragu…'}
+          </div>
+        )}
+        {results.map(c => (
+          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 6px', borderRadius: 8, marginBottom: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: 'var(--ink)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={c.name_hr}>
+                {c.name_hr}
+              </div>
+              <KatexPill latex={`\\ce{${c.formula}}`} />
+            </div>
+            <button type="button" title="Umetni formulu u tekst (∑)"
+              onMouseDown={e => insertFormula(e, c)}
+              style={{ flexShrink: 0, padding: '3px 7px', fontSize: 11, border: '1px solid var(--line)', borderRadius: 6, background: 'var(--bg)', color: 'var(--ink-soft)', cursor: 'pointer', fontFamily: 'var(--mono)', fontWeight: 700 }}>
+              ∑
+            </button>
+            <button type="button" title="Dodaj kao molekulski blok"
+              onMouseDown={e => addMoleculeBlock(e, c)}
+              style={{ flexShrink: 0, padding: '3px 7px', fontSize: 13, border: '1px solid var(--line)', borderRadius: 6, background: 'var(--bg)', color: 'var(--ink-soft)', cursor: 'pointer' }}>
+              ⚗️
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add new compound */}
+      <div style={{ padding: '10px 12px 12px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-faint)', fontFamily: 'var(--mono)', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '.07em' }}>
+          + Novi spoj
+        </div>
+        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ime (HR)" style={inp} />
+        <input value={newFormula} onChange={e => setNewFormula(e.target.value)} placeholder="Formula: H2SO4" style={{ ...inp, fontFamily: 'var(--mono)' }} />
+        <button type="button" onClick={handleSaveCompound}
+          disabled={saving || !newName.trim() || !newFormula.trim()}
+          style={{ width: '100%', padding: '7px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: (newName.trim() && newFormula.trim() && !saving) ? 'pointer' : 'default', opacity: (newName.trim() && newFormula.trim() && !saving) ? 1 : 0.5, fontFamily: 'inherit' }}>
+          {saving ? 'Sprema…' : 'Spremi spoj'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── LessonEditorPage ──────────────────────────────────────────────────────────
 
 export default function LessonEditorPage() {
@@ -1927,7 +2052,14 @@ export default function LessonEditorPage() {
   const [scheduleDate,   setScheduleDate]   = useState('');
   const [statusSaving,   setStatusSaving]   = useState(false);
   const [saveState,      setSaveState]      = useState('idle'); // idle | saving | saved
+  const [sidebarOpen,    setSidebarOpen]    = useState(false);
   const saveStateTimer                      = useRef(null);
+  const activeEditorRef                     = useRef(null);
+
+  // Stable context value so TiptapEditor's useEffect doesn't loop
+  const activeEditorCtx = useMemo(() => ({
+    setActive: (ed) => { activeEditorRef.current = ed; },
+  }), []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1965,8 +2097,10 @@ export default function LessonEditorPage() {
     }
   }
 
-  async function handleAddBlock(type) {
-    const content = JSON.parse(JSON.stringify(DEFAULT_CONTENT[type] || {}));
+  async function handleAddBlock(type, initialContent = null) {
+    const content = initialContent
+      ? { ...JSON.parse(JSON.stringify(DEFAULT_CONTENT[type] || {})), ...initialContent }
+      : JSON.parse(JSON.stringify(DEFAULT_CONTENT[type] || {}));
     const newBlock = await createLessonBlock(lessonId, type, content);
     setBlocks(bs => [...bs, newBlock]);
   }
@@ -2090,7 +2224,8 @@ export default function LessonEditorPage() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <ActiveEditorContext.Provider value={activeEditorCtx}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
 
       {/* ── Top bar ── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)', borderBottom: '1px solid var(--line)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -2153,12 +2288,20 @@ export default function LessonEditorPage() {
           style={{ background: 'var(--surface)', color: 'var(--ink-soft)', border: '1px solid var(--line)', borderRadius: 9, padding: '8px 16px', fontWeight: 600, fontSize: 14, cursor: blocks.length === 0 ? 'default' : 'pointer', opacity: blocks.length === 0 ? 0.5 : 1 }}>
           👁 Pregled kao student
         </button>
+        <button onClick={() => setSidebarOpen(s => !s)}
+          title="Baza kemijskih spojeva"
+          style={{ background: sidebarOpen ? 'var(--accent-wash)' : 'var(--surface)', color: sidebarOpen ? 'var(--accent-ink)' : 'var(--ink-soft)', border: `1px solid ${sidebarOpen ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 9, padding: '8px 14px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          ⚗️ Spojevi
+        </button>
         <button onClick={() => setShowPicker(true)}
           style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
           ＋ Dodaj blok
         </button>
       </div>
 
+      {/* ── Content area: canvas + optional compound sidebar ── */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
       {/* ── Branded WYSIWYG canvas ── */}
       <div className="mol-canvas">
         <div className="mol-canvas__header">
@@ -2229,9 +2372,19 @@ export default function LessonEditorPage() {
           <span>© Molekula Academy{lesson?.topic_title ? ` · ${lesson.topic_title}` : ''}</span>
         </div>
       </div>
+      </div>{/* /canvas wrapper */}
+
+      {sidebarOpen && (
+        <CompoundSidebar
+          activeEditorRef={activeEditorRef}
+          onAddBlock={({ type, content }) => handleAddBlock(type, content ?? null)}
+        />
+      )}
+      </div>{/* /flex row */}
 
       {showPicker && <BlockPicker onPick={handleAddBlock} onClose={() => setShowPicker(false)} />}
       {showPreview && <StudentPreviewModal blocks={blocks} onClose={() => setShowPreview(false)} />}
     </div>
+    </ActiveEditorContext.Provider>
   );
 }

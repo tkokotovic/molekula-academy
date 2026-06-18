@@ -2,6 +2,24 @@
 // importing this module (e.g. under Jest, which can't transform ESM) doesn't
 // pull it in. Only the actual PDF render needs a browser.
 
+const path = require('path');
+const fs   = require('fs');
+const katex = require('katex');
+
+// SmilesDrawer bundle inlined from the frontend so PDF rendering works offline.
+// Lazily loaded once on first call to renderBlock with a molecule3d block.
+let _smilesDrawerSrc = null;
+function getSmilesDrawerSrc() {
+  if (_smilesDrawerSrc !== null) return _smilesDrawerSrc;
+  try {
+    const p = path.resolve(__dirname, '../../../../frontend/node_modules/smiles-drawer/dist/smiles-drawer.min.js');
+    _smilesDrawerSrc = fs.readFileSync(p, 'utf8');
+  } catch {
+    _smilesDrawerSrc = '';
+  }
+  return _smilesDrawerSrc;
+}
+
 // ── Brand tokens ─────────────────────────────────────────────────────────────
 
 const B = {
@@ -38,10 +56,11 @@ function stars(n) {
 function css() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@700&family=Bricolage+Grotesque:wght@700;800&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-@page{size:A4;margin:0}
-html,body{width:210mm;background:#fff}
+@page{size:A4;margin:16mm 20mm 20mm 20mm}
+html,body{background:#fff}
 body{font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10.5pt;color:${B.ink};line-height:1.6}
 
 /* Watermark */
@@ -69,7 +88,11 @@ body{font-family:'DM Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size
 .rule{height:3px;background:linear-gradient(90deg,${B.accent} 0%,${B.accentBright} 55%,transparent 100%)}
 
 /* Content */
-.content{padding:24px 30px 60px;position:relative;z-index:1}
+.content{padding:16px 0 48px;position:relative;z-index:1;width:100%;box-sizing:border-box}
+.mol-3d{text-align:center;margin:8px 0}
+.mol-3d-name{font-weight:700;font-size:10pt;color:${B.ink};margin-bottom:6px}
+.mol-3d-smiles{font-family:monospace;font-size:8pt;color:${B.inkFaint};margin-top:4px}
+.blk-eq-render{text-align:center;padding:10px 16px;background:${B.bg};border:1px solid ${B.line};border-radius:6px;overflow-x:auto}
 h1.doc-title{font-family:'Bricolage Grotesque','Georgia',serif;font-size:20pt;font-weight:700;color:${B.ink};letter-spacing:-.02em;margin-bottom:4px}
 .doc-sub{font-size:8.5pt;color:${B.inkFaint};letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin-bottom:22px}
 hr.div{border:none;border-top:1px solid ${B.line};margin:16px 0}
@@ -140,11 +163,13 @@ function shell(style, docType, dateStr, body) {
   const dtCls    = isDark ? 'dt-dark' : 'dt-light';
   const ddCls    = isDark ? 'dd-dark' : 'dd-light';
 
+  const smilesJs = getSmilesDrawerSrc();
   return `<!DOCTYPE html>
 <html lang="hr">
 <head>
 <meta charset="UTF-8">
 <style>${css()}</style>
+${smilesJs ? `<script>${smilesJs}</script>` : ''}
 </head>
 <body>
 <div class="wm"><div class="wm-hex"><span class="wm-m">M</span></div></div>
@@ -165,6 +190,18 @@ function shell(style, docType, dateStr, body) {
   <span class="fl-c">MOLEKULA ACADEMY</span>
   <span class="fl-r">Stranica 1</span>
 </div>
+${smilesJs ? `<script>
+(function() {
+  document.querySelectorAll('svg.mol-svg[data-smiles]').forEach(function(el) {
+    try {
+      var drawer = new SmilesDrawer.SvgDrawer({ width: 260, height: 180 });
+      SmilesDrawer.parse(el.getAttribute('data-smiles'), function(tree) {
+        drawer.draw(tree, el, 'light');
+      }, function() {});
+    } catch(e) {}
+  });
+})();
+</script>` : ''}
 </body>
 </html>`;
 }
@@ -324,8 +361,15 @@ function renderBlock(b) {
     case 'summary':
       return `<div class="blk blk-summary"><strong>📋 Sažetak:</strong><br>${c.html || esc(c.text || '')}</div>`;
     case 'equation':
-    case 'formula':
-      return `<div class="blk blk-eq">${c.latex || esc(c.text || '')}</div>`;
+    case 'formula': {
+      const latex = c.latex || c.text || '';
+      let rendered = '';
+      if (latex) {
+        try { rendered = katex.renderToString(latex, { throwOnError: false, displayMode: true }); }
+        catch { rendered = `<code>${esc(latex)}</code>`; }
+      }
+      return `<div class="blk blk-eq-render">${rendered || esc(latex)}${c.caption ? `<div style="font-size:8.5pt;color:${B.inkFaint};margin-top:4px;font-style:italic">${esc(c.caption)}</div>` : ''}</div>`;
+    }
     case 'divider':
       return `<hr class="blk-divider">`;
     case 'image':
@@ -361,8 +405,18 @@ function renderBlock(b) {
       ).join('');
       return `<div class="blk" style="display:flex;gap:16px">${colsHtml}</div>`;
     }
+    case 'molecule3d': {
+      const smiles = (c.smiles || '').trim();
+      const name   = (c.name   || '').trim();
+      return `<div class="blk mol-3d">
+        ${name ? `<div class="mol-3d-name">${esc(name)}</div>` : ''}
+        ${smiles ? `<svg class="mol-svg" data-smiles="${esc(smiles)}" width="260" height="180" style="display:block;margin:0 auto;max-width:100%"></svg>` : ''}
+        ${smiles ? `<div class="mol-3d-smiles">${esc(smiles)}</div>` : ''}
+        ${!smiles && !name ? '<span class="blk-skip">[Molekula — bez SMILES]</span>' : ''}
+      </div>`;
+    }
     default:
-      // Media types, molecules, embeds — note in PDF
+      // Unsupported media types
       return `<div class="blk blk-skip">[${b.type} — nepodržano u PDF izvozu]</div>`;
   }
 }
@@ -403,10 +457,12 @@ async function renderToPDF(html) {
   const browser = await getBrowser();
   const pg = await browser.newPage();
   try {
-    await pg.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 });
+    // networkidle2: wait for SmilesDrawer init script + KaTeX CSS (2 or fewer open connections)
+    await pg.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
     return await pg.pdf({
       format: 'A4',
       printBackground: true,
+      // Margins defined via @page CSS rule; puppeteer margin here must be 0 to avoid double margins
       margin: { top: 0, bottom: 0, left: 0, right: 0 },
     });
   } finally {

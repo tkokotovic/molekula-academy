@@ -10,7 +10,60 @@ const {
   WidthType, BorderStyle, AlignmentType, ShadingType, ImageRun, ExternalHyperlink,
   Header, Footer, PageNumber,
 } = require('docx');
-const sharp = require('sharp');
+const sharp  = require('sharp');
+const katex  = require('katex');
+
+// Batch-render all equation blocks to PNG using puppeteer + KaTeX CSS.
+// Returns Map<blockId, pngBuffer>. Falls back gracefully if puppeteer fails.
+async function renderEquationsToPng(blocks) {
+  const eqItems = blocks
+    .map((b, i) => ({ i, b }))
+    .filter(({ b }) => {
+      if (b.type !== 'equation' && b.type !== 'formula') return false;
+      const c = typeof b.content === 'string' ? JSON.parse(b.content) : (b.content || {});
+      return !!(c.latex || c.text);
+    });
+  if (!eqItems.length) return new Map();
+
+  const htmlItems = eqItems.map(({ b }, idx) => {
+    const c = typeof b.content === 'string' ? JSON.parse(b.content) : (b.content || {});
+    const latex = c.latex || c.text || '';
+    let rendered = '';
+    try { rendered = katex.renderToString(latex, { throwOnError: false, displayMode: true }); }
+    catch { rendered = `<code style="font-family:monospace">${latex}</code>`; }
+    return { idx, blockId: b.id, rendered };
+  });
+
+  const pageHtml = `<!DOCTYPE html><html><head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<style>
+  html,body{margin:0;padding:8px;background:#fff;}
+  .eq{display:inline-block;padding:8px 16px;background:#f5f8f7;border-radius:4px;margin:2px;font-size:18px;}
+</style>
+</head><body>
+${htmlItems.map(h => `<div class="eq" id="e${h.idx}">${h.rendered}</div>`).join('\n')}
+</body></html>`;
+
+  let puppeteer;
+  try { puppeteer = require('puppeteer'); } catch { return new Map(); }
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 900, height: 600 });
+    await page.setContent(pageHtml, { waitUntil: 'networkidle2', timeout: 20000 });
+    const result = new Map();
+    for (const h of htmlItems) {
+      const el = await page.$(`#e${h.idx}`);
+      if (el) result.set(h.blockId, await el.screenshot({ type: 'png' }));
+    }
+    return result;
+  } finally {
+    await browser.close();
+  }
+}
 
 // ─── Brand palette (hex without #, as docx wants) ────────────────────────────
 const DEEP = '0B343C';
@@ -193,7 +246,7 @@ function signalBox(type, lines) {
 }
 
 // ─── Per-block → Paragraphs ──────────────────────────────────────────────────
-function blockToParagraphs(block, allBlocks) {
+async function blockToParagraphs(block, allBlocks, eqPngs = new Map()) {
   const c = typeof block.content === 'string' ? JSON.parse(block.content) : (block.content || {});
   const paras = [];
   const body = (text, opts = {}) => new Paragraph({ children: [new TextRun({ text: String(text || ''), ...opts })] });
@@ -283,10 +336,29 @@ function blockToParagraphs(block, allBlocks) {
       paras.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'D1D5DB' } } }));
       break;
     case 'equation':
-      paras.push(body('Jednadžba (LaTeX):', { bold: true, size: 18, color: DEEP }));
-      paras.push(codeBox(c.latex || ''));
+    case 'formula': {
+      const eqPng = eqPngs.get(block.id);
+      if (eqPng) {
+        try {
+          const meta = await sharp(eqPng).metadata();
+          const maxW = 450;
+          const w = Math.min(meta.width || maxW, maxW);
+          const h = Math.round(w * (meta.height || 60) / (meta.width || maxW));
+          paras.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 80, after: 80 },
+            children: [new ImageRun({ data: eqPng, type: 'png', transformation: { width: w, height: h } })],
+          }));
+        } catch {
+          paras.push(body(c.latex || c.text || '', { font: 'Cambria Math', size: 22 }));
+        }
+      } else {
+        paras.push(body('Jednadžba (LaTeX):', { bold: true, size: 18, color: DEEP }));
+        paras.push(codeBox(c.latex || c.text || ''));
+      }
       if (c.caption) paras.push(body(c.caption, { italics: true, color: '6B7280', size: 18 }));
       break;
+    }
     case 'molecule3d':
       paras.push(body(`Molekula: ${c.name || ''}`, { bold: true, color: DEEP }));
       paras.push(codeBox(`SMILES: ${c.smiles || ''}`));
@@ -390,13 +462,16 @@ async function buildLessonDocx(lesson, blocks, teacher) {
     })],
   });
 
+  const eqPngs = await renderEquationsToPng(blocks);
+
   const children = [];
   children.push(new Paragraph({ text: lesson.title, heading: HeadingLevel.TITLE }));
   if (lesson.summary) children.push(new Paragraph({ children: [new TextRun({ text: lesson.summary, italics: true, color: '4B5563' })] }));
   children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: DEEP } }, spacing: { after: 160 } }));
 
   for (const block of blocks) {
-    blockToParagraphs(block, blocks).forEach(p => children.push(p));
+    const paras = await blockToParagraphs(block, blocks, eqPngs);
+    paras.forEach(p => children.push(p));
     children.push(new Paragraph({ spacing: { after: 40 } }));
   }
 
