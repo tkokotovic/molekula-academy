@@ -398,6 +398,127 @@ export async function reorderLessonBlocks(lessonId, ids) {
   return data.blocks;
 }
 
+// ─── Flashcards (#18) ─────────────────────────────────────────────────────────
+
+// Generic image upload to a given flashcards endpoint; returns the public URL.
+async function uploadFlashcardImage(base, file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(`${base}/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Upload failed');
+  }
+  const data = await res.json();
+  return data.url || '';
+}
+
+// Student
+export async function getFlashcardDecks() {
+  const data = await apiFetch('/api/student/flashcards/decks');
+  return data.decks;
+}
+export async function getFlashcardDeck(id) {
+  return apiFetch(`/api/student/flashcards/decks/${id}`); // { deck, cards }
+}
+export async function createFlashcardDeck({ title, description }) {
+  const data = await apiFetch('/api/student/flashcards/decks', {
+    method: 'POST', body: JSON.stringify({ title, description }),
+  });
+  return data.deck;
+}
+export async function updateFlashcardDeck(id, patch) {
+  const data = await apiFetch(`/api/student/flashcards/decks/${id}`, {
+    method: 'PATCH', body: JSON.stringify(patch),
+  });
+  return data.deck;
+}
+export async function deleteFlashcardDeck(id) {
+  return apiFetch(`/api/student/flashcards/decks/${id}`, { method: 'DELETE' });
+}
+export async function createFlashcard(deckId, card) {
+  const data = await apiFetch(`/api/student/flashcards/decks/${deckId}/cards`, {
+    method: 'POST', body: JSON.stringify(card),
+  });
+  return data.card;
+}
+export async function updateFlashcard(cardId, patch) {
+  const data = await apiFetch(`/api/student/flashcards/cards/${cardId}`, {
+    method: 'PATCH', body: JSON.stringify(patch),
+  });
+  return data.card;
+}
+export async function deleteFlashcard(cardId) {
+  return apiFetch(`/api/student/flashcards/cards/${cardId}`, { method: 'DELETE' });
+}
+export async function getFlashcardStudyQueue(deckId) {
+  return apiFetch(`/api/student/flashcards/decks/${deckId}/study`); // { deck, cards }
+}
+export async function reviewFlashcard(cardId, grade) {
+  const data = await apiFetch(`/api/student/flashcards/cards/${cardId}/review`, {
+    method: 'POST', body: JSON.stringify({ grade }),
+  });
+  return data.review;
+}
+export function uploadStudentFlashcardImage(file) {
+  return uploadFlashcardImage('/api/student/flashcards', file);
+}
+
+// Teacher
+export async function getTeacherFlashcardDecks() {
+  const data = await apiFetch('/api/teacher/flashcards/decks');
+  return data.decks;
+}
+export async function getTeacherFlashcardDeck(id) {
+  return apiFetch(`/api/teacher/flashcards/decks/${id}`); // { deck, cards, shared_student_ids }
+}
+export async function createTeacherFlashcardDeck(payload) {
+  const data = await apiFetch('/api/teacher/flashcards/decks', {
+    method: 'POST', body: JSON.stringify(payload),
+  });
+  return data.deck;
+}
+export async function updateTeacherFlashcardDeck(id, patch) {
+  const data = await apiFetch(`/api/teacher/flashcards/decks/${id}`, {
+    method: 'PATCH', body: JSON.stringify(patch),
+  });
+  return data.deck;
+}
+export async function deleteTeacherFlashcardDeck(id) {
+  return apiFetch(`/api/teacher/flashcards/decks/${id}`, { method: 'DELETE' });
+}
+export async function createTeacherFlashcard(deckId, card) {
+  const data = await apiFetch(`/api/teacher/flashcards/decks/${deckId}/cards`, {
+    method: 'POST', body: JSON.stringify(card),
+  });
+  return data.card;
+}
+export async function updateTeacherFlashcard(cardId, patch) {
+  const data = await apiFetch(`/api/teacher/flashcards/cards/${cardId}`, {
+    method: 'PATCH', body: JSON.stringify(patch),
+  });
+  return data.card;
+}
+export async function deleteTeacherFlashcard(cardId) {
+  return apiFetch(`/api/teacher/flashcards/cards/${cardId}`, { method: 'DELETE' });
+}
+export async function shareTeacherFlashcardDeck(id, { is_public, student_ids }) {
+  return apiFetch(`/api/teacher/flashcards/decks/${id}/share`, {
+    method: 'PUT', body: JSON.stringify({ is_public, student_ids }),
+  });
+}
+export async function getFlashcardStudents() {
+  const data = await apiFetch('/api/teacher/flashcards/students');
+  return data.students;
+}
+export function uploadTeacherFlashcardImage(file) {
+  return uploadFlashcardImage('/api/teacher/flashcards', file);
+}
+
 // ─── Question bank ────────────────────────────────────────────────────────────
 
 export async function getQuestions(params = {}) {

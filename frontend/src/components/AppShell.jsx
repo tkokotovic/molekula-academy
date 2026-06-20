@@ -19,6 +19,7 @@ const Icon = {
   moon:   (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>,
   menu:   (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" {...p}><path d="M3 6h18M3 12h18M3 18h18"/></svg>,
   video:  (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>,
+  cards:  (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M8 6V5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2h-1"/></svg>,
 };
 
 // ─── Logo mark ────────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { to: '/courses',    label: 'Kolegiji', labelEn: 'Courses',   Icon: Icon.book  },
   { to: '/progress',   label: 'Napredak', labelEn: 'Progress',  Icon: Icon.chart },
   { to: '/quizzes',    label: 'Kvizovi',  labelEn: 'Quizzes',   Icon: Icon.quiz  },
+  { to: '/flashcards', label: 'Kartice',  labelEn: 'Flashcards', Icon: Icon.cards },
   { to: '/schedule',   label: 'Raspored', labelEn: 'Schedule',  Icon: Icon.cal   },
   { to: '/messages',   label: 'Poruke',   labelEn: 'Messages',  Icon: Icon.chat  },
   { to: '/homeworks',  label: 'Zadaće',   labelEn: 'Homework',  Icon: Icon.hw    },

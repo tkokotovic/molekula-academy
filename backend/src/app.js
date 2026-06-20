@@ -132,6 +132,11 @@ app.use('/api/teacher/upload', require('./routes/upload'));
 // Inline-chemistry compound library
 app.use('/api/teacher', require('./routes/chem_compounds'));
 
+// Flashcards (#18) — student-created + teacher-shared, Anki-style spaced repetition
+const { studentRouter: flashStudentRouter, teacherRouter: flashTeacherRouter } = require('./routes/flashcards');
+app.use('/api/student/flashcards', flashStudentRouter);
+app.use('/api/teacher/flashcards', flashTeacherRouter);
+
 // PDF export (R35 parent report, R36 progress report, lesson export)
 app.use('/api/teacher', require('./routes/pdf'));
 

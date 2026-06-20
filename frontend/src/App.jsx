@@ -18,6 +18,7 @@ const MessagesPage           = lazy(() => import('./pages/MessagesPage'));
 const SchedulePage           = lazy(() => import('./pages/SchedulePage'));
 const SettingsPage           = lazy(() => import('./pages/SettingsPage'));
 const StudentHomeworksPage   = lazy(() => import('./pages/StudentHomeworksPage'));
+const FlashcardsPage         = lazy(() => import('./pages/FlashcardsPage'));
 const LoginPage              = lazy(() => import('./pages/LoginPage'));
 const ForgotPasswordPage     = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage      = lazy(() => import('./pages/ResetPasswordPage'));
@@ -41,6 +42,7 @@ const AdminQuestionsPage     = lazy(() => import('./pages/admin/AdminQuestionsPa
 const LessonEditorPage       = lazy(() => import('./pages/admin/LessonEditorPage'));
 const LessonPrintPage        = lazy(() => import('./pages/admin/LessonPrintPage'));
 const AdminChemToolsPage     = lazy(() => import('./pages/admin/AdminChemToolsPage'));
+const AdminFlashcardsPage    = lazy(() => import('./pages/admin/AdminFlashcardsPage'));
 
 // ─── Error boundary (dev debugging) ───────────────────────────────────────────
 
@@ -106,6 +108,7 @@ export default function App() {
         <Route path="/schedule"          element={<RequireAuth><SchedulePage /></RequireAuth>} />
         <Route path="/messages"          element={<RequireAuth><MessagesPage /></RequireAuth>} />
         <Route path="/homeworks"         element={<RequireAuth><StudentHomeworksPage /></RequireAuth>} />
+        <Route path="/flashcards"        element={<RequireAuth><FlashcardsPage /></RequireAuth>} />
         <Route path="/settings"          element={<RequireAuth><SettingsPage /></RequireAuth>} />
 
         {/* Admin panel — teacher/owner only */}
@@ -124,6 +127,7 @@ export default function App() {
         <Route path="/admin/reports"                element={<RequireTeacher><AdminReportsPage /></RequireTeacher>} />
         <Route path="/admin/questions"              element={<RequireTeacher><AdminQuestionsPage /></RequireTeacher>} />
         <Route path="/admin/chem-tools"            element={<RequireTeacher><AdminChemToolsPage /></RequireTeacher>} />
+        <Route path="/admin/flashcards"            element={<RequireTeacher><AdminFlashcardsPage /></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/edit" element={<RequireTeacher><ErrorBoundary><LessonEditorPage /></ErrorBoundary></RequireTeacher>} />
         <Route path="/admin/lessons/:lessonId/print" element={<RequireTeacher><LessonPrintPage /></RequireTeacher>} />
       </Routes>

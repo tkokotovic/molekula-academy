@@ -657,6 +657,57 @@ const migrations = [
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
   )`,
+  // #18 — Flashcards. A deck groups study cards; the owner is the creator
+  // (student or teacher, recorded in `source`). Teacher decks can be made public
+  // (visible to all students) or shared with hand-picked students. Card front/back
+  // may carry inline KaTeX / mhchem and an optional image.
+  `CREATE TABLE IF NOT EXISTS flashcard_decks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id INTEGER NOT NULL,
+    source TEXT NOT NULL DEFAULT 'student',     -- student | teacher
+    title TEXT NOT NULL,
+    description TEXT,
+    course_id INTEGER,                           -- optional link to a course
+    is_public INTEGER NOT NULL DEFAULT 0,        -- teacher decks: 1 = all students
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS flashcards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deck_id INTEGER NOT NULL,
+    front TEXT NOT NULL DEFAULT '',
+    back TEXT NOT NULL DEFAULT '',
+    image_url TEXT,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (deck_id) REFERENCES flashcard_decks(id) ON DELETE CASCADE
+  )`,
+  // Teacher → student share grants (used when a teacher deck is not public).
+  `CREATE TABLE IF NOT EXISTS flashcard_deck_shares (
+    deck_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    shared_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (deck_id, student_id),
+    FOREIGN KEY (deck_id) REFERENCES flashcard_decks(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
+  // Per-student SM-2 spaced-repetition state. One row per (student, card) once the
+  // student has reviewed it at least once; absence of a row means the card is new.
+  `CREATE TABLE IF NOT EXISTS flashcard_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    card_id INTEGER NOT NULL,
+    ease REAL NOT NULL DEFAULT 2.5,
+    interval_days REAL NOT NULL DEFAULT 0,
+    repetitions INTEGER NOT NULL DEFAULT 0,
+    due_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_reviewed_at TEXT,
+    UNIQUE(student_id, card_id),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (card_id) REFERENCES flashcards(id) ON DELETE CASCADE
+  )`,
 ];
 
 for (const sql of migrations) {
@@ -901,6 +952,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_broadcast_recipients_user ON broadcast_recipients(user_id);
   CREATE INDEX IF NOT EXISTS idx_lesson_syllabus_tags_code ON lesson_syllabus_tags(syllabus_code_id);
   CREATE INDEX IF NOT EXISTS idx_password_resets_user      ON password_resets(user_id);
+  CREATE INDEX IF NOT EXISTS idx_flashcards_deck           ON flashcards(deck_id);
+  CREATE INDEX IF NOT EXISTS idx_flashcard_decks_owner     ON flashcard_decks(owner_id);
+  CREATE INDEX IF NOT EXISTS idx_flashcard_shares_student  ON flashcard_deck_shares(student_id);
+  CREATE INDEX IF NOT EXISTS idx_flashcard_reviews_student ON flashcard_reviews(student_id);
 `);
 
 module.exports = db;
