@@ -643,6 +643,53 @@ export async function getAttempt(attemptId) {
   return apiFetch(`/api/student/attempts/${attemptId}`);
 }
 
+// ─── Personalized practice quizzes (#19, Premium) ─────────────────────────────
+
+// Generate a fresh random practice quiz. Returns { quiz, attempt }.
+export async function generatePracticeQuiz({ topic_ids, count, difficulty, question_types }) {
+  return apiFetch('/api/student/quizzes/self-generated', {
+    method: 'POST',
+    body: JSON.stringify({ topic_ids, count, difficulty, question_types }),
+  });
+}
+
+// Student self-marks one open-ended answer. Returns the updated attempt.
+export async function selfGradeAnswer(attemptId, questionId, pointsEarned) {
+  return apiFetch(`/api/student/attempts/${attemptId}/self-grade`, {
+    method: 'POST',
+    body: JSON.stringify({ question_id: questionId, points_earned: pointsEarned }),
+  });
+}
+
+// Upload a photo of handwritten working for a practice answer. Returns the URL.
+export async function uploadAnswerImage(file) {
+  const fd = new FormData();
+  fd.append('image', file);
+  const res = await fetch('/api/student/attempts/answer-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Upload failed');
+  }
+  const data = await res.json();
+  return data.url || '';
+}
+
+// Track record for the logged-in student's practice quizzes (oldest → newest).
+export async function getPracticeHistory() {
+  const data = await apiFetch('/api/student/practice/history');
+  return data.attempts;
+}
+
+// Teacher: a given student's practice track record.
+export async function getStudentPracticeHistory(studentId) {
+  const data = await apiFetch(`/api/teacher/students/${studentId}/practice/history`);
+  return data.attempts;
+}
+
 // ─── Student dashboard / progress ────────────────────────────────────────────
 
 export async function getStudentStats() {

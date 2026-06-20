@@ -615,9 +615,13 @@ describe('Option shuffle in attempts', () => {
       });
 
     const sToken = await studentToken();
+    db.prepare("UPDATE users SET subscription_tier = 'premium' WHERE email = 'ana@student.hr'").run();
+    // Re-login so the JWT carries the premium tier
+    const loginRes = await request(app).post('/api/auth/login').send({ email: 'ana@student.hr', password: 'lozinka123' });
+    const premiumToken = loginRes.body.token;
     const res = await request(app)
       .post('/api/student/quizzes/self-generated')
-      .set('Authorization', `Bearer ${sToken}`)
+      .set('Authorization', `Bearer ${premiumToken}`)
       .send({ topic_ids: [topicId], count: 1 });
 
     expect(res.status).toBe(201);

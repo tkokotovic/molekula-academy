@@ -130,6 +130,60 @@ function buildQuizHistory(studentId) {
   });
 }
 
+// Track record for personalized practice quizzes (#19): every self-generated
+// attempt with overall score and a per-topic percentage breakdown. Ordered
+// oldest → newest so the client can plot the trend directly.
+function buildPracticeHistory(studentId) {
+  const attempts = db.prepare(`
+    SELECT qa.id AS attempt_id, qa.score, qa.max_score, qa.status,
+           qa.started_at, qa.submitted_at
+      FROM quiz_attempts qa
+      JOIN quizzes q ON qa.quiz_id = q.id
+     WHERE qa.student_id = ?
+       AND q.type = 'self_generated'
+       AND qa.status IN ('submitted', 'graded')
+     ORDER BY qa.submitted_at ASC
+  `).all(studentId);
+
+  return attempts.map(a => {
+    const scorePct = (a.max_score && a.max_score > 0)
+      ? Math.round((a.score / a.max_score) * 100)
+      : null;
+
+    const topicRows = db.prepare(`
+      SELECT t.id AS topic_id, t.title,
+             COALESCE(SUM(qaa.points_earned), 0) AS earned,
+             SUM(COALESCE(qq.points_override, q.max_points)) AS possible,
+             COUNT(*) AS question_count
+        FROM quiz_attempt_answers qaa
+        JOIN questions q ON qaa.question_id = q.id
+        JOIN quiz_questions qq ON qq.quiz_id = ? AND qq.question_id = qaa.question_id
+        LEFT JOIN topics t ON q.topic_id = t.id
+       WHERE qaa.attempt_id = ?
+       GROUP BY t.id
+    `).all(
+      db.prepare('SELECT quiz_id FROM quiz_attempts WHERE id = ?').get(a.attempt_id).quiz_id,
+      a.attempt_id,
+    );
+
+    const per_topic = topicRows.map(r => ({
+      topic_id: r.topic_id,
+      title: r.title || 'Bez teme',
+      question_count: r.question_count,
+      earned: r.earned,
+      possible: r.possible,
+      pct: r.possible > 0 ? Math.round((r.earned / r.possible) * 100) : null,
+    }));
+
+    return {
+      ...a,
+      score_pct: scorePct,
+      question_count: per_topic.reduce((s, r) => s + r.question_count, 0),
+      per_topic,
+    };
+  });
+}
+
 // ─── Student — homework list ──────────────────────────────────────────────────
 
 // GET /api/student/homework — all published homework quizzes
@@ -228,6 +282,12 @@ studentRouter.get('/progress/quiz-history', requireAuth, (req, res) => {
   return res.json({ attempts });
 });
 
+// GET /api/student/practice/history — personalized-quiz track record (#19)
+studentRouter.get('/practice/history', requireAuth, (req, res) => {
+  const attempts = buildPracticeHistory(req.user.id);
+  return res.json({ attempts });
+});
+
 // GET /api/student/progress/stats
 studentRouter.get('/progress/stats', requireAuth, (req, res) => {
   const studentId = req.user.id;
@@ -318,6 +378,16 @@ teacherRouter.get('/students/:id/progress/quiz-history', requireTeacher, (req, r
   if (!student) return res.status(404).json({ error: 'Student not found' });
 
   const attempts = buildQuizHistory(studentId);
+  return res.json({ attempts });
+});
+
+// GET /api/teacher/students/:id/practice/history — track record visible to TK (#19)
+teacherRouter.get('/students/:id/practice/history', requireTeacher, (req, res) => {
+  const studentId = Number(req.params.id);
+  const student = db.prepare('SELECT id FROM users WHERE id = ?').get(studentId);
+  if (!student) return res.status(404).json({ error: 'Student not found' });
+
+  const attempts = buildPracticeHistory(studentId);
   return res.json({ attempts });
 });
 

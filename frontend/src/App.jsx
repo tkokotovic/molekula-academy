@@ -12,6 +12,7 @@ const CourseDetailPage       = lazy(() => import('./pages/CourseDetailPage'));
 const LessonPage             = lazy(() => import('./pages/LessonPage'));
 const QuizPage               = lazy(() => import('./pages/QuizPage'));
 const QuizzesPage            = lazy(() => import('./pages/QuizzesPage'));
+const PracticeQuizPage       = lazy(() => import('./pages/PracticeQuizPage'));
 const DashboardPage          = lazy(() => import('./pages/DashboardPage'));
 const ProgressPage           = lazy(() => import('./pages/ProgressPage'));
 const MessagesPage           = lazy(() => import('./pages/MessagesPage'));
@@ -105,6 +106,7 @@ export default function App() {
         <Route path="/dashboard"         element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/progress"          element={<RequireAuth><ProgressPage /></RequireAuth>} />
         <Route path="/quizzes"           element={<RequireAuth><QuizzesPage /></RequireAuth>} />
+        <Route path="/practice"          element={<RequireAuth><PracticeQuizPage /></RequireAuth>} />
         <Route path="/schedule"          element={<RequireAuth><SchedulePage /></RequireAuth>} />
         <Route path="/messages"          element={<RequireAuth><MessagesPage /></RequireAuth>} />
         <Route path="/homeworks"         element={<RequireAuth><StudentHomeworksPage /></RequireAuth>} />

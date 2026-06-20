@@ -26,6 +26,14 @@ async function studentToken(email = 'ana@student.hr') {
   return register('Ana', email);
 }
 
+async function premiumStudentToken(email = 'premium@student.hr', name = 'Petra') {
+  await register(name, email);
+  db.prepare("UPDATE users SET subscription_tier = 'premium' WHERE email = ?").run(email);
+  // Re-login so the JWT carries subscription_tier = 'premium'
+  const res = await request(app).post('/api/auth/login').send({ email, password: 'lozinka123' });
+  return res.body.token;
+}
+
 // Creates a topic (returns topic id)
 async function createTopic(token) {
   const courseRes = await request(app)
@@ -94,6 +102,21 @@ async function createFillBlankQuestion(token, topicId) {
       options: [
         { text: '6', is_correct: true, points: 2, keywords: ['6', 'six'] },
       ],
+    });
+  return res.body.question.id;
+}
+
+async function createShortAnswerQuestion(token, topicId) {
+  const res = await request(app)
+    .post('/api/teacher/questions')
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+      type: 'short_answer',
+      stem: 'Explain why entropy increases when ice melts.',
+      difficulty: 'medium',
+      max_points: 3,
+      model_answer: 'Solid → liquid increases molecular disorder, so entropy rises.',
+      topic_id: topicId,
     });
   return res.body.question.id;
 }
@@ -840,7 +863,7 @@ describe('GET /api/teacher/quizzes/:id/attempts', () => {
 // ─── Self-generated quizzes ───────────────────────────────────────────────────
 
 describe('POST /api/student/quizzes/self-generated', () => {
-  test('student can generate a quiz from the question bank', async () => {
+  test('premium student can generate a quiz from the question bank', async () => {
     const tToken = await teacherToken();
     const topicId = await createTopic(tToken);
 
@@ -849,7 +872,7 @@ describe('POST /api/student/quizzes/self-generated', () => {
     await createTFQuestion(tToken, topicId);
     await createFillBlankQuestion(tToken, topicId);
 
-    const sToken = await studentToken();
+    const sToken = await premiumStudentToken();
     const res = await request(app)
       .post('/api/student/quizzes/self-generated')
       .set('Authorization', `Bearer ${sToken}`)
@@ -866,6 +889,36 @@ describe('POST /api/student/quizzes/self-generated', () => {
     expect(res.body.quiz.questions.length).toBeGreaterThanOrEqual(1);
   });
 
+  test('non-premium student is blocked (403)', async () => {
+    const tToken = await teacherToken();
+    const topicId = await createTopic(tToken);
+    await createQuestion(tToken, topicId);
+
+    const sToken = await studentToken();
+    const res = await request(app)
+      .post('/api/student/quizzes/self-generated')
+      .set('Authorization', `Bearer ${sToken}`)
+      .send({ topic_ids: [topicId], count: 2 });
+
+    expect(res.status).toBe(403);
+  });
+
+  test('count is capped at 20', async () => {
+    const tToken = await teacherToken();
+    const topicId = await createTopic(tToken);
+    // Create 25 questions
+    for (let i = 0; i < 25; i++) await createQuestion(tToken, topicId);
+
+    const sToken = await premiumStudentToken();
+    const res = await request(app)
+      .post('/api/student/quizzes/self-generated')
+      .set('Authorization', `Bearer ${sToken}`)
+      .send({ topic_ids: [topicId], count: 50 });
+
+    expect(res.status).toBe(201);
+    expect(res.body.quiz.questions.length).toBeLessThanOrEqual(20);
+  });
+
   test('returns 400 if no topic_ids provided', async () => {
     const sToken = await studentToken();
     const res = await request(app)
@@ -880,12 +933,53 @@ describe('POST /api/student/quizzes/self-generated', () => {
     const topicId = await createTopic(tToken);
     // No questions created
 
-    const sToken = await studentToken();
+    const sToken = await premiumStudentToken();
     const res = await request(app)
       .post('/api/student/quizzes/self-generated')
       .set('Authorization', `Bearer ${sToken}`)
       .send({ topic_ids: [topicId], count: 5 });
 
     expect(res.status).toBe(400);
+  });
+
+  test('open answers await self-grading, then student self-grades', async () => {
+    const tToken = await teacherToken();
+    const topicId = await createTopic(tToken);
+    const shortQid = await createShortAnswerQuestion(tToken, topicId);
+
+    const sToken = await premiumStudentToken();
+    const gen = await request(app)
+      .post('/api/student/quizzes/self-generated')
+      .set('Authorization', `Bearer ${sToken}`)
+      .send({ topic_ids: [topicId], count: 1, question_types: ['short_answer'] });
+    expect(gen.status).toBe(201);
+    const attemptId = gen.body.attempt.id;
+
+    // Submit an answer to the short-answer question
+    const submit = await request(app)
+      .post(`/api/student/attempts/${attemptId}/submit`)
+      .set('Authorization', `Bearer ${sToken}`)
+      .send({ answers: [{ question_id: shortQid, answer_data: { text: 'Moj odgovor' } }] });
+    expect(submit.status).toBe(200);
+    // Attempt stays 'submitted' (pending self-grade), open answer ungraded
+    expect(submit.body.status).toBe('submitted');
+    const pending = submit.body.answers.find(a => a.question_id === shortQid);
+    expect(pending.is_correct).toBeNull();
+
+    // Student self-grades it full marks
+    const sg = await request(app)
+      .post(`/api/student/attempts/${attemptId}/self-grade`)
+      .set('Authorization', `Bearer ${sToken}`)
+      .send({ question_id: shortQid, points_earned: 3 });
+    expect(sg.status).toBe(200);
+    expect(sg.body.status).toBe('graded');
+
+    // Track record now lists this attempt with a per-topic breakdown
+    const hist = await request(app)
+      .get('/api/student/practice/history')
+      .set('Authorization', `Bearer ${sToken}`);
+    expect(hist.status).toBe(200);
+    expect(hist.body.attempts.length).toBe(1);
+    expect(hist.body.attempts[0].per_topic.length).toBeGreaterThanOrEqual(1);
   });
 });

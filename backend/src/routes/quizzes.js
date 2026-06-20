@@ -1,4 +1,8 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const { randomUUID } = require('crypto');
+const multer = require('multer');
 const db = require('../db');
 const { requireAuth, requireTeacher } = require('../middleware/auth');
 const { gradeAnswer } = require('../services/aiGrading');
@@ -343,12 +347,36 @@ teacherRouter.get('/:id/attempts', requireTeacher, (req, res) => {
 // ─── Student routes ───────────────────────────────────────────────────────────
 
 // POST /api/student/quizzes/self-generated  (must be before /:id routes)
+// Premium-only personalized practice (#19). Student picks topics, difficulty,
+// question type(s) and count (max 20); questions are drawn at random from the
+// approved bank. A fresh random selection every time. No time limit.
 studentRouter.post('/self-generated', requireAuth, (req, res) => {
-  const { topic_ids, count = 10, difficulty, ib_level, question_type } = req.body;
+  const {
+    topic_ids,
+    count = 10,
+    difficulty,
+    ib_level,
+    question_type,            // legacy single value (kept for back-compat)
+    question_types,           // preferred: array of types
+  } = req.body;
 
   if (!Array.isArray(topic_ids) || topic_ids.length === 0) {
     return res.status(400).json({ error: 'topic_ids array is required' });
   }
+
+  // ─── Premium gate ─────────────────────────────────────────────────────────
+  if (req.user.role === 'student' && req.user.subscription_tier !== 'premium') {
+    return res.status(403).json({ error: 'Personalizirani kvizovi dostupni su samo Premium korisnicima.' });
+  }
+
+  // Cap the count at 20 (spec: max 20), floor at 1.
+  const limit = Math.max(1, Math.min(Number(count) || 10, 20));
+
+  // Normalise requested question types into a clean list.
+  const VALID_TYPES = ['mcq', 'true_false', 'fill_blank', 'short_answer', 'chem_equation'];
+  let types = [];
+  if (Array.isArray(question_types)) types = question_types.filter(t => VALID_TYPES.includes(t));
+  else if (question_type && VALID_TYPES.includes(question_type)) types = [question_type];
 
   // Build query for approved questions matching filters
   const placeholders = topic_ids.map(() => '?').join(',');
@@ -357,10 +385,13 @@ studentRouter.post('/self-generated', requireAuth, (req, res) => {
 
   if (difficulty)     { sql += ' AND difficulty = ?';  params.push(difficulty); }
   if (ib_level)       { sql += ' AND ib_level = ?';    params.push(ib_level); }
-  if (question_type)  { sql += ' AND type = ?';        params.push(question_type); }
+  if (types.length > 0) {
+    sql += ` AND type IN (${types.map(() => '?').join(',')})`;
+    params.push(...types);
+  }
 
   sql += ' ORDER BY RANDOM() LIMIT ?';
-  params.push(Number(count));
+  params.push(limit);
 
   const pool = db.prepare(sql).all(...params);
 
@@ -629,6 +660,10 @@ attemptRouter.post('/:id/submit', requireAuth, (req, res) => {
 
   const { answers = [] } = req.body;
 
+  // Self-generated practice (#19): open-ended answers are graded by the student
+  // themselves (against the model answer), not by the AI grader.
+  const isSelfPractice = quiz && quiz.type === 'self_generated';
+
   // Load quiz questions (with points overrides)
   const quizQuestions = db.prepare(`
     SELECT qq.points_override, q.*
@@ -670,6 +705,9 @@ attemptRouter.post('/:id/submit', requireAuth, (req, res) => {
         pointsEarned = autoResult.points_earned;
         gradedAt = new Date().toISOString();
         totalScore += pointsEarned;
+      } else if (AI_GRADED_TYPES.includes(qq.type) && isSelfPractice) {
+        // short_answer, chem_equation in practice mode — leave ungraded so the
+        // student can self-mark against the model answer. is_correct/points stay null.
       } else if (AI_GRADED_TYPES.includes(qq.type)) {
         // short_answer, chem_equation — AI grading
         const effectiveQuestion = { ...qq, max_points: qq.points_override ?? qq.max_points };
@@ -704,13 +742,23 @@ attemptRouter.post('/:id/submit', requireAuth, (req, res) => {
       });
     }
 
-    // All answers are now graded (either auto, AI, or skipped) — status → graded
-    db.prepare(`
-      UPDATE quiz_attempts
-         SET status = 'graded', score = ?, submitted_at = datetime('now'),
-             graded_at = datetime('now')
-       WHERE id = ?
-    `).run(totalScore, attempt.id);
+    // Practice mode: if any open answers await self-grading, the attempt is
+    // 'submitted' (not yet fully graded). Otherwise everything is graded.
+    const hasPending = gradedAnswers.some(a => a.is_correct === null);
+    if (hasPending) {
+      db.prepare(`
+        UPDATE quiz_attempts
+           SET status = 'submitted', score = ?, submitted_at = datetime('now')
+         WHERE id = ?
+      `).run(totalScore, attempt.id);
+    } else {
+      db.prepare(`
+        UPDATE quiz_attempts
+           SET status = 'graded', score = ?, submitted_at = datetime('now'),
+               graded_at = datetime('now')
+         WHERE id = ?
+      `).run(totalScore, attempt.id);
+    }
   });
 
   submit();
@@ -726,6 +774,106 @@ attemptRouter.post('/:id/submit', requireAuth, (req, res) => {
   return res.json({ ...updated, answers: gradedAnswers });
 });
 
+// ─── Practice self-grading (#19) ──────────────────────────────────────────────
+
+// Image upload for an open-ended practice answer (handwritten working / drawing).
+const ANSWER_UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+const ANSWER_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+const answerUpload = multer({
+  storage: process.env.NODE_ENV === 'test'
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+        destination: (req, file, cb) => {
+          if (!fs.existsSync(ANSWER_UPLOAD_DIR)) fs.mkdirSync(ANSWER_UPLOAD_DIR, { recursive: true });
+          cb(null, ANSWER_UPLOAD_DIR);
+        },
+        filename: (req, file, cb) => cb(null, `${randomUUID()}${path.extname(file.originalname)}`),
+      }),
+  fileFilter: (req, file, cb) =>
+    ANSWER_IMAGE_TYPES.has(file.mimetype) ? cb(null, true) : cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE')),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+// POST /api/student/attempts/answer-image — upload a photo of handwritten working
+attemptRouter.post('/answer-image', requireAuth, (req, res) => {
+  answerUpload.single('image')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: 'Nepodržani tip datoteke (samo slike).' });
+    if (!req.file) return res.status(400).json({ error: 'Nije priložena slika.' });
+
+    const { originalname, mimetype, size, filename: diskFilename, buffer } = req.file;
+    const filename = diskFilename || `${randomUUID()}${path.extname(originalname)}`;
+    const filePath = process.env.NODE_ENV === 'test'
+      ? `uploads/${filename}`
+      : path.relative(path.join(__dirname, '../..'), path.join(ANSWER_UPLOAD_DIR, filename));
+
+    db.prepare(`
+      INSERT INTO uploads (filename, original_name, mime_type, size, path, uploaded_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(filename, originalname, mimetype, size || (buffer ? buffer.length : 0), filePath, req.user.id);
+
+    return res.status(201).json({ url: `/${filePath.replace(/^\/+/, '')}` });
+  });
+});
+
+// POST /api/student/attempts/:id/self-grade — student marks one open answer
+// Body: { question_id, points_earned }
+attemptRouter.post('/:id/self-grade', requireAuth, (req, res) => {
+  const attempt = db.prepare('SELECT * FROM quiz_attempts WHERE id = ?').get(req.params.id);
+  if (!attempt) return res.status(404).json({ error: 'Attempt not found' });
+  if (attempt.student_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+
+  const quiz = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(attempt.quiz_id);
+  if (!quiz || quiz.type !== 'self_generated') {
+    return res.status(400).json({ error: 'Self-grading is only available for practice quizzes.' });
+  }
+
+  const { question_id, points_earned } = req.body;
+  if (question_id === undefined || points_earned === undefined) {
+    return res.status(400).json({ error: 'question_id and points_earned are required' });
+  }
+
+  const answer = db.prepare(`
+    SELECT qaa.id, q.max_points, qq.points_override
+      FROM quiz_attempt_answers qaa
+      JOIN questions q ON qaa.question_id = q.id
+      JOIN quiz_questions qq ON qq.quiz_id = ? AND qq.question_id = qaa.question_id
+     WHERE qaa.attempt_id = ? AND qaa.question_id = ?
+  `).get(attempt.quiz_id, attempt.id, question_id);
+  if (!answer) return res.status(404).json({ error: 'Answer not found' });
+
+  const maxPts = answer.points_override ?? answer.max_points;
+  const pts = Math.max(0, Math.min(Number(points_earned), maxPts));
+  const isCorrect = pts >= maxPts * 0.5 ? 1 : 0;
+
+  const finalize = db.transaction(() => {
+    db.prepare(`
+      UPDATE quiz_attempt_answers
+         SET points_earned = ?, is_correct = ?, graded_at = datetime('now'), graded_by = ?
+       WHERE id = ?
+    `).run(pts, isCorrect, req.user.id, answer.id);
+
+    const total = db.prepare(
+      'SELECT COALESCE(SUM(points_earned), 0) AS s FROM quiz_attempt_answers WHERE attempt_id = ?'
+    ).get(attempt.id).s;
+    const pending = db.prepare(
+      'SELECT COUNT(*) AS c FROM quiz_attempt_answers WHERE attempt_id = ? AND is_correct IS NULL'
+    ).get(attempt.id).c;
+
+    if (pending === 0) {
+      db.prepare(`
+        UPDATE quiz_attempts SET score = ?, status = 'graded', graded_at = datetime('now') WHERE id = ?
+      `).run(total, attempt.id);
+    } else {
+      db.prepare('UPDATE quiz_attempts SET score = ? WHERE id = ?').run(total, attempt.id);
+    }
+  });
+  finalize();
+
+  const updated = db.prepare('SELECT * FROM quiz_attempts WHERE id = ?').get(attempt.id);
+  return res.json(updated);
+});
+
 // GET /api/student/attempts/:id
 attemptRouter.get('/:id', requireAuth, (req, res) => {
   const attempt = db.prepare('SELECT * FROM quiz_attempts WHERE id = ?').get(req.params.id);
@@ -735,7 +883,7 @@ attemptRouter.get('/:id', requireAuth, (req, res) => {
   const optionOrders = attempt.option_orders ? JSON.parse(attempt.option_orders) : {};
 
   const rawAnswers = db.prepare(`
-    SELECT qaa.*, q.type, q.stem, q.explanation, q.max_points
+    SELECT qaa.*, q.type, q.stem, q.explanation, q.model_answer, q.max_points
       FROM quiz_attempt_answers qaa
       JOIN questions q ON qaa.question_id = q.id
      WHERE qaa.attempt_id = ?
@@ -765,6 +913,7 @@ attemptRouter.get('/:id', requireAuth, (req, res) => {
         type: row.type,
         stem: row.stem,
         explanation: row.explanation,
+        model_answer: row.model_answer,
         max_points: row.max_points,
         options: orderedOptions,
       },

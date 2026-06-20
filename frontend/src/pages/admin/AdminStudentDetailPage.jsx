@@ -6,6 +6,7 @@ import {
   getTeacherSessions, createSession, updateSession, deleteSession,
   downloadParentReportPDF, downloadProgressReportPDF,
   getCourses, adminEnrollStudent, adminUnenrollStudent,
+  getStudentPracticeHistory,
 } from '../../api/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -624,10 +625,15 @@ function TabOverview({ student, courses, onProfileSaved, onCoursesChanged }) {
   );
 }
 
-function TabProgress({ courses, quizHistory }) {
+function TabProgress({ courses, quizHistory, studentId }) {
   const avgScore = quizHistory.length
     ? Math.round(quizHistory.reduce((s, q) => s + (q.max_score > 0 ? q.score / q.max_score * 100 : 0), 0) / quizHistory.length)
     : null;
+
+  const [practice, setPractice] = useState(null);
+  useEffect(() => {
+    getStudentPracticeHistory(studentId).then(setPractice).catch(() => setPractice([]));
+  }, [studentId]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -671,6 +677,59 @@ function TabProgress({ courses, quizHistory }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Personalized practice track record (#19) */}
+      <PracticeTrackRecord practice={practice} />
+    </div>
+  );
+}
+
+// Per-topic averages + recent attempts from the student's self-made practice quizzes.
+function PracticeTrackRecord({ practice }) {
+  if (practice === null) return null;
+
+  const scored = practice.filter(a => a.score_pct !== null);
+  const avg = scored.length ? Math.round(scored.reduce((s, a) => s + a.score_pct, 0) / scored.length) : null;
+
+  const topicAgg = {};
+  practice.forEach(a => a.per_topic.forEach(tp => {
+    if (tp.pct === null) return;
+    const k = tp.topic_id ?? 'none';
+    if (!topicAgg[k]) topicAgg[k] = { title: tp.title, sum: 0, n: 0 };
+    topicAgg[k].sum += tp.pct; topicAgg[k].n += 1;
+  }));
+  const topicRows = Object.values(topicAgg).map(x => ({ title: x.title, pct: Math.round(x.sum / x.n) })).sort((a, b) => a.pct - b.pct);
+
+  return (
+    <div>
+      <h3 style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 10, marginTop: 0 }}>
+        {t('Personalizirani kvizovi (vježba)', 'Personalized practice quizzes')}
+      </h3>
+      {practice.length === 0 ? (
+        <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+          {t('Student još nije riješio nijednu samostalnu vježbu.', 'No self-made practice quizzes yet.')}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+            {practice.length} {t('vježbi', 'practice quizzes')}
+            {avg != null && <> · {t('prosjek', 'avg')} <strong style={{ color: scoreColor(avg) }}>{avg}%</strong></>}
+          </div>
+          {topicRows.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {topicRows.map((tp, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--ink)' }}>{tp.title}</span>
+                  <div style={{ width: 120, height: 6, background: 'var(--line)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${tp.pct}%`, background: scoreColor(tp.pct) }} />
+                  </div>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: scoreColor(tp.pct), minWidth: 36, textAlign: 'right' }}>{tp.pct}%</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1156,7 +1215,7 @@ export default function AdminStudentDetailPage() {
 
       {/* Tab content */}
       {activeTab === 'overview'  && <TabOverview student={student} courses={courses} onProfileSaved={load} onCoursesChanged={load} />}
-      {activeTab === 'progress'  && <TabProgress courses={courses} quizHistory={quizHistory} />}
+      {activeTab === 'progress'  && <TabProgress courses={courses} quizHistory={quizHistory} studentId={id} />}
       {activeTab === 'quizzes'   && <TabQuizzes quizHistory={quizHistory} />}
       {activeTab === 'homeworks' && <TabHomeworks studentId={id} />}
       {activeTab === 'sessions'  && <TabSessions studentId={id} />}
