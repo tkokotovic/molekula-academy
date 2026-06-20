@@ -243,4 +243,40 @@ router.get('/lessons/:id/blocks', requireAuth, (req, res) => {
   return res.json({ blocks: visible });
 });
 
+// ─── GET /api/student/lessons/:id/notes ───────────────────────────────────────
+// The logged-in student's private notes for a lesson (empty if none yet).
+// Notes are per-student and never shared — no teacher visibility (#17).
+router.get('/lessons/:id/notes', requireAuth, (req, res) => {
+  const row = db.prepare(
+    'SELECT content, updated_at FROM lesson_notes WHERE student_id = ? AND lesson_id = ?'
+  ).get(req.user.id, req.params.id);
+  return res.json({ note: row || { content: '', updated_at: null } });
+});
+
+// ─── PUT /api/student/lessons/:id/notes ───────────────────────────────────────
+// Upsert the student's notes (autosave target). Online-only — no export path.
+// Body may carry inline KaTeX / mhchem; stored verbatim, rendered on the client.
+router.put('/lessons/:id/notes', requireAuth, (req, res) => {
+  const lesson = db.prepare(
+    `SELECT id FROM lessons WHERE id = ? AND status = 'published'`
+  ).get(req.params.id);
+  if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+  let content = typeof req.body.content === 'string' ? req.body.content : '';
+  // Cap length so a runaway paste can't bloat the row / payload.
+  if (content.length > 50000) content = content.slice(0, 50000);
+
+  db.prepare(`
+    INSERT INTO lesson_notes (student_id, lesson_id, content, updated_at)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(student_id, lesson_id)
+    DO UPDATE SET content = excluded.content, updated_at = datetime('now')
+  `).run(req.user.id, req.params.id, content);
+
+  const row = db.prepare(
+    'SELECT content, updated_at FROM lesson_notes WHERE student_id = ? AND lesson_id = ?'
+  ).get(req.user.id, req.params.id);
+  return res.json({ note: row });
+});
+
 module.exports = router;

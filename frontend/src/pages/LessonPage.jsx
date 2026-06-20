@@ -9,6 +9,7 @@ import { hydrateChemHtml } from '../components/extensions/chem';
 import { Watermark, useContentGuards } from '../components/ContentProtection';
 import MolekulaMark from '../components/MolekulaMark';
 import Molecule3dViewer from '../components/Molecule3dViewer';
+import LessonNotes from '../components/LessonNotes';
 import './admin/LessonEditorCanvas.css';
 
 // Signal-block palette — kept in sync with the editor (LessonEditorPage SIGNAL),
@@ -808,6 +809,9 @@ export default function LessonPage() {
               <span>© Molekula Academy{topicTitle ? ` · ${topicTitle}` : ''}</span>
             </div>
           </article>
+
+          {/* Private study notes for this lesson (#17) */}
+          <LessonNotes lessonId={lessonId} />
 
           {/* Mark complete + nav */}
           <div style={{ marginTop: 48, paddingTop: 28, borderTop: '1px solid var(--line)' }}>

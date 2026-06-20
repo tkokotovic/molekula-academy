@@ -644,6 +644,19 @@ const migrations = [
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
   )`,
+  // #17 — Student per-lesson digital notes. Online-only (no export); the body is
+  // free text that may carry inline KaTeX / mhchem ($…$, $$…$$, \ce{…}, \pu{…}).
+  // One row per (student, lesson) — upserted as the student types (autosave).
+  `CREATE TABLE IF NOT EXISTS lesson_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    lesson_id INTEGER NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(student_id, lesson_id),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+  )`,
 ];
 
 for (const sql of migrations) {

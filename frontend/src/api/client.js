@@ -302,6 +302,21 @@ export async function searchStudentContent(q) {
   return data.results;
 }
 
+// ─── Per-lesson digital notes (#17) ───────────────────────────────────────────
+
+export async function getLessonNote(lessonId) {
+  const data = await apiFetch(`/api/student/lessons/${lessonId}/notes`);
+  return data.note;
+}
+
+export async function saveLessonNote(lessonId, content) {
+  const data = await apiFetch(`/api/student/lessons/${lessonId}/notes`, {
+    method: 'PUT',
+    body: JSON.stringify({ content }),
+  });
+  return data.note;
+}
+
 export async function createLessonBlock(lessonId, type, content) {
   const data = await apiFetch(`/api/teacher/lessons/${lessonId}/blocks`, {
     method: 'POST',

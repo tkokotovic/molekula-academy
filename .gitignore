@@ -7,6 +7,7 @@ backend/node_modules/
 backend/molekula.db
 backend/molekula.db-shm
 backend/molekula.db-wal
+backend/database.sqlite
 
 # Uploads (user-uploaded files — not committed)
 backend/uploads/
